@@ -41,7 +41,7 @@ const COMBO_RULES = {
 var jump_count = 0
 
 # STATE MACHINE
-enum State {IDLE, WALK, SPRINT, CROUCH, JUMP, FALL, ATTACK, HURT}
+enum State {IDLE, WALK, SPRINT, CROUCH, JUMP, FALL, ATTACK, HURT, ACTION_BUSY}
 var current_state = State.IDLE
 
 # NODE REFERENCES
@@ -72,8 +72,9 @@ func _ready():
 
 
 func _physics_process(delta):
-	apply_gravity(delta)
-	handle_input()
+	if current_state != State.ACTION_BUSY:
+		apply_gravity(delta)
+		handle_input()
 	
 	match current_state:
 		State.IDLE, State.WALK, State.SPRINT, State.CROUCH:
@@ -85,6 +86,11 @@ func _physics_process(delta):
 		State.HURT:
 			if is_on_floor():
 				velocity.x = move_toward(velocity.x, 0, friction * delta)
+		State.ACTION_BUSY:
+			if is_on_floor():
+				velocity.x = move_toward(velocity.x, 0, friction * delta)
+			else:
+				velocity.x = move_toward(velocity.x, 0, friction * delta * 0.25)
 
 	move_and_slide()
 	update_animation_and_flip()
@@ -270,7 +276,7 @@ func update_animation_and_flip():
 			animated_sprite.flip_h = (direction < 0)
 			hitbox_shape.get_parent().scale.x = -1 if animated_sprite.flip_h else 1
 
-	if current_state in [State.ATTACK, State.HURT]:
+	if current_state in [State.ATTACK, State.HURT, State.ACTION_BUSY]:
 		return
 
 	var anim_to_play = ""
