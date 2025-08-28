@@ -1,0 +1,49 @@
+[gd_scene load_steps=2 format=3 uid="uid://caxxeh82ihqh"]
+
+[ext_resource type="Script" uid="uid://rkm22foeu6n4" path="res://skill-system/ui/SkillIcon.gd" id="1_yix4x"]
+
+[node name="SkillIcon" type="Panel"]
+custom_minimum_size = Vector2(100, 100)
+script = ExtResource("1_yix4x")
+
+[node name="SkillName" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Skill Name"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Keybind" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 23.0
+grow_horizontal = 2
+text = "1"
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="CooldownOverlay" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.49019608)
+
+[node name="CooldownText" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 24
+text = "5.0"
+horizontal_alignment = 1
+vertical_alignment = 1
