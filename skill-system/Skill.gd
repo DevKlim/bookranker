@@ -6,6 +6,7 @@ var skill_name = "skill"
 var description  = "description"
 var cooldown = 1.0
 var cooldown_timer = 0.0
+var action_duration = 0.5
 
 func _process(delta):
 	if cooldown_timer > 0:

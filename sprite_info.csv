@@ -1,0 +1,45 @@
+Sprite Name,Dimensions,Frame Size,Horizontal Frames,Vertical Frames
+player katana continuous attack 80x64.png,720x64,80x64,9,1
+player katana air attack (upper body) 80x64.png,720x64,80x64,9,1
+player push idle 48x48.png,384x48,48x48,8,1
+player air spin 48x48.png,288x48,48x48,6,1
+player run 48x48.png,384x48,48x48,8,1
+player climb-back 48x48.png,192x48,48x48,4,1
+player katana running attack (upper body).png,640x64,48x48,13,1
+dash.png,432x48,48x48,9,1
+Player Punch 64x64.png,512x64,64x64,8,1
+Player Running Shooting 48x48.png,384x48,48x48,8,1
+Player Running Aiming 48x48.png,384x48,48x48,8,1
+player katana run 48x48.png,384x48,48x48,8,1
+player katana attack-sheathe 80x64.png,800x64,80x64,10,1
+player crouch-walk 48x48.png,480x48,48x48,10,1
+player push 48x48.png,480x48,48x48,10,1
+player wall slide (left) 48x48.png,144x48,48x48,3,1
+player wall slide 48x48.png,144x48,48x48,3,1
+Player Crouch-Idle 48x48.png,480x48,48x48,10,1
+Player Hurt 48x48.png,192x48,48x48,4,1
+player jump left 48x48-sheet.png,288x48,48x48,6,1
+player new jump 48x48.png,288x48,48x48,6,1
+player jump 48x48.png,144x48,48x48,3,1
+Player Sword Run 48x48.png,384x48,48x48,8,1
+Player Side-Climb 48x48.png,192x48,48x48,4,1
+Player Side-Climb 48x48.png,192x48,48x48,4,1
+Player Pull 48x48.png,288x48,48x48,6,1
+Player Death 64x64.png,480x48,64x64,7,0
+katana walk.png,480x48,48x48,10,1
+Player Sword Stab 96x48.png,672x48,96x48,7,1
+player ledge climb 48x48.png,240x48,48x48,5,1
+Player Wall Land (left) 48x48.png,288x48,48x48,6,1
+player wall land 48x48.png,288x48,48x48,6,1
+Player Sword Idle 48x48.png,480x48,48x48,10,1
+Player Slide 48x48.png,384x48,48x48,8,1
+Player Roll 48x48.png,336x48,48x48,7,1
+Player Jab 48x48.png,480x48,48x48,10,1
+player shoot 2H 48x48.png,480x48,48x48,10,1
+PlayerWalk 48x48.png,384x48,48x48,8,1
+player sword atk 64x64.png,384x64,64x64,6,1
+Player Idle 48x48.png,480x48,48x48,10,1
+Player Punch Cross 64x64.png,448x64,64x64,7,1
+Basic Tilemap.png,96x160,48x48,2,3
+160x160 background tilemap.png,160x160,160x160,1,1
+player land 48x48.png,432x48,48x48,9,1

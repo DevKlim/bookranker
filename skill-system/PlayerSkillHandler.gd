@@ -2,6 +2,7 @@ extends Node
 
 # Add this export so you can assign your SkillBar.tscn scene in the Inspector.
 @export var skill_bar_scene: PackedScene
+@onready var player_state = get_node("../PlayerState")
 
 var skills = {}
 var skill_actions = ["skill1", "skill2", "skill3", "skill4"] # A list of your skill input actions
@@ -43,11 +44,16 @@ func use_skill(action_name): # Receives the action string from a client
 	# Only the authority (the host) can execute this logic.
 	if not is_multiplayer_authority(): return
 
+	if player_state.current_state != player_state.PlayerState.IDLE:
+		print("Player is busy!")
+		return
+
 	if skills.has(action_name):
 		var skill = skills[action_name]
 		# The host checks the cooldown.
 		if skill.can_use(self):
 			# If valid, execute the skill's core logic...
+			player_state.set_state(player_state.PlayerState.ACTION_BUSY)
 			skill.execute(self)
 			# ...and tell all players to play the visual effect.
 			rpc("play_skill_effect", action_name)
