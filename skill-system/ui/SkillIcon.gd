@@ -35,9 +35,10 @@ func _process(delta):
 func set_skill(skill_node, action_name):
 	self.skill = skill_node
 	skill_name_label.text = skill.skill_name
-	
 	# Find the physical key bound to the action for display
 	for event in InputMap.action_get_events(action_name):
 		if event is InputEventKey:
-			keybind_label.text = OS.get_keycode_string(event.keycode)
+			keybind_label.text = OS.get_keycode_string(event.physical_keycode)
+			print(OS.get_keycode_string(event.keycode))
 			break # Stop after finding the first key
+		
