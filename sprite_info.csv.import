@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://dnxk0s2fkdvdt"
+
+[deps]
+
+files=["res://sprite_info.Dimensions.translation", "res://sprite_info.Frame Size.translation", "res://sprite_info.Horizontal Frames.translation", "res://sprite_info.Vertical Frames.translation"]
+
+source_file="res://sprite_info.csv"
+dest_files=["res://sprite_info.Dimensions.translation", "res://sprite_info.Frame Size.translation", "res://sprite_info.Horizontal Frames.translation", "res://sprite_info.Vertical Frames.translation"]
+
+[params]
+
+compress=true
+delimiter=0
