@@ -13,7 +13,6 @@ extends CharacterBody2D
 @export var max_jumps = 2
 
 @export_group("Combat")
-@export var knockback_force = 900.0
 @export var combo_reset_time = 0.8 # Window to reset combo after the last attack
 
 # SPRINT (DOUBLE TAP) VARIABLES
@@ -41,7 +40,7 @@ const COMBO_RULES = {
 var jump_count = 0
 
 # STATE MACHINE
-enum State {IDLE, WALK, SPRINT, CROUCH, JUMP, FALL, ATTACK, HURT}
+enum State {IDLE, WALK, SPRINT, CROUCH, JUMP, FALL, ATTACK}
 var current_state = State.IDLE
 
 # NODE REFERENCES
@@ -82,9 +81,6 @@ func _physics_process(delta):
 			handle_air_state(delta)
 		State.ATTACK:
 			handle_attack_state(delta)
-		State.HURT:
-			if is_on_floor():
-				velocity.x = move_toward(velocity.x, 0, friction * delta)
 
 	move_and_slide()
 	update_animation_and_flip()
@@ -200,11 +196,11 @@ func handle_attack_input(type: String):
 	if current_state == State.ATTACK:
 		# Buffer the input if we are already attacking
 		attack_input_buffered = type
-	elif current_state not in [State.HURT, State.CROUCH]:
+	elif current_state != State.CROUCH:
 		# Otherwise, initiate a new attack
 		initiate_attack(type)
-		
-		
+
+
 func handle_combo_weaving():
 	if attack_input_buffered == "":
 		return
@@ -224,8 +220,8 @@ func initiate_attack(attack_type: String):
 	current_state = State.ATTACK
 	attack_input_buffered = "" # Clear buffer on successful initiation
 	
-	# Stop player for the first ground attack for commitment
-	if is_on_floor() and not animated_sprite.animation.begins_with("Attack"):
+	# Stop player for ground attacks for commitment
+	if is_on_floor():
 		velocity.x = 0
 
 	var anim_to_play = ""
@@ -251,18 +247,6 @@ func initiate_attack(attack_type: String):
 		combo_timer.start() # This timer is for dropping the combo entirely
 
 
-func take_damage(attacker_position):
-	if current_state == State.HURT: return
-
-	current_state = State.HURT
-	animated_sprite.play("Hurt")
-	attack1_combo = 0; attack2_combo = 0
-	
-	var direction_to_attacker = (attacker_position - global_position).normalized()
-	velocity = - direction_to_attacker * knockback_force
-	velocity.y = jump_velocity * 0.6
-
-
 func update_animation_and_flip():
 	if current_state != State.ATTACK:
 		var direction = Input.get_axis("p%d_left" % player_id, "p%d_right" % player_id)
@@ -270,7 +254,7 @@ func update_animation_and_flip():
 			animated_sprite.flip_h = (direction < 0)
 			hitbox_shape.get_parent().scale.x = -1 if animated_sprite.flip_h else 1
 
-	if current_state in [State.ATTACK, State.HURT]:
+	if current_state == State.ATTACK:
 		return
 
 	var anim_to_play = ""
@@ -300,7 +284,7 @@ func _on_animation_finished():
 		if current_state == State.ATTACK:
 			current_state = State.FALL if not is_on_floor() else State.IDLE
 	
-	if anim_name in ["Land", "Hurt"]:
+	if anim_name == "Land":
 		current_state = State.IDLE
 	if anim_name == "Jump_Start":
 		current_state = State.FALL
@@ -309,12 +293,6 @@ func _on_animation_finished():
 func _on_combo_timer_timeout():
 	attack1_combo = 0
 	attack2_combo = 0
-
-
-func _on_hurtbox_area_entered(area):
-	if area.is_in_group("hitbox") and area.get_parent().get_parent() != self:
-		var attacker = area.get_parent().get_parent()
-		take_damage(attacker.global_position)
 
 
 func enable_hitbox(enable: bool):
