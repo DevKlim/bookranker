@@ -20,12 +20,26 @@ func _ready():
 	for zone in death_zones:
 		zone.body_entered.connect(_on_death_zone_body_entered)
 		
-	# Store spawn positions
-	p1_spawn_pos = player1.global_position
-	p2_spawn_pos = player2.global_position
+	# Safety check to ensure players are assigned before storing spawn positions
+	if is_instance_valid(player1):
+		p1_spawn_pos = player1.global_position
+	else:
+		push_error("Player 1 is not a valid instance in _ready(). Check the scene tree.")
+		
+	if is_instance_valid(player2):
+		p2_spawn_pos = player2.global_position
+	else:
+		push_error("Player 2 is not a valid instance in _ready(). Check the scene tree.")
+
 
 func _process(delta):
+	# Guard clause: If either player is not valid, do nothing.
+	# This prevents crashes if a player is removed from the tree.
+	if not is_instance_valid(player1) or not is_instance_valid(player2):
+		return
+		
 	handle_camera(delta)
+
 
 func handle_camera(delta):
 	# Calculate the midpoint between the players
@@ -50,6 +64,7 @@ func handle_camera(delta):
 	
 	# Smoothly apply the new zoom
 	camera.zoom = lerp(camera.zoom, Vector2(target_zoom, target_zoom), delta * CAMERA_SMOOTHING)
+
 
 func _on_death_zone_body_entered(body):
 	# Check if the body that entered is a player

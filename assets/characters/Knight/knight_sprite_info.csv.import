@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://867jtbdkp2wq"
+
+[deps]
+
+files=["res://assets/characters/Knight/knight_sprite_info.AnimationName.translation", "res://assets/characters/Knight/knight_sprite_info.AnimationType.translation", "res://assets/characters/Knight/knight_sprite_info.FrameWidth.translation", "res://assets/characters/Knight/knight_sprite_info.FrameHeight.translation", "res://assets/characters/Knight/knight_sprite_info.HFrames.translation", "res://assets/characters/Knight/knight_sprite_info.AttackState.translation", "res://assets/characters/Knight/knight_sprite_info.AttackInput.translation", "res://assets/characters/Knight/knight_sprite_info.AttackComboIndex.translation"]
+
+source_file="res://assets/characters/Knight/knight_sprite_info.csv"
+dest_files=["res://assets/characters/Knight/knight_sprite_info.AnimationName.translation", "res://assets/characters/Knight/knight_sprite_info.AnimationType.translation", "res://assets/characters/Knight/knight_sprite_info.FrameWidth.translation", "res://assets/characters/Knight/knight_sprite_info.FrameHeight.translation", "res://assets/characters/Knight/knight_sprite_info.HFrames.translation", "res://assets/characters/Knight/knight_sprite_info.AttackState.translation", "res://assets/characters/Knight/knight_sprite_info.AttackInput.translation", "res://assets/characters/Knight/knight_sprite_info.AttackComboIndex.translation"]
+
+[params]
+
+compress=true
+delimiter=0

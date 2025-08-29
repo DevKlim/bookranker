@@ -20,7 +20,12 @@ position = Vector2(640, 500)
 [node name="Player1" parent="." instance=ExtResource("3_6d7t0")]
 position = Vector2(400, 350)
 scale = Vector2(3, 3)
-jump_velocity = -900.0
+sprint_speed = 700.0
+jump_velocity = -1000.0
+friction = 2700.0
+fast_fall_peak_threshold = 600.0
+jump_buffer_time = 0.19999999999708962
+landing_lag_duration = 0.3000000000029104
 
 [node name="Player2" parent="." instance=ExtResource("3_6d7t0")]
 position = Vector2(880, 350)

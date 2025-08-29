@@ -1,0 +1,10 @@
+SpritePath,AnimationName,AnimationType,FrameWidth,FrameHeight,HFrames,AttackState,AttackInput,AttackComboIndex
+Idle/Player Idle 48x48.png,Idle,Movement,48,48,10,,,,
+Run/player run 48x48.png,Sprint,Movement,48,48,8,,,,
+Walk/PlayerWalk 48x48.png,Walk,Movement,48,48,8,,,,
+Jump/player jump 48x48.png,Jump_Start,Movement,48,48,3,,,,
+Fall/player land 48x48.png,Fall,Movement,48,48,3,,,,
+Land/player land 48x48.png,Land,Movement,48,48,4,,,,
+GroundAttack1/Player Jab 48x48.png,Attack1_1,Attack,48,48,6,Grounded,attack1,1
+GroundAttack2/Player Punch Cross 64x64.png,Attack1_2,Attack,64,64,7,Grounded,attack1,2
+AirAttack1/player sword stab 96x48.png,Air_Attack1,Attack,96,48,7,Aerial,attack1,1
