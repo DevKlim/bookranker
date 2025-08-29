@@ -1,0 +1,33 @@
+[gd_scene load_steps=4 format=3 uid="uid://qnxhqi6xx7c8"]
+
+[ext_resource type="Script" uid="uid://b3pjys8bau6l2" path="res://scripts/PlayerUI.gd" id="1_wxbm6"]
+[ext_resource type="PackedScene" uid="uid://b8dp2xfeutl8y" path="res://stat-system/ui/StatBar.tscn" id="2_08kqy"]
+[ext_resource type="PackedScene" uid="uid://cpk7vy4faftvg" path="res://skill-system/ui/SkillBar.tscn" id="3_p6wq6"]
+
+[node name="PlayerUI" type="CanvasLayer"]
+script = ExtResource("1_wxbm6")
+
+[node name="StatBarsContainer" type="MarginContainer" parent="."]
+offset_right = 178.0
+offset_bottom = 38.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="StatBarsContainer"]
+layout_mode = 2
+
+[node name="HealthBar" parent="StatBarsContainer/VBoxContainer" instance=ExtResource("2_08kqy")]
+layout_mode = 2
+
+[node name="ManaBar" parent="StatBarsContainer/VBoxContainer" instance=ExtResource("2_08kqy")]
+layout_mode = 2
+instant_fill_color = Color(0.19435093, 0.52938396, 0.9477832, 1)
+
+[node name="SkillBarContainer" parent="." instance=ExtResource("3_p6wq6")]
+anchors_preset = 0
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 620.0
+offset_top = 680.0
+offset_right = 660.0
+offset_bottom = 720.0

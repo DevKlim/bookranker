@@ -1,4 +1,4 @@
-[gd_scene load_steps=130 format=3 uid="uid://ddt0l01c1q28p"]
+[gd_scene load_steps=134 format=3 uid="uid://ddt0l01c1q28p"]
 
 [ext_resource type="Script" uid="uid://cflsksi8hgpxu" path="res://scripts/Player.gd" id="1_d758x"]
 [ext_resource type="Texture2D" uid="uid://dmeos56nl557i" path="res://assets/2d_fighter_template/Death/Player Death 64x64.png" id="2_r4goy"]
@@ -16,6 +16,10 @@
 [ext_resource type="Texture2D" uid="uid://dqw0qs2wu63eb" path="res://assets/2d_fighter_template/Air Spin/player air spin 48x48.png" id="11_d75yq"]
 [ext_resource type="Texture2D" uid="uid://dd0qvkm8j82re" path="res://assets/2d_fighter_template/Katana Air Attack/player katana air attack (upper body) 80x64.png" id="12_x31k1"]
 [ext_resource type="Texture2D" uid="uid://dplr7g35oqe" path="res://assets/2d_fighter_template/Katana Continuous Attack/player katana continuous attack 80x64.png" id="13_5t5r0"]
+[ext_resource type="Script" uid="uid://bltxtukkkmvy0" path="res://stat-system/HealthComponent.gd" id="17_61ith"]
+[ext_resource type="Script" uid="uid://bxfh4idd48h1p" path="res://stat-system/ManaComponent.gd" id="18_ebwui"]
+[ext_resource type="Script" uid="uid://hqj6wruhs3yh" path="res://skill-system/PlayerSkillHandler.gd" id="19_ebwui"]
+[ext_resource type="PackedScene" uid="uid://qnxhqi6xx7c8" path="res://scenes/PlayerUI.tscn" id="20_sfy4j"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_h8gpf"]
 atlas = ExtResource("11_d75yq")
@@ -880,12 +884,14 @@ size = Vector2(18, 30)
 properties/0/path = NodePath(".:position")
 properties/0/spawn = true
 properties/0/replication_mode = 1
+properties/1/path = NodePath("HealthComponent:current_health")
+properties/1/spawn = true
+properties/1/replication_mode = 1
 
 [node name="Player" type="CharacterBody2D"]
 collision_layer = 2
 script = ExtResource("1_d758x")
 walk_speed = 400.0
-sprint_speed = 600.0
 jump_velocity = -1200.0
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
@@ -919,6 +925,17 @@ replication_config = SubResource("SceneReplicationConfig_g068p")
 
 [node name="ComboTimer" type="Timer" parent="."]
 one_shot = true
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("17_61ith")
+
+[node name="ManaComponent" type="Node" parent="."]
+script = ExtResource("18_ebwui")
+
+[node name="PlayerSkillHandler" type="Node" parent="."]
+script = ExtResource("19_ebwui")
+
+[node name="PlayerUI" parent="." instance=ExtResource("20_sfy4j")]
 
 [connection signal="area_entered" from="Hurtbox" to="." method="_on_hurtbox_area_entered"]
 [connection signal="timeout" from="ComboTimer" to="." method="_on_combo_timer_timeout"]

@@ -1,0 +1,42 @@
+[gd_scene load_steps=2 format=3 uid="uid://b8dp2xfeutl8y"]
+
+[ext_resource type="Script" uid="uid://dnhxhk18bfial" path="res://stat-system/ui/StatBar.gd" id="1_5ktke"]
+
+[node name="StatBar" type="Control"]
+custom_minimum_size = Vector2(200, 40)
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_5ktke")
+delayed_fill_color = Color(0.7262233, 3.4172833e-06, 5.7756904e-07, 1)
+
+[node name="DelayedFill" type="ProgressBar" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+value = 100.0
+show_percentage = false
+
+[node name="InstantFill" type="ProgressBar" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+value = 100.0
+show_percentage = false
+
+[node name="Label" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2

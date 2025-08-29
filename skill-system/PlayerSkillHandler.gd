@@ -1,6 +1,5 @@
 extends Node
 
-@export var skill_bar_scene: PackedScene
 @onready var player = get_parent()
 
 var skills = {}
@@ -11,10 +10,7 @@ func _ready():
 		add_skill("skill1", load("res://skill-system/skills/Fireball.gd").new())
 		add_skill("skill2", load("res://skill-system/skills/IceSpike.gd").new())
 	
-	if get_multiplayer_authority() == multiplayer.get_unique_id():
-		var skill_bar = skill_bar_scene.instantiate()
-		add_child(skill_bar)
-		skill_bar.setup_skill_bar(skills)
+
 
 func _unhandled_input(event):
 	if get_multiplayer_authority() == multiplayer.get_unique_id():
@@ -27,6 +23,7 @@ func add_skill(action_name, skill):
 		remove_child(skills[action_name])
 	skills[action_name] = skill
 	add_child(skill)
+	
 
 @rpc("call_local")
 func use_skill(action_name):

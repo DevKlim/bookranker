@@ -1,9 +1,9 @@
 # skill-system/ui/SkillBar.gd
-extends CanvasLayer
+extends MarginContainer
 
 # --- Node References ---
 # Get a reference to the HBoxContainer that will hold the icons.
-@onready var container = $MarginContainer/HBoxContainer
+@onready var container = $HBoxContainer
 
 # --- Preload Scenes ---
 # Preload the SkillIcon scene so we can create instances of it.

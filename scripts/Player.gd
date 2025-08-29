@@ -45,6 +45,8 @@ enum State {IDLE, WALK, SPRINT, CROUCH, JUMP, FALL, ATTACK, HURT, ACTION_BUSY}
 var current_state = State.IDLE
 
 # NODE REFERENCES
+@onready var health_component = $HealthComponent
+@onready var mana_component = $ManaComponent
 @onready var animated_sprite = $AnimatedSprite2D
 @onready var hitbox_shape = $Hitbox/CollisionShape2D
 @onready var combo_timer = $ComboTimer
@@ -255,18 +257,56 @@ func initiate_attack(attack_type: String):
 		animated_sprite.play(anim_to_play)
 		enable_hitbox(true)
 		combo_timer.start() # This timer is for dropping the combo entirely
+func can_use_skill() -> bool:
+	"""
+	Checks if the player is in a state that allows skill usage.
+	Returns 'true' if the player is in a neutral state.
+	"""
+	return current_state in [State.IDLE, State.WALK, State.SPRINT, State.JUMP, State.FALL]
+
+func set_action_busy():
+	"""
+	Puts the player into the ACTION_BUSY state.
+	This is called by the skill handler right before a skill is used.
+	"""
+	current_state = State.ACTION_BUSY
+	# You can also play a casting animation here if you have one
+	# animated_sprite.play("Cast")
 
 
-func take_damage(attacker_position):
+func end_action_busy():
+	"""
+	Returns the player to a neutral state after a skill's duration is over.
+	This is called by the skill handler's timer.
+	"""
+	# Only change state if we are still busy. This prevents overriding
+	# a more important state, like being hurt.
+	if current_state == State.ACTION_BUSY:
+		current_state = State.FALL if not is_on_floor() else State.IDLE
+
+@rpc("any_peer", "reliable") # <-- ADD THIS DECORATOR
+func take_damage(attacker_path, damage_amount):
+	# This authority check is critical for P2P
+	if not is_multiplayer_authority(): return
+	
+	# This line will now work because attacker_path is a valid NodePath
+	var attacker = get_node_or_null(attacker_path)
+	if not attacker: return
+
+	# The rest of your logic is correct
 	if current_state == State.HURT: return
+	var attacker_position = attacker.global_position
+	health_component.take_damage(DamageReport.new(attacker, attacker_position, damage_amount))
 
 	current_state = State.HURT
 	animated_sprite.play("Hurt")
 	attack1_combo = 0; attack2_combo = 0
 	
 	var direction_to_attacker = (attacker_position - global_position).normalized()
-	velocity = - direction_to_attacker * knockback_force
+	velocity = -direction_to_attacker * knockback_force
 	velocity.y = jump_velocity * 0.6
+func _on_died():
+	print("Player %d has died!" % player_id)
 
 
 func update_animation_and_flip():
@@ -320,7 +360,13 @@ func _on_combo_timer_timeout():
 func _on_hurtbox_area_entered(area):
 	if area.is_in_group("hitbox") and area.get_parent().get_parent() != self:
 		var attacker = area.get_parent().get_parent()
-		take_damage(attacker.global_position)
+		
+		# Only the player controlling the attacker can initiate the hit
+		if not attacker.is_multiplayer_authority():
+			return
+			
+		# Call the RPC on the victim (self) and pass the ATTACKER'S PATH
+		self.rpc("take_damage", attacker.get_path(), 10.0)
 
 
 func enable_hitbox(enable: bool):
