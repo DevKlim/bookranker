@@ -2,7 +2,7 @@ extends CharacterBody2D
 
 # Load the Attack class definitions
 const Attack = preload("res://scripts/Attack.gd")
-# REMOVED HitboxData preload as it's no longer needed here.
+const Skill = preload("res://skill-system/Skill.gd")
 
 # EXPORT VARIABLES
 @export var player_id: int = 1
@@ -25,14 +25,17 @@ const Attack = preload("res://scripts/Attack.gd")
 ## If checked, active hitboxes will be drawn on screen.
 @export var debug_draw_hitboxes: bool = false
 
-# ATTACK VARIABLES
+# ATTACK & SKILL VARIABLES
 var attacks_map = {}
-var current_attack: Attack = null
+var skills_map = {}
+var skills_list: Array[Skill] = []
+var current_attack: Attack = null # Can be a normal Attack or a Skill
 var attack_input_buffered = ""
 var combo_counters: Dictionary = {} # Tracks progress for each attack chain
 var last_attack_chain: StringName = &""
 var _last_anim_frame = -1
 var is_in_fixed_move = false
+var skill_actions = ["skill1", "skill2", "skill3", "skill4"]
 
 # SPRINT (DOUBLE TAP) VARIABLES
 var last_tap_dir = 0
@@ -53,6 +56,8 @@ var current_state = State.IDLE
 @onready var animated_sprite = $AnimatedSprite2D
 @onready var hitbox_area = $Hitbox
 @onready var attacks_node = $Attacks
+@onready var skills_node = $Skills
+@onready var skill_bar = $CanvasLayer/SkillBar
 @onready var combo_timer = $ComboTimer
 @onready var attack_lag_timer = $AttackLagTimer
 @onready var landing_lag_timer = $LandingLagTimer
@@ -82,6 +87,8 @@ func _ready():
 	animated_sprite.animation_finished.connect(_on_animation_finished)
 	
 	parse_attacks()
+	parse_skills()
+	setup_skill_bar()
 	
 	# Configure timers
 	landing_lag_timer.wait_time = landing_lag_duration
@@ -97,8 +104,6 @@ func _ready():
 	_input_attack2 = "p%d_attack2" % player_id
 
 func _draw():
-	# The debug drawing is now handled by the editor plugin, 
-	# but we can keep this for runtime debugging if we want.
 	if not debug_draw_hitboxes or current_state != State.ATTACK:
 		return
 	
@@ -133,6 +138,21 @@ func parse_attacks():
 		for input in attacks_map[state]:
 			attacks_map[state][input].sort_custom(func(a, b): return a.combo_index < b.combo_index)
 
+func parse_skills():
+	skills_map.clear()
+	skills_list.clear()
+	for skill_node in skills_node.get_children():
+		if skill_node is Skill:
+			var skill: Skill = skill_node
+			if not skill.skill_input_action.is_empty():
+				skills_map[skill.skill_input_action] = skill
+				skills_list.append(skill)
+	# Sort by action name to keep UI consistent
+	skills_list.sort_custom(func(a, b): return a.skill_input_action < b.skill_input_action)
+
+func setup_skill_bar():
+	if is_instance_valid(skill_bar):
+		skill_bar.setup_skill_bar(skills_list)
 
 func _physics_process(delta):
 	was_airborne = not is_on_floor()
@@ -185,10 +205,19 @@ func apply_gravity(delta):
 func handle_input():
 	if current_state in [State.ATTACK_LAG, State.LANDING_LAG]:
 		return
+
+	# Attack Inputs
 	if Input.is_action_just_pressed(_input_attack1):
 		handle_attack_input("attack1")
 	if Input.is_action_just_pressed(_input_attack2):
 		handle_attack_input("attack2")
+	
+	# Skill Inputs
+	for action in skill_actions:
+		if Input.is_action_just_pressed(action):
+			handle_skill_input(action)
+			
+	# Fast Fall
 	if not is_on_floor() and Input.is_action_just_pressed(_input_down):
 		if abs(velocity.y) < fast_fall_peak_threshold:
 			velocity.y = fast_fall_velocity
@@ -216,6 +245,12 @@ func handle_attack_state(delta):
 		if opposite_input_pressed:
 			_end_attack_state() # Cancel the attack with no lag
 			return # Exit early
+
+	# --- Skill Effect Logic ---
+	if current_attack is Skill:
+		var skill: Skill = current_attack
+		if current_frame >= skill.effect_frame and _last_anim_frame < skill.effect_frame:
+			skill.execute_effect(self)
 
 	# --- Movement Logic ---
 	match current_attack.movement_type:
@@ -362,6 +397,20 @@ func handle_attack_input(type: String):
 	elif current_state not in [State.ATTACK_LAG, State.LANDING_LAG]:
 		find_and_initiate_attack(type)
 
+func handle_skill_input(action: String):
+	# Can't use skills while already attacking, in lag, etc.
+	if current_state in [State.ATTACK, State.ATTACK_LAG, State.LANDING_LAG]:
+		return
+		
+	var skill: Skill = skills_map.get(action)
+	
+	if skill and skill.can_use():
+		# Check if player state is valid for this skill (e.g. Grounded/Aerial)
+		var player_posture = "Aerial" if not is_on_floor() else "Grounded"
+		if skill.required_state == player_posture or skill.required_state == "Any": # Added "Any" for flexibility
+			initiate_attack(skill) # Re-use the attack initiation logic
+			skill.start_cooldown()
+
 func find_and_initiate_attack(input: String):
 	# Determine current state context for attacks
 	var state_key = "Grounded"
@@ -407,17 +456,18 @@ func initiate_attack(attack_data: Attack):
 	attack_input_buffered = ""
 	current_attack = attack_data
 	
-	# If this is a new chain, clear the old one's progress.
-	# This handles switching from an attack1 combo to an attack2 combo starter.
-	if attack_data.attack_chain != last_attack_chain and last_attack_chain != &"":
-		combo_counters.erase(last_attack_chain)
+	if not attack_data is Skill:
+		# If this is a new chain, clear the old one's progress.
+		# This handles switching from an attack1 combo to an attack2 combo starter.
+		if attack_data.attack_chain != last_attack_chain and last_attack_chain != &"":
+			combo_counters.erase(last_attack_chain)
 
-	last_attack_chain = attack_data.attack_chain
-	combo_counters[last_attack_chain] = attack_data.combo_index
-	
+		last_attack_chain = attack_data.attack_chain
+		combo_counters[last_attack_chain] = attack_data.combo_index
+		combo_timer.start()
+
 	animated_sprite.play(attack_data.animation_name)
 	_last_anim_frame = -1
-	combo_timer.start()
 
 func stop_fixed_move():
 	if is_in_fixed_move:
@@ -425,9 +475,7 @@ func stop_fixed_move():
 		fixed_move_timer.stop()
 		velocity = Vector2.ZERO
 
-# --- NEW AND CORRECTED HITBOX FUNCTIONS ---
 func clear_active_hitboxes():
-	# This function now correctly clears all children of the Hitbox Area2D.
 	for child in hitbox_area.get_children():
 		child.queue_free()
 
@@ -438,23 +486,17 @@ func update_active_hitboxes():
 
 	var frame = animated_sprite.frame
 	
-	# Iterate through the children of the current attack node.
 	for editor_hitbox in current_attack.get_children():
-		# Check if the child is one of our editor hitboxes and is active.
 		if "start_frame" in editor_hitbox and "end_frame" in editor_hitbox:
 			if frame >= editor_hitbox.start_frame and frame < editor_hitbox.end_frame:
 				var new_shape_node = CollisionShape2D.new()
 				var rect_shape = RectangleShape2D.new()
 				
-				# Use the editor node's position and size to create the real hitbox.
 				rect_shape.size = editor_hitbox.size
-				# The position needs to be the center of the editor rect.
 				new_shape_node.position = editor_hitbox.position + editor_hitbox.size / 2.0
 				
 				new_shape_node.shape = rect_shape
 				hitbox_area.add_child(new_shape_node)
-
-# --- END OF NEW HITBOX FUNCTIONS ---
 
 func update_animation_and_flip():
 	var direction = Input.get_axis(_input_left, _input_right)

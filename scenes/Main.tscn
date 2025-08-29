@@ -1,10 +1,5 @@
-[gd_scene load_steps=6 format=3 uid="uid://dx3sxiv5a1apv"]
+[gd_scene load_steps=5 format=3 uid="uid://dx3sxiv5a1apv"]
 
-[ext_resource type="Script" uid="uid://ds0u5is7adgf7" path="res://Main.gd" id="1_2n7h5"]
-[ext_resource type="PackedScene" uid="uid://ck6c55r53o22t" path="res://Level.tscn" id="2_2o4n6"]
-[ext_resource type="PackedScene" uid="uid://ddt0l01c1q28p" path="res://Player.tscn" id="3_6d7t0"]
-[ext_resource type="Script" uid="uid://hqj6wruhs3yh" path="res://skill-system/PlayerSkillHandler.gd" id="4_cm0pq"]
-[ext_resource type="PackedScene" uid="uid://cpk7vy4faftvg" path="res://skill-system/ui/SkillBar.tscn" id="5_fos0i"]
 [ext_resource type="Script" uid="uid://dtfnsy5jfo334" path="res://scripts/Main.gd" id="1_0bbpv"]
 [ext_resource type="PackedScene" uid="uid://ck6c55r53o22t" path="res://scenes/Level.tscn" id="2_2o4n6"]
 [ext_resource type="PackedScene" uid="uid://ddt0l01c1q28p" path="res://scenes/Player.tscn" id="3_6d7t0"]
@@ -31,10 +26,6 @@ friction = 2700.0
 fast_fall_peak_threshold = 600.0
 jump_buffer_time = 0.19999999999708962
 landing_lag_duration = 0.3000000000029104
-
-[node name="Node" type="Node" parent="Player1"]
-script = ExtResource("4_cm0pq")
-skill_bar_scene = ExtResource("5_fos0i")
 
 [node name="Player2" parent="." instance=ExtResource("3_6d7t0")]
 position = Vector2(880, 350)

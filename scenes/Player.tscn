@@ -1,4 +1,4 @@
-[gd_scene load_steps=140 format=3 uid="uid://ddt0l01c1q28p"]
+[gd_scene load_steps=143 format=3 uid="uid://ddt0l01c1q28p"]
 
 [ext_resource type="Script" uid="uid://6nmuavdxedq2" path="res://scripts/Player.gd" id="1_d758x"]
 [ext_resource type="Script" uid="uid://b5x52he7uh4cg" path="res://scripts/Attack.gd" id="2_27g8d"]
@@ -19,6 +19,9 @@
 [ext_resource type="Texture2D" uid="uid://dplr7g35oqe" path="res://assets/2d_fighter_template/Katana Continuous Attack/player katana continuous attack 80x64.png" id="18_5t5r0"]
 [ext_resource type="Script" uid="uid://qxwpqoxfr36e" path="res://scripts/editor/EditorHitbox.gd" id="19_ebwui"]
 [ext_resource type="Texture2D" uid="uid://mdsebygd70r0" path="res://assets/2d_fighter_template/Sword Stab/Player Sword Stab 96x48.png" id="19_s4h2e"]
+[ext_resource type="Script" path="res://skill-system/skills/Fireball.gd" id="20_g3q0u"]
+[ext_resource type="Script" path="res://skill-system/skills/IceSpike.gd" id="21_y0n0t"]
+[ext_resource type="PackedScene" uid="uid://cpk7vy4faftvg" path="res://skill-system/ui/SkillBar.tscn" id="22_mwh4f"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_j1h2s"]
 atlas = ExtResource("19_s4h2e")
@@ -1105,6 +1108,18 @@ required_state = "Aerial"
 required_input = "attack2"
 animation_name = &"Air_Attack2_2"
 applied_velocity = Vector2(0, -50)
+
+[node name="Skills" type="Node" parent="."]
+
+[node name="Fireball" type="Node" parent="Skills"]
+script = ExtResource("20_g3q0u")
+
+[node name="IceSpike" type="Node" parent="Skills"]
+script = ExtResource("21_y0n0t")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="SkillBar" parent="CanvasLayer" instance=ExtResource("22_mwh4f")]
 
 [connection signal="timeout" from="ComboTimer" to="." method="_on_combo_timer_timeout"]
 [connection signal="timeout" from="AttackLagTimer" to="." method="_on_attack_lag_timer_timeout"]
