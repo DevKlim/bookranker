@@ -24,7 +24,7 @@ scale = Vector2(3, 3)
 [node name="Player2" parent="." instance=ExtResource("3_nfxya")]
 position = Vector2(880, 350)
 scale = Vector2(3, 3)
-player_id = 2
+script = null
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(640, 360)

@@ -19,7 +19,6 @@ func can_use(player):
 # It runs ONLY on the host/server.
 func execute(player):
 	cooldown_timer = cooldown
-	print("Executing skill " + skill_name + " on server.")
 
 # CLIENT VISUALS: This function handles particles, sounds, animations.
 # It runs on EVERYONE'S machine, called by the 'play_skill_effect' RPC.
