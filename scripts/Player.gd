@@ -1,566 +1,426 @@
 extends CharacterBody2D
-
-# Load the Attack class definitions
-const Attack = preload("res://scripts/Attack.gd")
-const Skill = preload("res://skill-system/Skill.gd")
-
-# EXPORT VARIABLES
-@export var player_id: int = 1
-
-@export_group("Movement")
-@export var walk_speed = 300.0
-@export var sprint_speed = 600.0
-@export var jump_velocity = -800.0
-@export var friction = 1200.0
-@export var acceleration = 1500.0
-@export var fast_fall_multiplier = 2.0
-@export var fast_fall_velocity = 400.0
-@export var fast_fall_peak_threshold = 400.0
-@export var max_jumps = 2
-@export var jump_buffer_time = 0.15
-@export var jump_release_gravity_multiplier = 3.0
-@export var landing_lag_duration = 0.15
-
-@export_group("Debugging")
-## If checked, active hitboxes will be drawn on screen.
-@export var debug_draw_hitboxes: bool = false
-
-# ATTACK & SKILL VARIABLES
-var attacks_map = {}
-var skills_map = {}
-var skills_list: Array[Skill] = []
-var current_attack: Attack = null # Can be a normal Attack or a Skill
-var attack_input_buffered = ""
-var combo_counters: Dictionary = {} # Tracks progress for each attack chain
-var last_attack_chain: StringName = &""
-var _last_anim_frame = -1
-var is_in_fixed_move = false
-var skill_actions = ["skill1", "skill2", "skill3", "skill4"]
-
-# SPRINT (DOUBLE TAP) VARIABLES
-var last_tap_dir = 0
-var last_tap_time = 0.0
-const DOUBLE_TAP_WINDOW = 0.3
-var sprinting_by_double_tap = false
-
-# JUMP VARIABLES
-var jump_count = 0
-var jump_input_buffered = false
-var did_fast_fall_this_airtime = false
+class_name Player
 
 # STATE MACHINE
-enum State {IDLE, WALK, SPRINT, CROUCH, JUMP, FALL, ATTACK, ATTACK_LAG, SPRINT_JUMP, LANDING_LAG}
-var current_state = State.IDLE
+enum State {IDLE, MOVE, CROUCH, AERIAL, ATTACK, ATTACK_LAG, LANDING_LAG, HURT, HITLAG, DEAD, FREE_FALL, SLIDE}
+var current_state = State.AERIAL # Start in the air to trigger landing logic correctly
 
-# NODE REFERENCES
-@onready var animated_sprite = $AnimatedSprite2D
-@onready var hitbox_area = $Hitbox
-@onready var attacks_node = $Attacks
-@onready var skills_node = $Skills
-@onready var skill_bar = $CanvasLayer/SkillBar
-@onready var combo_timer = $ComboTimer
-@onready var attack_lag_timer = $AttackLagTimer
-@onready var landing_lag_timer = $LandingLagTimer
-@onready var jump_buffer_timer = $JumpBufferTimer
-@onready var fixed_move_timer = $FixedMoveTimer
+@export var player_id: int = 1
 
-# --- Optimization: Cache input action strings ---
-var _input_left: String
-var _input_right: String
-var _input_down: String
-var _input_jump: String
-var _input_sprint: String
-var _input_attack1: String
-var _input_attack2: String
+# NODE REFERENCES (COMPONENTS)
+@onready var stats: StatsComponent = $StatsComponent
+@onready var movement: MovementComponent = $MovementComponent
+@onready var attack_handler: AttackHandlerComponent = $AttackHandlerComponent
+@onready var animation_handler: AnimationComponent = $AnimationComponent
 
-# Gravity
-var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
+# NODE REFERENCES (Other)
+@onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var hitbox_area: Area2D = $Hitbox
+@onready var hurtbox: Area2D = $Hurtbox
+@onready var hitlag_timer: Timer = $HitlagTimer
+@onready var hurt_timer: Timer = $HurtTimer
+@onready var landing_lag_timer: Timer = $LandingLagTimer
+@onready var jump_buffer_timer: Timer = $JumpBufferTimer
+@onready var fixed_move_timer: Timer = $FixedMoveTimer
+@onready var attack_lag_timer: Timer = $AttackHandlerComponent/AttackLagTimer
+@onready var double_tap_timer: Timer = Timer.new()
 
-# Helper variable for landing detection
-var was_airborne = false
+# STATE VARIABLES
+var inputs: Dictionary
+var jump_count: int = 0
+var jump_input_buffered: bool = false
+var was_airborne: bool = true
+var is_invincible: bool = false
+
+# SPRINTING
+@export_group("Sprinting")
+@export var double_tap_time_threshold: float = 0.25
+var is_sprinting: bool = false
+var double_tap_sprint_enabled: bool = false
+var last_tap_dir: int = 0
+
+# ATTACK MOVEMENT
+var is_in_fixed_move: bool = false
+var fixed_move_velocity: Vector2 = Vector2.ZERO
 
 
 func _ready():
-	if player_id == 2:
-		animated_sprite.modulate = Color("dc143c") # Crimson
+	# --- Setup Timers ---
+	add_child(double_tap_timer)
+	double_tap_timer.one_shot = true
+	double_tap_timer.wait_time = double_tap_time_threshold
+	landing_lag_timer.wait_time = movement.landing_lag_duration
+
+	# --- Setup Input Map ---
+	inputs = {
+		"left": "p%d_left" % player_id, "right": "p%d_right" % player_id,
+		"down": "p%d_down" % player_id, "jump": "p%d_jump" % player_id,
+		"sprint": "p%d_sprint" % player_id,
+		"attack1": "p%d_attack1" % player_id, "attack2": "p%d_attack2" % player_id,
+		"skill1": "p%d_skill1" % player_id, "skill2": "p%d_skill2" % player_id,
+		"skill3": "p%d_skill3" % player_id, "skill4": "p%d_skill4" % player_id,
+		"skill5": "p%d_skill5" % player_id, "skill6": "p%d_skill6" % player_id,
+		"skill7": "p%d_skill7" % player_id, "skill8": "p%d_skill8" % player_id,
+		"skill_bar_switch": "p%d_skill_bar_switch" % player_id,
+	}
 	
+	# --- Initialize Components & Connect Signals ---
+	attack_handler.initialize(self, stats, animated_sprite, player_id)
+	
+	stats.died.connect(_die)
+	attack_handler.attack_initiated.connect(_on_attack_initiated)
+	attack_handler.attack_ended.connect(_on_attack_ended)
+	attack_handler.attack_lag_started.connect(_on_attack_lag_started)
+	attack_handler.hit_target.connect(start_hitlag)
 	animated_sprite.animation_finished.connect(_on_animation_finished)
-	
-	parse_attacks()
-	parse_skills()
-	setup_skill_bar()
-	
-	# Configure timers
-	landing_lag_timer.wait_time = landing_lag_duration
-	jump_buffer_timer.wait_time = jump_buffer_time
-	fixed_move_timer.timeout.connect(_on_fixed_move_timer_timeout)
-	
-	_input_left = "p%d_left" % player_id
-	_input_right = "p%d_right" % player_id
-	_input_down = "p%d_down" % player_id
-	_input_jump = "p%d_jump" % player_id
-	_input_sprint = "p%d_sprint" % player_id
-	_input_attack1 = "p%d_attack1" % player_id
-	_input_attack2 = "p%d_attack2" % player_id
 
-func _draw():
-	if not debug_draw_hitboxes or current_state != State.ATTACK:
+func _physics_process(delta: float):
+	# Early exit for uninterruptible states
+	if current_state in [State.HITLAG, State.DEAD]:
+		if current_state == State.HITLAG: move_and_slide()
 		return
+
+	# --- 1. GATHER INPUTS & UPDATE FLAGS ---
+	var direction = Input.get_axis(inputs.left, inputs.right)
+	handle_all_inputs(direction)
+	update_invincibility()
 	
-	for shape_node in hitbox_area.get_children():
-		if shape_node is CollisionShape2D:
-			var shape = shape_node.shape
-			var position = shape_node.position
-			
-			if shape is RectangleShape2D:
-				draw_rect(Rect2(position - shape.size / 2, shape.size), Color(1, 0, 0, 0.5))
-
-
-func parse_attacks():
-	attacks_map.clear()
-	for attack_node in attacks_node.get_children():
-		if not attack_node is Attack:
-			continue
-		
-		var attack: Attack = attack_node
-		var state = attack.required_state
-		var input = attack.required_input
-
-		if not attacks_map.has(state):
-			attacks_map[state] = {}
-		if not attacks_map[state].has(input):
-			attacks_map[state][input] = []
-			
-		attacks_map[state][input].append(attack)
+	# --- 2. UPDATE STATE MACHINE ---
+	update_state(direction)
 	
-	# Sort each list by combo_index to make logic predictable
-	for state in attacks_map:
-		for input in attacks_map[state]:
-			attacks_map[state][input].sort_custom(func(a, b): return a.combo_index < b.combo_index)
-
-func parse_skills():
-	skills_map.clear()
-	skills_list.clear()
-	for skill_node in skills_node.get_children():
-		if skill_node is Skill:
-			var skill: Skill = skill_node
-			if not skill.skill_input_action.is_empty():
-				skills_map[skill.skill_input_action] = skill
-				skills_list.append(skill)
-	# Sort by action name to keep UI consistent
-	skills_list.sort_custom(func(a, b): return a.skill_input_action < b.skill_input_action)
-
-func setup_skill_bar():
-	if is_instance_valid(skill_bar):
-		skill_bar.setup_skill_bar(skills_list)
-
-func _physics_process(delta):
-	was_airborne = not is_on_floor()
+	# --- 3. CALCULATE VELOCITY ---
+	apply_gravity(delta)
+	apply_movement(delta, direction)
 	
-	if not (current_state == State.ATTACK and is_in_fixed_move):
-		apply_gravity(delta)
-	
-	match current_state:
-		State.IDLE, State.WALK, State.SPRINT, State.CROUCH:
-			handle_ground_state(delta)
-		State.JUMP, State.FALL, State.SPRINT_JUMP:
-			handle_air_state(delta)
-		State.ATTACK:
-			handle_attack_state(delta)
-		State.ATTACK_LAG:
-			handle_attack_lag_state(delta)
-		State.LANDING_LAG:
-			handle_landing_lag_state(delta)
-			
-	handle_input()
-	handle_jumping()
+	# --- 4. MOVE ---
 	move_and_slide()
-
-	if was_airborne and is_on_floor():
-		handle_landing()
 	
+	# --- 5. POST-MOVE UPDATES ---
+	if was_airborne and is_on_floor(): handle_landing()
+	was_airborne = not is_on_floor()
+	update_active_hitboxes()
+	update_animation_and_flip(direction)
+
+#region ======================== INPUT & STATE ========================
+func handle_all_inputs(direction: float):
+	if current_state in [State.ATTACK_LAG, State.LANDING_LAG, State.HURT, State.FREE_FALL, State.SLIDE]: return
+	
+	handle_sprint_input(direction)
+	handle_attack_inputs()
+	handle_jumping_input()
+
+func handle_sprint_input(direction: float):
+	# Conditions to stop sprinting
+	if not is_on_floor() or direction == 0:
+		is_sprinting = false
+		double_tap_sprint_enabled = false
+		return
+
+	# 1. Check for dedicated sprint button (highest priority)
+	if Input.is_action_pressed(inputs.sprint):
+		is_sprinting = true
+		double_tap_sprint_enabled = false # Button press overrides double-tap state
+		return
+
+	# 2. Handle double-tap logic if sprint button is not held
+	var current_dir_sign = sign(direction)
+	
+	# Reset double-tap sprint if direction changes
+	if last_tap_dir != 0 and current_dir_sign != last_tap_dir:
+		double_tap_sprint_enabled = false
+
+	if Input.is_action_just_pressed(inputs.left) or Input.is_action_just_pressed(inputs.right):
+		if not double_tap_timer.is_stopped() and last_tap_dir == current_dir_sign:
+			double_tap_sprint_enabled = true
+			double_tap_timer.stop()
+		else:
+			last_tap_dir = current_dir_sign
+			double_tap_timer.start()
+			double_tap_sprint_enabled = false
+
+	is_sprinting = double_tap_sprint_enabled
+
+func handle_attack_inputs():
 	if current_state == State.ATTACK:
-		update_active_hitboxes()
-	else:
-		clear_active_hitboxes() # Ensure hitboxes are off when not attacking
+		attack_handler.check_for_buffered_attack()
 	
-	if debug_draw_hitboxes:
-		queue_redraw()
-
-	update_animation_and_flip()
-	_last_anim_frame = animated_sprite.frame
-
-
-func apply_gravity(delta):
-	if not is_on_floor():
-		var gravity_multiplier = 1.0
-		if velocity.y < 0 and not Input.is_action_pressed(_input_jump):
-			gravity_multiplier = jump_release_gravity_multiplier
-		elif velocity.y > 0 and Input.is_action_pressed(_input_down) and current_state not in [State.ATTACK_LAG, State.LANDING_LAG, State.ATTACK]:
-			gravity_multiplier = fast_fall_multiplier
-			did_fast_fall_this_airtime = true
-		velocity.y += gravity * gravity_multiplier * delta
-
-
-func handle_input():
-	if current_state in [State.ATTACK_LAG, State.LANDING_LAG]:
-		return
-
-	# Attack Inputs
-	if Input.is_action_just_pressed(_input_attack1):
-		handle_attack_input("attack1")
-	if Input.is_action_just_pressed(_input_attack2):
-		handle_attack_input("attack2")
-	
-	# Skill Inputs
-	for action in skill_actions:
-		if Input.is_action_just_pressed(action):
-			handle_skill_input(action)
-			
-	# Fast Fall
-	if not is_on_floor() and Input.is_action_just_pressed(_input_down):
-		if abs(velocity.y) < fast_fall_peak_threshold:
-			velocity.y = fast_fall_velocity
-			did_fast_fall_this_airtime = true
-
-func handle_ground_state(delta):
-	if not is_on_floor():
-		current_state = State.FALL
-		return
-	handle_ground_movement(delta)
-
-func handle_air_state(delta):
-	handle_air_movement(delta)
-
-func handle_attack_state(delta):
-	if not current_attack: return # Safety check
-	
-	var current_frame = animated_sprite.frame
-	
-	# --- Directional Cancel Logic ---
-	if current_attack.can_directional_cancel and current_frame >= current_attack.directional_cancel_start_frame:
-		var facing_right = not animated_sprite.flip_h
-		var opposite_input_pressed = (facing_right and Input.is_action_just_pressed(_input_left)) or \
-									 (not facing_right and Input.is_action_just_pressed(_input_right))
-		if opposite_input_pressed:
-			_end_attack_state() # Cancel the attack with no lag
-			return # Exit early
-
-	# --- Skill Effect Logic ---
-	if current_attack is Skill:
-		var skill: Skill = current_attack
-		if current_frame >= skill.effect_frame and _last_anim_frame < skill.effect_frame:
-			skill.execute_effect(self)
-
-	# --- Movement Logic ---
-	match current_attack.movement_type:
-		"Apply Velocity":
-			if current_frame >= current_attack.applied_velocity_frame and _last_anim_frame < current_attack.applied_velocity_frame:
-				var facing_dir = -1.0 if animated_sprite.flip_h else 1.0
-				velocity += current_attack.applied_velocity * Vector2(facing_dir, 1.0)
-			if is_on_floor(): velocity.x = move_toward(velocity.x, 0, friction * delta / 2)
-			else: velocity.x = move_toward(velocity.x, 0, friction * delta * 0.25)
+	for key in inputs:
+		if not (key.begins_with("attack") or key.begins_with("skill")): continue
 		
-		"Fixed Distance":
-			if not is_in_fixed_move and current_frame >= current_attack.move_start_frame and _last_anim_frame < current_attack.move_start_frame:
-				is_in_fixed_move = true
-				fixed_move_timer.wait_time = current_attack.move_duration
-				fixed_move_timer.start()
+		var action_name = inputs[key]
+		if Input.is_action_just_pressed(action_name):
+			attack_handler.handle_attack_input(action_name)
+			break
 
-			if is_in_fixed_move:
-				var facing_dir = -1.0 if animated_sprite.flip_h else 1.0
-				var move_velocity = current_attack.move_distance / current_attack.move_duration
-				velocity.x = move_velocity.x * facing_dir
-				velocity.y = move_velocity.y
-			else:
-				if is_on_floor(): velocity.x = move_toward(velocity.x, 0, friction * delta / 2)
-				else: velocity.x = move_toward(velocity.x, 0, friction * delta * 0.25)
-		
-		"None":
-			if is_on_floor(): velocity.x = move_toward(velocity.x, 0, friction * delta / 2)
-			else: velocity.x = move_toward(velocity.x, 0, friction * delta * 0.25)
-
-	# --- Combo/Cancel Logic ---
-	if attack_input_buffered != "" and current_frame >= current_attack.cancel_frame:
-		var buffered_input = attack_input_buffered
-		attack_input_buffered = ""
-		_end_attack_state() # End current attack cleanly before starting next
-		find_and_initiate_attack(buffered_input)
-		if current_state == State.ATTACK: return
-
-func handle_attack_lag_state(delta):
-	velocity.x = move_toward(velocity.x, 0, friction * delta)
-
-func handle_landing_lag_state(delta):
-	if Input.is_action_just_pressed(_input_jump):
-		velocity.y = jump_velocity
-		current_state = State.JUMP
-		jump_count += 1
-		landing_lag_timer.stop()
-		return
-	velocity.x = move_toward(velocity.x, 0, friction * delta)
-
-func handle_landing():
-	if current_state in [State.JUMP, State.FALL, State.SPRINT_JUMP, State.ATTACK]:
-		_end_attack_state() # Clears attack state, hitboxes, etc.
-		jump_count = 0
-		
-		# Reset combo state on landing
-		combo_counters.clear()
-		last_attack_chain = &""
-		combo_timer.stop()
-		
-		if did_fast_fall_this_airtime:
-			animated_sprite.play("Land")
-			current_state = State.LANDING_LAG
-			landing_lag_timer.start()
-		else:
-			current_state = State.IDLE
-		did_fast_fall_this_airtime = false
-
-func handle_ground_movement(delta):
-	var direction = Input.get_axis(_input_left, _input_right)
-	
-	if Input.is_action_pressed(_input_down) and direction == 0:
-		current_state = State.CROUCH
-		velocity.x = move_toward(velocity.x, 0, friction * delta)
-		return
-	elif current_state == State.CROUCH:
-		current_state = State.IDLE
-
-	if direction != 0:
-		var just_pressed_dir = Input.is_action_just_pressed(_input_left) or Input.is_action_just_pressed(_input_right)
-		if just_pressed_dir:
-			var current_time = Time.get_ticks_msec() / 1000.0
-			if current_time - last_tap_time < DOUBLE_TAP_WINDOW and sign(direction) == sign(last_tap_dir):
-				sprinting_by_double_tap = true
-			elif sign(direction) != sign(last_tap_dir):
-				sprinting_by_double_tap = false
-			last_tap_time = current_time
-			last_tap_dir = direction
-		
-		var sprint_by_key = Input.is_action_pressed(_input_sprint)
-		
-		if sprint_by_key or sprinting_by_double_tap:
-			current_state = State.SPRINT
-			velocity.x = move_toward(velocity.x, sprint_speed * direction, acceleration * delta)
-		else:
-			sprinting_by_double_tap = false
-			current_state = State.WALK
-			velocity.x = move_toward(velocity.x, walk_speed * direction, acceleration * delta)
-	else:
-		sprinting_by_double_tap = false
-		current_state = State.IDLE
-		velocity.x = move_toward(velocity.x, 0, friction * delta)
-
-func handle_air_movement(delta):
-	var direction = Input.get_axis(_input_left, _input_right)
-	var target_air_speed = walk_speed
-	if current_state == State.SPRINT_JUMP:
-		target_air_speed = sprint_speed
-	if direction != 0:
-		velocity.x = move_toward(velocity.x, target_air_speed * direction, acceleration * delta * 0.75)
-
-func handle_jumping():
-	if Input.is_action_just_pressed(_input_jump):
+func handle_jumping_input():
+	if Input.is_action_just_pressed(inputs.jump):
 		jump_input_buffered = true
 		jump_buffer_timer.start()
-	var wants_to_jump = jump_input_buffered or (is_on_floor() and Input.is_action_pressed(_input_jump))
-	if not wants_to_jump: return
-	if current_state in [State.ATTACK_LAG, State.LANDING_LAG, State.CROUCH]: return
-	if jump_count >= max_jumps: return
-	if not is_on_floor() and not jump_input_buffered: return
+
+	if not jump_input_buffered: return
+	if current_state in [State.ATTACK_LAG, State.LANDING_LAG, State.CROUCH, State.HURT, State.FREE_FALL, State.SLIDE]: return
+	if jump_count >= movement.max_jumps: return
 	
-	jump_input_buffered = false
-	jump_buffer_timer.stop()
-	did_fast_fall_this_airtime = false
+	var can_cancel_attack = false
+	if current_state == State.ATTACK and attack_handler.current_attack:
+		if animated_sprite.frame >= attack_handler.current_attack.cancel_frame:
+			can_cancel_attack = true
 	
-	if current_state == State.ATTACK and current_attack and animated_sprite.frame < current_attack.cancel_frame:
-		return
-	
-	velocity.y = jump_velocity
+	if current_state != State.ATTACK or can_cancel_attack:
+		jump_input_buffered = false
+		jump_buffer_timer.stop()
+		velocity.y = movement.jump_velocity
+		current_state = State.AERIAL
+		jump_count += 1
+		# REMOVED animation call from here. It will be handled by update_animation_and_flip.
+
+func update_state(direction: float):
+	# MODIFIED: Added State.AERIAL to prevent state override on the same frame as a jump.
+	if current_state in [State.AERIAL, State.ATTACK, State.ATTACK_LAG, State.LANDING_LAG, State.HURT, State.FREE_FALL, State.SLIDE]: return
 	
 	if is_on_floor():
-		if current_state == State.SPRINT:
-			current_state = State.SPRINT_JUMP
+		if is_sprinting and Input.is_action_just_pressed(inputs.down):
+			current_state = State.SLIDE
+		elif Input.is_action_pressed(inputs.down) and direction == 0:
+			current_state = State.CROUCH
+		elif direction != 0:
+			current_state = State.MOVE
 		else:
-			current_state = State.JUMP
-	
-	jump_count += 1
+			current_state = State.IDLE
+	else:
+		# This case is now mostly for falling off a ledge.
+		current_state = State.AERIAL
+#endregion
 
-func handle_attack_input(type: String):
-	if current_state == State.ATTACK:
-		if current_attack and animated_sprite.frame < current_attack.cancel_frame:
-			attack_input_buffered = type
-		else:
-			find_and_initiate_attack(type)
-	elif current_state not in [State.ATTACK_LAG, State.LANDING_LAG]:
-		find_and_initiate_attack(type)
-
-func handle_skill_input(action: String):
-	# Can't use skills while already attacking, in lag, etc.
-	if current_state in [State.ATTACK, State.ATTACK_LAG, State.LANDING_LAG]:
-		return
+#region ======================== MOVEMENT & PHYSICS ========================
+func apply_gravity(delta: float):
+	if not is_on_floor():
+		var can_ff = current_state not in [State.ATTACK_LAG, State.LANDING_LAG, State.ATTACK, State.HURT]
+		var gravity_vec = movement.get_gravity_vector(velocity, Input.is_action_pressed(inputs.jump), Input.is_action_pressed(inputs.down), can_ff)
+		velocity += gravity_vec * delta
 		
-	var skill: Skill = skills_map.get(action)
-	
-	if skill and skill.can_use():
-		# Check if player state is valid for this skill (e.g. Grounded/Aerial)
-		var player_posture = "Aerial" if not is_on_floor() else "Grounded"
-		if skill.required_state == player_posture or skill.required_state == "Any": # Added "Any" for flexibility
-			initiate_attack(skill) # Re-use the attack initiation logic
-			skill.start_cooldown()
+func apply_movement(delta: float, direction: float):
+	match current_state:
+		State.IDLE:
+			velocity = movement.get_ground_velocity(velocity, 0, false, delta)
+		State.MOVE:
+			velocity = movement.get_ground_velocity(velocity, direction, is_sprinting, delta)
+		State.CROUCH:
+			velocity = movement.get_ground_velocity(velocity, 0, false, delta)
+		State.AERIAL, State.FREE_FALL:
+			velocity = movement.get_air_velocity(velocity, direction, delta)
+		State.ATTACK:
+			handle_attack_movement(delta, direction)
+		State.ATTACK_LAG, State.HURT, State.LANDING_LAG, State.SLIDE:
+			velocity.x = move_toward(velocity.x, 0, movement.ground_friction * delta * 0.5)
 
-func find_and_initiate_attack(input: String):
-	# Determine current state context for attacks
-	var state_key = "Grounded"
-	if not is_on_floor(): state_key = "Aerial"
-	elif current_state == State.SPRINT: state_key = "Running"
-	elif current_state == State.CROUCH: state_key = "Crouching"
-
-	if not attacks_map.has(state_key) or not attacks_map[state_key].has(input):
-		return # No attacks for this state/input combination
-
-	var possible_attacks = attacks_map[state_key][input]
-	var attack_to_initiate: Attack = null
-
-	# 1. Try to continue an existing combo from the last used chain
-	if not combo_timer.is_stopped() and last_attack_chain != &"":
-		var current_combo_index = combo_counters.get(last_attack_chain, 0)
-		var next_combo_index = current_combo_index + 1
-		
-		for attack in possible_attacks:
-			if attack.attack_chain == last_attack_chain and attack.combo_index == next_combo_index:
-				attack_to_initiate = attack
-				break
-
-	# 2. If no combo to continue, find a starter attack (combo_index == 1)
-	if not attack_to_initiate:
-		# Reset combo state before starting a new one
-		if last_attack_chain != &"":
-			combo_counters.erase(last_attack_chain)
-		last_attack_chain = &""
-
-		for attack in possible_attacks:
-			if attack.combo_index == 1:
-				attack_to_initiate = attack
-				break
-	
-	# 3. Initiate the found attack
-	if attack_to_initiate:
-		initiate_attack(attack_to_initiate)
-
-
-func initiate_attack(attack_data: Attack):
-	current_state = State.ATTACK
-	attack_input_buffered = ""
-	current_attack = attack_data
-	
-	if not attack_data is Skill:
-		# If this is a new chain, clear the old one's progress.
-		# This handles switching from an attack1 combo to an attack2 combo starter.
-		if attack_data.attack_chain != last_attack_chain and last_attack_chain != &"":
-			combo_counters.erase(last_attack_chain)
-
-		last_attack_chain = attack_data.attack_chain
-		combo_counters[last_attack_chain] = attack_data.combo_index
-		combo_timer.start()
-
-	animated_sprite.play(attack_data.animation_name)
-	_last_anim_frame = -1
-
-func stop_fixed_move():
-	if is_in_fixed_move:
-		is_in_fixed_move = false
-		fixed_move_timer.stop()
-		velocity = Vector2.ZERO
-
-func clear_active_hitboxes():
-	for child in hitbox_area.get_children():
-		child.queue_free()
-
-func update_active_hitboxes():
-	clear_active_hitboxes() # Clear previous frame's hitboxes.
-	if not current_attack:
-		return
-
+func handle_attack_movement(delta: float, direction: float):
+	var attack = attack_handler.current_attack
+	if not attack: return
 	var frame = animated_sprite.frame
 	
-	for editor_hitbox in current_attack.get_children():
-		if "start_frame" in editor_hitbox and "end_frame" in editor_hitbox:
-			if frame >= editor_hitbox.start_frame and frame < editor_hitbox.end_frame:
-				var new_shape_node = CollisionShape2D.new()
-				var rect_shape = RectangleShape2D.new()
-				
-				rect_shape.size = editor_hitbox.size
-				new_shape_node.position = editor_hitbox.position + editor_hitbox.size / 2.0
-				
-				new_shape_node.shape = rect_shape
-				hitbox_area.add_child(new_shape_node)
+	if is_in_fixed_move:
+		velocity = fixed_move_velocity
+		return
+	elif attack.movement_type == "Fixed Distance" and frame >= attack.move_start_frame:
+		is_in_fixed_move = true
+		var dist = attack.move_distance
+		dist.x *= -1 if animated_sprite.flip_h else 1
+		fixed_move_velocity = dist / attack.move_duration
+		fixed_move_timer.wait_time = attack.move_duration
+		fixed_move_timer.start()
+		velocity = fixed_move_velocity
+		return
+	
+	if attack.movement_type == "Apply Velocity" and frame == attack.applied_velocity_frame:
+		var vel_to_add = attack.applied_velocity
+		vel_to_add.x *= -1 if animated_sprite.flip_h else 1
+		velocity += vel_to_add
 
-func update_animation_and_flip():
-	var direction = Input.get_axis(_input_left, _input_right)
+	if not is_on_floor():
+		velocity = movement.get_air_velocity(velocity, direction, delta)
+	else:
+		velocity.x = move_toward(velocity.x, 0, movement.ground_friction * delta * 0.2)
+#endregion
+
+#region ======================== ACTIONS & REACTIONS ========================
+func check_required_state(req_string: String) -> bool:
+	if req_string.is_empty(): return true
+	for condition in req_string.split("&", false):
+		match condition.strip_edges():
+			"Grounded": if not is_on_floor(): return false
+			"Aerial": if is_on_floor(): return false
+			"Sprint": if not is_sprinting: return false
+	return true
+
+func handle_landing():
+	if current_state in [State.AERIAL, State.ATTACK, State.HURT, State.FREE_FALL]:
+		attack_handler.on_land()
+		jump_count = 0
+		current_state = State.LANDING_LAG
+		landing_lag_timer.start()
+
+func take_damage(hitbox: HitboxData, attacker: Node2D):
+	if current_state in [State.HURT, State.DEAD] or is_invincible: return
+	stats.take_damage(hitbox.damage)
+	
+	var knockback_dir = hitbox.knockback_direction.normalized()
+	if attacker.global_position.x > self.global_position.x: knockback_dir.x *= -1.0
+	
+	velocity = knockback_dir * hitbox.knockback_amount
+	is_in_fixed_move = false
+	fixed_move_timer.stop()
+	attack_handler.on_hurt()
+	
+	current_state = State.HURT
+	animated_sprite.play(animation_handler.hurt)
+	hurt_timer.wait_time = hitbox.stun_duration
+	hurt_timer.start()
+	
+func start_hitlag(duration: float):
+	if duration > 0:
+		current_state = State.HITLAG
+		hitlag_timer.wait_time = duration
+		hitlag_timer.start()
+		animated_sprite.speed_scale = 0
+
+func _die():
+	current_state = State.DEAD
+	animated_sprite.play(animation_handler.death)
+	set_physics_process(false)
+#endregion
+
+#region ======================== VISUALS & HITBOXES ========================
+func update_invincibility():
+	var should_be_invincible = false
+	if current_state == State.ATTACK and attack_handler.current_attack:
+		var attack = attack_handler.current_attack
+		if attack.invincibility_start_frame >= 0 and attack.invincibility_end_frame >= 0:
+			var frame = animated_sprite.frame
+			if frame >= attack.invincibility_start_frame and frame < attack.invincibility_end_frame:
+				should_be_invincible = true
+	
+	if should_be_invincible != is_invincible:
+		is_invincible = should_be_invincible
+		hurtbox.set_deferred("monitorable", not is_invincible)
+		animated_sprite.modulate.a = 0.6 if is_invincible else 1.0
+
+func update_animation_and_flip(direction: float):
 	if direction != 0:
-		if current_state == State.ATTACK and current_attack and not current_attack.can_turn_around:
-			pass # Do not allow turning
-		else:
+		var attack = attack_handler.current_attack
+		var can_turn = not (current_state == State.ATTACK and attack and not attack.can_turn_around)
+		if can_turn:
 			var is_flipped = direction < 0
 			animated_sprite.flip_h = is_flipped
 			hitbox_area.scale.x = -1 if is_flipped else 1
 
-	if current_state in [State.ATTACK, State.ATTACK_LAG, State.LANDING_LAG]:
-		return
+	if current_state in [State.ATTACK, State.ATTACK_LAG, State.HURT, State.HITLAG, State.DEAD]: return
 
-	var anim_to_play = ""
+	var anim_to_play: StringName
 	match current_state:
-		State.IDLE: anim_to_play = "Idle"
-		State.WALK: anim_to_play = "Walk"
-		State.SPRINT: anim_to_play = "Sprint"
-		State.CROUCH: anim_to_play = "Crouch"
-		State.JUMP:
-			if animated_sprite.animation != "Jump_Start": anim_to_play = "Jump_Start"
-		State.FALL: anim_to_play = "Fall"
-		State.SPRINT_JUMP: anim_to_play = "Sprint_Jump"
-	
+		State.IDLE: anim_to_play = animation_handler.idle
+		State.MOVE: anim_to_play = animation_handler.run if is_sprinting else animation_handler.walk
+		State.CROUCH: anim_to_play = animation_handler.crouch_idle
+		# MODIFIED: Reworked aerial animation logic
+		State.AERIAL, State.FREE_FALL:
+			var current_anim = animated_sprite.animation
+			var valid_aerial_anims = [animation_handler.jump_start, animation_handler.sprint_jump_start, animation_handler.fall]
+			
+			# If we are in the air but not playing an aerial animation, it means we just jumped.
+			if not current_anim in valid_aerial_anims:
+				anim_to_play = animation_handler.sprint_jump_start if is_sprinting else animation_handler.jump_start
+			# If we are playing a jump animation and start falling, switch to the fall animation.
+			elif velocity.y > 0 and current_anim != animation_handler.fall:
+				anim_to_play = animation_handler.fall
+		State.LANDING_LAG: anim_to_play = animation_handler.land
+		State.SLIDE: anim_to_play = animation_handler.running_slide
+			
 	if anim_to_play and animated_sprite.animation != anim_to_play:
 		animated_sprite.play(anim_to_play)
 
-func _end_attack_state(lag_duration: float = 0.0):
-	stop_fixed_move()
+func clear_active_hitboxes():
+	for child in hitbox_area.get_children(): child.queue_free()
+
+func update_active_hitboxes():
 	clear_active_hitboxes()
-	current_attack = null
-	if lag_duration > 0:
-		current_state = State.ATTACK_LAG
-		attack_lag_timer.wait_time = lag_duration
-		attack_lag_timer.start()
-	else:
-		current_state = State.IDLE if is_on_floor() else State.FALL
+	if current_state != State.ATTACK: return
+	
+	var attack = attack_handler.current_attack
+	if not attack: return
+	
+	var frame = animated_sprite.frame
+	for hitbox_data in attack.hitboxes:
+		if frame >= hitbox_data.start_frame and frame < hitbox_data.end_frame:
+			var shape_node = CollisionShape2D.new()
+			shape_node.shape = hitbox_data.shape.duplicate()
+			shape_node.position = hitbox_data.position
+			hitbox_area.add_child(shape_node)
+#endregion
+
+#region ======================== SIGNAL CALLBACKS ========================
+func _on_hurtbox_area_entered(area: Area2D):
+	if not area.is_in_group("hitbox"): return
+	var attacker: Node = area.get_owner()
+	if attacker == self or not attacker is Player: return
+	
+	var attack: Attack = attacker.attack_handler.current_attack
+	if not attack: return
+	
+	if attacker.attack_handler.hit_targets_this_attack.has(self): return
+	attacker.attack_handler.hit_targets_this_attack.append(self)
+	
+	var hitbox_to_apply = attack.hitboxes[0] if not attack.hitboxes.is_empty() else null
+	if not hitbox_to_apply: return
+	
+	attacker.attack_handler.on_hit_target(hitbox_to_apply)
+	take_damage(hitbox_to_apply, attacker)
 
 func _on_animation_finished():
 	var anim_name = animated_sprite.animation
-	if current_attack and anim_name == current_attack.animation_name:
-		_end_attack_state(current_attack.end_lag_duration)
-	elif anim_name == "Jump_Start" or anim_name == "Sprint_Jump":
-		current_state = State.FALL
+	
+	attack_handler.on_animation_finished(anim_name)
 
-func _on_combo_timer_timeout():
-	if last_attack_chain != &"":
-		combo_counters.erase(last_attack_chain)
-		last_attack_chain = &""
+	if attack_handler.current_attack and anim_name == attack_handler.current_attack.animation_name:
+		if not is_on_floor() and attack_handler.current_attack.enter_free_fall:
+			current_state = State.FREE_FALL
+			return
 
-func _on_attack_lag_timer_timeout():
-	current_state = State.IDLE if is_on_floor() else State.FALL
+	# This logic is now handled correctly by the AERIAL state in update_animation_and_flip
+	# The check for anim_name against jump_start/sprint_jump_start is no longer needed here.
+	
+	if anim_name == animation_handler.running_slide:
+		_on_attack_ended()
+	elif anim_name == animation_handler.death:
+		pass
+
+func _on_attack_initiated(attack_data: Attack):
+	is_in_fixed_move = false
+	current_state = State.ATTACK
+	animated_sprite.play(attack_data.animation_name)
+
+func _on_attack_ended():
+	if current_state not in [State.HURT, State.HITLAG, State.DEAD]:
+		current_state = State.IDLE if is_on_floor() else State.AERIAL
+
+func _on_attack_lag_started(duration: float):
+	current_state = State.ATTACK_LAG
+	attack_lag_timer.wait_time = duration
+	attack_lag_timer.start()
+
+func _on_attack_lag_timer_timeout(): _on_attack_ended()
+
+func _on_hitlag_timer_timeout():
+	current_state = State.ATTACK if attack_handler.current_attack else (State.IDLE if is_on_floor() else State.AERIAL)
+	animated_sprite.speed_scale = 1.0
+
+func _on_hurt_timer_timeout(): _on_attack_ended()
 
 func _on_landing_lag_timer_timeout():
-	if current_state == State.LANDING_LAG:
-		current_state = State.IDLE
+	if current_state == State.LANDING_LAG: current_state = State.IDLE
 
-func _on_jump_buffer_timer_timeout():
-	jump_input_buffered = false
+func _on_jump_buffer_timer_timeout(): jump_input_buffered = false
 
 func _on_fixed_move_timer_timeout():
 	is_in_fixed_move = false
-	if is_on_floor():
-		velocity = Vector2.ZERO
-	else:
-		velocity.x = 0
+	if is_on_floor(): velocity = Vector2.ZERO
+#endregion

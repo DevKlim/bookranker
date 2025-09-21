@@ -1,0 +1,57 @@
+[gd_scene load_steps=3 format=3 uid="uid://c6j2a5v7y6g6s"]
+
+[ext_resource type="Script" path="res://scripts/ui/SkillBar.gd" id="1_4n20n"]
+[ext_resource type="PackedScene" uid="uid://c6v2n2v1tqxtp" path="res://scenes/ui/SkillDisplay.tscn" id="2_y55h7"]
+
+[node name="SkillBar" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_4n20n")
+
+[node name="Bar1Container" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="SkillDisplay1" parent="Bar1Container" instance=ExtResource("2_y55h7")]
+layout_mode = 2
+
+[node name="SkillDisplay2" parent="Bar1Container" instance=ExtResource("2_y55h7")]
+layout_mode = 2
+
+[node name="SkillDisplay3" parent="Bar1Container" instance=ExtResource("2_y55h7")]
+layout_mode = 2
+
+[node name="SkillDisplay4" parent="Bar1Container" instance=ExtResource("2_y55h7")]
+layout_mode = 2
+
+[node name="Bar2Container" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="SkillDisplay5" parent="Bar2Container" instance=ExtResource("2_y55h7")]
+layout_mode = 2
+
+[node name="SkillDisplay6" parent="Bar2Container" instance=ExtResource("2_y55h7")]
+layout_mode = 2
+
+[node name="SkillDisplay7" parent="Bar2Container" instance=ExtResource("2_y55h7")]
+layout_mode = 2
+
+[node name="SkillDisplay8" parent="Bar2Container" instance=ExtResource("2_y55h7")]
+layout_mode = 2

@@ -1,0 +1,79 @@
+[gd_scene load_steps=7 format=3 uid="uid://c6y7s8v9e10f"]
+
+[ext_resource type="Script" path="res://scripts/ui/PlayerUI.gd" id="1_45g5c"]
+[ext_resource type="Texture2D" uid="uid://bdt5860q80o0j" path="res://assets/ui/bar_empty.png" id="2_g6e8q"]
+[ext_resource type="Texture2D" uid="uid://cy88f72v68661" path="res://assets/ui/bar_health_delayed.png" id="3_70yqg"]
+[ext_resource type="Texture2D" uid="uid://b6q0a7v2bwe5k" path="res://assets/ui/bar_health_instant.png" id="4_v7n8h"]
+[ext_resource type="Texture2D" uid="uid://dcvl4xcy67h3g" path="res://assets/ui/bar_mana_delayed.png" id="5_a727p"]
+[ext_resource type="Texture2D" uid="uid://bqj5fcvs86d8a" path="res://assets/ui/bar_mana_instant.png" id="6_i5v7r"]
+
+[node name="PlayerUI" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_45g5c")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 100.0
+offset_bottom = 44.0
+theme_override_constants/separation = 4
+
+[node name="HealthBar" type="Control" parent="VBoxContainer"]
+custom_minimum_size = Vector2(100, 20)
+layout_mode = 2
+
+[node name="HealthBarDelayed" type="TextureProgressBar" parent="VBoxContainer/HealthBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+max_value = 100.0
+value = 100.0
+texture_under = ExtResource("2_g6e8q")
+texture_progress = ExtResource("3_70yqg")
+
+[node name="HealthBarInstant" type="TextureProgressBar" parent="VBoxContainer/HealthBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+max_value = 100.0
+value = 100.0
+texture_under = ExtResource("2_g6e8q")
+texture_progress = ExtResource("4_v7n8h")
+
+[node name="ManaBar" type="Control" parent="VBoxContainer"]
+custom_minimum_size = Vector2(100, 20)
+layout_mode = 2
+
+[node name="ManaBarDelayed" type="TextureProgressBar" parent="VBoxContainer/ManaBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+max_value = 100.0
+value = 100.0
+texture_under = ExtResource("2_g6e8q")
+texture_progress = ExtResource("5_a727p")
+
+[node name="ManaBarInstant" type="TextureProgressBar" parent="VBoxContainer/ManaBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+max_value = 100.0
+value = 100.0
+texture_under = ExtResource("2_g6e8q")
+texture_progress = ExtResource("6_i5v7r")

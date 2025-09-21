@@ -1,11 +1,15 @@
-[gd_scene load_steps=5 format=3 uid="uid://dx3sxiv5a1apv"]
+[gd_scene load_steps=6 format=3 uid="uid://dx3sxiv5a1apv"]
 
-[ext_resource type="Script" uid="uid://dtfnsy5jfo334" path="res://scripts/Main.gd" id="1_0bbpv"]
+[ext_resource type="Script" path="res://scripts/Main.gd" id="1_0bbpv"]
 [ext_resource type="PackedScene" uid="uid://ck6c55r53o22t" path="res://scenes/Level.tscn" id="2_2o4n6"]
 [ext_resource type="PackedScene" uid="uid://ddt0l01c1q28p" path="res://scenes/Player.tscn" id="3_6d7t0"]
+[ext_resource type="PackedScene" uid="uid://c6y7s8v9e10f" path="res://scenes/ui/PlayerUI.tscn" id="4_player_ui"]
+[ext_resource type="PackedScene" uid="uid://c6j2a5v7y6g6s" path="res://scenes/ui/SkillBar.tscn" id="5_skill_bar"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_0bbpv")
+player_ui_scene = ExtResource("4_player_ui")
+skill_bar_scene = ExtResource("5_skill_bar")
 
 [node name="BackgroundColor" type="ColorRect" parent="."]
 offset_left = -1357.0
@@ -20,12 +24,6 @@ position = Vector2(640, 500)
 [node name="Player1" parent="." instance=ExtResource("3_6d7t0")]
 position = Vector2(400, 350)
 scale = Vector2(3, 3)
-sprint_speed = 700.0
-jump_velocity = -1000.0
-friction = 2700.0
-fast_fall_peak_threshold = 600.0
-jump_buffer_time = 0.19999999999708962
-landing_lag_duration = 0.3000000000029104
 
 [node name="Player2" parent="." instance=ExtResource("3_6d7t0")]
 position = Vector2(880, 350)
@@ -35,3 +33,55 @@ player_id = 2
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(640, 360)
 zoom = Vector2(0.8, 0.8)
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="P1_UI_Anchor" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -62.0
+offset_right = 120.0
+offset_bottom = -22.0
+grow_vertical = 0
+
+[node name="P2_UI_Anchor" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -120.0
+offset_top = -62.0
+offset_right = -20.0
+offset_bottom = -22.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="P1_SkillBar_Anchor" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -150.0
+offset_right = 290.0
+offset_bottom = -80.0
+grow_vertical = 0
+
+[node name="P2_SkillBar_Anchor" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -290.0
+offset_top = -150.0
+offset_right = -20.0
+offset_bottom = -80.0
+grow_horizontal = 0
+grow_vertical = 0

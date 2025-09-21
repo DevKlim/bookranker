@@ -5,7 +5,7 @@ import math
 
 # --- CONFIGURATION ---
 CHARACTER_NAME = "Knight" # The name of the character to generate.
-BASE_PLAYER_SCRIPT_PATH = "scripts/Player.gd"
+BASE_PLAYER_SCENE_PATH = "scenes/Player.tscn" # The base player scene this character will instance.
 ASSETS_BASE_PATH = "assets/characters"
 OUTPUT_SCENES_PATH = "scenes/characters"
 OUTPUT_SCRIPTS_PATH = "scripts/characters"
@@ -14,10 +14,15 @@ OUTPUT_SCRIPTS_PATH = "scripts/characters"
 # Template for a HitboxData resource
 HITBOX_DATA_TEMPLATE = """[sub_resource type="Resource" id="Resource_{res_id}"]
 script = ExtResource("{hitbox_script_id}")
+damage = {damage}
+stun_duration = {stun_duration}
+hitlag_duration = {hitlag_duration}
+knockback_amount = {knockback_amount}
+knockback_direction = Vector2({knockback_x}, {knockback_y})
 shape = SubResource("RectangleShape2D_{shape_id}")
 position = Vector2(0, 0)
-start_frame = 1
-end_frame = 999
+start_frame = 2
+end_frame = 4
 """
 
 # Template for a RectangleShape2D for the hitbox
@@ -30,53 +35,16 @@ SCENE_TEMPLATE = """[gd_scene load_steps={load_steps} format=3 uid="uid://{scene
 
 {ext_resources}
 {sub_resources}
-[node name="{char_name}" type="CharacterBody2D"]
-collision_layer = 2
+[node name="{char_name}" instance=ExtResource("{base_player_scene_id}")]
 script = ExtResource("{script_id}")
-walk_speed = 400.0
-jump_velocity = -1200.0
-friction = 2000.0
-max_jumps = 1
-debug_draw_hitboxes = true
 
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+[node name="AnimatedSprite2D" parent="." index="0"]
 sprite_frames = SubResource("SpriteFrames_main")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, 1)
-shape = SubResource("CapsuleShape2D_main")
+[node name="AnimationComponent" type="Node" parent="."]
+script = ExtResource("{anim_comp_script_id}")
+{anim_comp_assignments}
 
-[node name="Hitbox" type="Area2D" parent="." groups=["hitbox"]]
-collision_layer = 8
-collision_mask = 4
-
-[node name="Hurtbox" type="Area2D" parent="." groups=["hurtbox"]]
-collision_layer = 4
-collision_mask = 8
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
-position = Vector2(-1, 1)
-shape = SubResource("RectangleShape2D_hurtbox")
-
-[node name="ComboTimer" type="Timer" parent="."]
-wait_time = 0.8
-one_shot = true
-
-[node name="AttackLagTimer" type="Timer" parent="."]
-one_shot = true
-
-[node name="LandingLagTimer" type="Timer" parent="."]
-wait_time = 0.15
-one_shot = true
-
-[node name="JumpBufferTimer" type="Timer" parent="."]
-wait_time = 0.15
-one_shot = true
-
-[node name="FixedMoveTimer" type="Timer" parent="."]
-one_shot = true
-
-[node name="Attacks" type="Node" parent="."]
 {attack_nodes}
 """
 
@@ -107,23 +75,34 @@ def create_character_files(char_name):
         print(f"ERROR: CSV file not found at {csv_path}")
         return
 
-    # 2. Create the character script (copy of Player.gd)
-    try:
-        with open(BASE_PLAYER_SCRIPT_PATH, 'r') as f_in:
-            base_script_content = f_in.read()
-        with open(output_script_path, 'w') as f_out:
-            f_out.write(base_script_content)
-        print(f"Successfully created script: {output_script_path}")
-    except FileNotFoundError:
-        print(f"ERROR: Base player script not found at {BASE_PLAYER_SCRIPT_PATH}")
-        return
+    # 2. Create the character script (which simply extends Player.gd)
+    char_script_content = f"""extends Player
+
+# This script is for {char_name}-specific logic.
+# All core logic is inherited from Player.gd.
+
+func _ready():
+	super()
+	# You can add character-specific setup here.
+	# For example:
+	# max_health = 120
+	# walk_speed = 280
+"""
+    with open(output_script_path, 'w', encoding='utf-8') as f_out:
+        f_out.write(char_script_content)
+    print(f"Successfully created script: {output_script_path}")
 
     # 3. Read and process CSV data
-    df = pd.read_csv(csv_path)
+    df = pd.read_csv(csv_path).fillna('')
     animations = []
     attacks = []
+    non_attack_animations = {}
 
     for _, row in df.iterrows():
+        # Skip rows that don't have a sprite path defined
+        if not row["SpritePath"] or pd.isna(row["SpritePath"]):
+            continue
+
         anim_data = {
             "path": os.path.join(char_assets_path, row["SpritePath"]).replace("\\", "/"),
             "name": row["AnimationName"],
@@ -135,17 +114,28 @@ def create_character_files(char_name):
         animations.append(anim_data)
 
         if anim_data["type"] == "Attack":
-            attack_data = {
+            attacks.append({
                 "node_name": sanitize_node_name(anim_data["name"]),
                 "anim_name": anim_data["name"],
                 "attack_chain": row.get("AttackChain", "default"),
                 "required_state": row["AttackState"],
                 "required_input": row["AttackInput"],
-                "combo_index": int(row["AttackComboIndex"]),
-                "can_directional_cancel": str(row.get("CanDirectionalCancel", "false")).lower() == "true",
-                "directional_cancel_start_frame": int(row.get("DirectionalCancelStartFrame", 0))
-            }
-            attacks.append(attack_data)
+                "combo_index": int(row["AttackComboIndex"]) if row["AttackComboIndex"] != '' else 1,
+                "attack_type": row.get("AttackType", "Combo"),
+                "skill_input_action": row.get("SkillInputAction", ""),
+                "multi_hit": str(row.get("MultiHit", "false")).lower() == "true",
+                "damage": float(row["Damage"]) if row["Damage"] != '' else 10.0,
+                "stun_duration": float(row["StunDuration"]) if row["StunDuration"] != '' else 0.2,
+                "hitlag_duration": float(row["HitlagDuration"]) if row["HitlagDuration"] != '' else 0.1,
+                "knockback_amount": float(row["KnockbackAmount"]) if row["KnockbackAmount"] != '' else 300.0,
+                "knockback_x": float(row["KnockbackDirectionX"]) if row["KnockbackDirectionX"] != '' else 1.0,
+                "knockback_y": float(row["KnockbackDirectionY"]) if row["KnockbackDirectionY"] != '' else -0.5,
+                "mana_cost": float(row["ManaCost"]) if row["ManaCost"] != '' else 0.0,
+                "hp_cost": float(row["HPCost"]) if row["HPCost"] != '' else 0.0,
+            })
+        else:
+            non_attack_animations[anim_data["type"]] = anim_data["name"]
+
 
     print(f"Found {len(animations)} animations and {len(attacks)} attacks.")
 
@@ -154,29 +144,34 @@ def create_character_files(char_name):
     sub_resources = []
     
     # --- Ext Resources ---
-    script_id = "1_script"
-    attack_script_id = "2_attack_script"
-    hitbox_script_id = "3_hitbox_script"
+    # Find the UID of the base Player.tscn
+    player_scene_uid = ""
+    with open(f"{BASE_PLAYER_SCENE_PATH}.uid", "r") as f:
+        player_scene_uid = f.read().strip()
+
+    base_player_scene_id = "1_base_player"
+    script_id = "2_script"
+    attack_script_id = "3_attack_script"
+    hitbox_script_id = "4_hitbox_script"
+    anim_comp_script_id = "5_anim_comp_script"
     
+    ext_resources.append(f'[ext_resource type="PackedScene" uid="{player_scene_uid}" path="res://{BASE_PLAYER_SCENE_PATH}" id="{base_player_scene_id}"]')
     ext_resources.append(f'[ext_resource type="Script" path="res://{output_script_path}" id="{script_id}"]')
     ext_resources.append(f'[ext_resource type="Script" path="res://scripts/Attack.gd" id="{attack_script_id}"]')
     ext_resources.append(f'[ext_resource type="Script" path="res://scripts/HitboxData.gd" id="{hitbox_script_id}"]')
+    ext_resources.append(f'[ext_resource type="Script" path="res://scripts/components/AnimationComponent.gd" id="{anim_comp_script_id}"]')
+
 
     texture_ids = {}
-    tex_counter = 4
+    tex_counter = 6
     for anim in animations:
         if anim['path'] not in texture_ids:
-            tex_id = f"{tex_counter}_tex"
+            tex_id = f"tex_{tex_counter}"
             texture_ids[anim['path']] = tex_id
             ext_resources.append(f'[ext_resource type="Texture2D" uid="uid://{generate_godot_uid()}" path="res://{anim["path"]}" id="{tex_id}"]')
             tex_counter += 1
 
     # --- Sub Resources ---
-    # Basic physics shapes
-    sub_resources.append('[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_main"]\nradius = 9.0')
-    sub_resources.append('[sub_resource type="RectangleShape2D" id="RectangleShape2D_hurtbox"]\nsize = Vector2(18, 30)')
-
-    # SpriteFrames and AtlasTextures
     sprite_frames_animation_list = []
     for anim in animations:
         atlas_textures = []
@@ -189,52 +184,83 @@ def create_character_files(char_name):
             sub_resources.append('')
 
         frames_str = ", ".join([f'{{"duration": 1.0, "texture": SubResource("{atlas_id}")}}' for atlas_id in atlas_textures])
-        loop = "true" if anim["name"] in ["Idle", "Walk", "Sprint"] else "false"
-        sprite_frames_animation_list.append(f'{{"frames": [{frames_str}], "loop": {loop}, "name": &"{anim["name"]}", "speed": 10.0}}')
+        loop = "true" if anim["name"] in ["Idle", "Walk", "Sprint", "Crouch_Idle", "Crouch_Walk"] else "false"
+        sprite_frames_animation_list.append(f'{{"frames": [{frames_str}], "loop": {loop}, "name": &"{anim["name"]}", "speed": 12.0}}') 
     
     sprite_frames_str = ",\n".join(sprite_frames_animation_list)
     sub_resources.append('[sub_resource type="SpriteFrames" id="SpriteFrames_main"]')
     sub_resources.append(f"animations = [{sprite_frames_str}]")
     sub_resources.append("")
 
-    # Attack nodes and their hitbox resources
     attack_nodes_str_list = []
     res_counter = 1
-    for attack in attacks:
+    for i, attack in enumerate(attacks):
         shape_id = f"shape_{res_counter}"
         res_id = f"res_{res_counter}"
         
-        # Add hitbox sub-resources
-        sub_resources.append(RECTANGLE_SHAPE_TEMPLATE.format(shape_id=shape_id, width=32, height=16))
-        sub_resources.append(HITBOX_DATA_TEMPLATE.format(res_id=res_id, hitbox_script_id=hitbox_script_id, shape_id=shape_id))
+        sub_resources.append(RECTANGLE_SHAPE_TEMPLATE.format(shape_id=shape_id, width=32, height=24)) 
+        sub_resources.append(HITBOX_DATA_TEMPLATE.format(
+            res_id=res_id, 
+            hitbox_script_id=hitbox_script_id, 
+            shape_id=shape_id, 
+            damage=attack["damage"],
+            stun_duration=attack["stun_duration"],
+            hitlag_duration=attack["hitlag_duration"],
+            knockback_amount=attack["knockback_amount"],
+            knockback_x=attack["knockback_x"],
+            knockback_y=attack["knockback_y"]
+        ))
         
-        # Add the node string
-        attack_nodes_str_list.append(f'[node name="{attack["node_name"]}" type="Node" parent="Attacks"]')
-        attack_nodes_str_list.append(f'script = ExtResource("{attack_script_id}")')
-        attack_nodes_str_list.append(f'attack_chain = &"{attack["attack_chain"]}"')
-        attack_nodes_str_list.append(f'combo_index = {attack["combo_index"]}')
-        attack_nodes_str_list.append(f'required_state = "{attack["required_state"]}"')
-        attack_nodes_str_list.append(f'required_input = "{attack["required_input"]}"')
-        attack_nodes_str_list.append(f'animation_name = &"{attack["anim_name"]}"')
-        if attack["can_directional_cancel"]:
-            attack_nodes_str_list.append('can_directional_cancel = true')
-            attack_nodes_str_list.append(f'directional_cancel_start_frame = {attack["directional_cancel_start_frame"]}')
-        attack_nodes_str_list.append(f'hitboxes = [SubResource("Resource_{res_id}")]')
-        attack_nodes_str_list.append('')
+        node_str = f'[node name="{attack["node_name"]}" type="Node" parent="AttackHandlerComponent"]\n'
+        node_str += f'script = ExtResource("{attack_script_id}")\n'
+        node_str += f'attack_type = "{attack["attack_type"]}"\n'
+        node_str += f'multi_hit = {"true" if attack["multi_hit"] else "false"}\n'
+        if attack["skill_input_action"]:
+            node_str += f'skill_input_action = "{attack["skill_input_action"]}"\n'
+        node_str += f'attack_chain = &"{attack["attack_chain"]}"\n'
+        node_str += f'combo_index = {attack["combo_index"]}\n'
+        node_str += f'required_state = "{attack["required_state"]}"\n'
+        node_str += f'required_input = "{attack["required_input"]}"\n'
+        node_str += f'mana_cost = {attack["mana_cost"]}\n'
+        node_str += f'hp_cost = {attack["hp_cost"]}\n'
+        node_str += f'animation_name = &"{attack["anim_name"]}"\n'
+        node_str += f'hitboxes = [SubResource("Resource_{res_id}")]'
+        
+        attack_nodes_str_list.append(node_str)
         res_counter += 1
 
+    # --- Animation Component Setup ---
+    prop_map = {
+        "Idle": "idle", "Walk": "walk", "Run": "run", "CrouchIdle": "crouch_idle",
+        "CrouchWalk": "crouch_walk", "JumpStart": "jump_start", 
+        "SprintJumpStart": "sprint_jump_start", "Fall": "fall", "Land": "land",
+        "RunningSlide": "running_slide", "LedgeGrab": "ledge_grab", "Hurt": "hurt",
+        "Death": "death"
+    }
+    anim_comp_assignments_list = []
+    for anim_type, anim_name in non_attack_animations.items():
+        if anim_type in prop_map:
+            prop_name = prop_map[anim_type]
+            anim_comp_assignments_list.append(f'{prop_name} = &"{anim_name}"')
+    anim_comp_assignments_str = "\n".join(anim_comp_assignments_list)
+
     # 5. Assemble the final .tscn file
+    load_steps = len(ext_resources) + len(sub_resources) # A bit of an overestimation but safer
+
     final_tscn = SCENE_TEMPLATE.format(
-        load_steps=len(ext_resources) + len(sub_resources), # This is an approximation but works
+        load_steps=load_steps, 
         scene_uid=generate_godot_uid(),
         char_name=char_name,
         script_id=script_id,
+        base_player_scene_id=base_player_scene_id,
         ext_resources="\n".join(ext_resources),
         sub_resources="\n".join(sub_resources),
-        attack_nodes="\n".join(attack_nodes_str_list)
+        anim_comp_script_id=anim_comp_script_id,
+        anim_comp_assignments=anim_comp_assignments_str,
+        attack_nodes="\n\n".join(attack_nodes_str_list)
     )
     
-    with open(output_scene_path, 'w') as f:
+    with open(output_scene_path, 'w', encoding='utf-8') as f:
         f.write(final_tscn)
     print(f"Successfully generated scene: {output_scene_path}")
     print(f"--- Character '{char_name}' generation complete! ---")
