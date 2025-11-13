@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="ElementResource" load_steps=2 format=3 uid="uid://cx6i1c81y3gwe"]
+
+[ext_resource type="Script" path="res://scripts/resources/element_resource.gd" id="1_44w2u"]
+
+[resource]
+script = ExtResource("1_44w2u")
+element_name = "Fire"
+color = Color(1, 0.341176, 0.133333, 1)

@@ -1,0 +1,22 @@
+[gd_scene load_steps=5 format=3 uid="uid://cb41v1hcv7l3h"]
+
+[ext_resource type="Script" uid="uid://cr0o0ofoe0h4a" path="res://scripts/components/power_consumer_component.gd" id="1_41k0s"]
+[ext_resource type="Texture2D" uid="uid://bclf0y7fpxq7m" path="res://assets/buildables/conveyor.png" id="2_jsaqa"]
+[ext_resource type="Script" uid="uid://ct0ceu3kvxshh" path="res://scripts/entities/buildings/conveyor.gd" id="3_o4b2q"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_yv65y"]
+size = Vector2(32, 32)
+
+[node name="Conveyor" type="StaticBody2D"]
+script = ExtResource("3_o4b2q")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(0, 4.7683716e-07)
+texture = ExtResource("2_jsaqa")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_yv65y")
+
+[node name="PowerConsumerComponent" type="Node" parent="."]
+script = ExtResource("1_41k0s")
+power_consumption = 1.0

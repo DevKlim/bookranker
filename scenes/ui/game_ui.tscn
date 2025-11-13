@@ -1,0 +1,62 @@
+[gd_scene load_steps=5 format=3 uid="uid://c6o6gqf57o2b3"]
+
+[ext_resource type="PackedScene" uid="uid://cnb68n02f3s4p" path="res://scenes/ui/hotbar.tscn" id="1_4n20r"]
+[ext_resource type="Script" path="res://scripts/ui/game_ui.gd" id="2_4h68c"]
+[ext_resource type="Script" path="res://scripts/ui/dev_ui.gd" id="2_h3q2e"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1y7w7"]
+bg_color = Color(0.14902, 0.14902, 0.14902, 0.74902)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[node name="GameUI" type="CanvasLayer"]
+script = ExtResource("2_4h68c")
+
+[node name="Hotbar" parent="." instance=ExtResource("1_4n20r")]
+
+[node name="DevUIPanel" type="Panel" parent="."]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -220.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 100.0
+grow_horizontal = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_1y7w7")
+script = ExtResource("2_h3q2e")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="DevUIPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="SpawnWaveButton" type="Button" parent="DevUIPanel/VBoxContainer"]
+layout_mode = 2
+text = "Spawn Wave"
+
+[node name="StopWaveButton" type="Button" parent="DevUIPanel/VBoxContainer"]
+layout_mode = 2
+text = "Stop Wave"
+
+[node name="DebugCoordsLabel" type="Label" parent="."]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -43.0
+offset_right = 220.0
+offset_bottom = -20.0
+grow_vertical = 0
+text = "Tile Coords: (-, -)"
+vertical_alignment = 2
+
+[connection signal="pressed" from="DevUIPanel/VBoxContainer/SpawnWaveButton" to="DevUIPanel" method="_on_spawn_wave_button_pressed"]
+[connection signal="pressed" from="DevUIPanel/VBoxContainer/StopWaveButton" to="DevUIPanel" method="_on_stop_wave_button_pressed"]

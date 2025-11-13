@@ -1,87 +1,48 @@
-[gd_scene load_steps=6 format=3 uid="uid://dx3sxiv5a1apv"]
+[gd_scene load_steps=7 format=3 uid="uid://dpsa8knhxpybo"]
 
-[ext_resource type="Script" path="res://scripts/Main.gd" id="1_0bbpv"]
-[ext_resource type="PackedScene" uid="uid://ck6c55r53o22t" path="res://scenes/Level.tscn" id="2_2o4n6"]
-[ext_resource type="PackedScene" uid="uid://ddt0l01c1q28p" path="res://scenes/Player.tscn" id="3_6d7t0"]
-[ext_resource type="PackedScene" uid="uid://c6y7s8v9e10f" path="res://scenes/ui/PlayerUI.tscn" id="4_player_ui"]
-[ext_resource type="PackedScene" uid="uid://c6j2a5v7y6g6s" path="res://scenes/ui/SkillBar.tscn" id="5_skill_bar"]
+[ext_resource type="Script" uid="uid://d0pfnu2msf0sx" path="res://scripts/main.gd" id="1_57xwr"]
+[ext_resource type="PackedScene" uid="uid://wdsglfb2b83d" path="res://scenes/core.tscn" id="2_87q1w"]
+[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="3_6j88b"]
+[ext_resource type="PackedScene" uid="uid://sk4jxbgm5ygn" path="res://scenes/tilemaps/map1.tscn" id="3_tbgi4"]
+[ext_resource type="TileSet" uid="uid://wdd5tpfw5y8k" path="res://tilesets/wiring_tileset.tres" id="4_v5r1r"]
+[ext_resource type="PackedScene" uid="uid://c6o6gqf57o2b3" path="res://scenes/ui/game_ui.tscn" id="5_53nla"]
 
 [node name="Main" type="Node2D"]
-script = ExtResource("1_0bbpv")
-player_ui_scene = ExtResource("4_player_ui")
-skill_bar_scene = ExtResource("5_skill_bar")
-
-[node name="BackgroundColor" type="ColorRect" parent="."]
-offset_left = -1357.0
-offset_top = -1626.0
-offset_right = 2643.0
-offset_bottom = 2374.0
-color = Color(0.678431, 0.847059, 0.901961, 1)
-
-[node name="Level" parent="." instance=ExtResource("2_2o4n6")]
-position = Vector2(640, 500)
-
-[node name="Player1" parent="." instance=ExtResource("3_6d7t0")]
-position = Vector2(400, 350)
-scale = Vector2(3, 3)
-
-[node name="Player2" parent="." instance=ExtResource("3_6d7t0")]
-position = Vector2(880, 350)
-scale = Vector2(3, 3)
-player_id = 2
+script = ExtResource("1_57xwr")
 
 [node name="Camera2D" type="Camera2D" parent="."]
-position = Vector2(640, 360)
-zoom = Vector2(0.8, 0.8)
+offset = Vector2(0, -60)
+zoom = Vector2(3, 3)
+limit_left = -1000
+limit_top = -1000
+limit_right = 1000
+limit_bottom = 500
 
-[node name="UI" type="CanvasLayer" parent="."]
+[node name="Core" parent="." instance=ExtResource("2_87q1w")]
+position = Vector2(-0.5, -35.5)
 
-[node name="P1_UI_Anchor" type="Control" parent="UI"]
-layout_mode = 3
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = -62.0
-offset_right = 120.0
-offset_bottom = -22.0
-grow_vertical = 0
+[node name="Buildings" type="Node2D" parent="."]
+z_index = 2
+y_sort_enabled = true
 
-[node name="P2_UI_Anchor" type="Control" parent="UI"]
-layout_mode = 3
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -120.0
-offset_top = -62.0
-offset_right = -20.0
-offset_bottom = -22.0
-grow_horizontal = 0
-grow_vertical = 0
+[node name="WiringLayer" type="TileMapLayer" parent="."]
+z_index = 1
+y_sort_enabled = true
+texture_filter = 1
+tile_set = ExtResource("4_v5r1r")
+rendering_quadrant_size = 32
 
-[node name="P1_SkillBar_Anchor" type="Control" parent="UI"]
-layout_mode = 3
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = -150.0
-offset_right = 290.0
-offset_bottom = -80.0
-grow_vertical = 0
+[node name="TileMapLayer" parent="." instance=ExtResource("3_tbgi4")]
 
-[node name="P2_SkillBar_Anchor" type="Control" parent="UI"]
-layout_mode = 3
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -290.0
-offset_top = -150.0
-offset_right = -20.0
-offset_bottom = -80.0
-grow_horizontal = 0
-grow_vertical = 0
+[node name="Projectiles" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="Enemies" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="BuildPreview" type="Sprite2D" parent="."]
+modulate = Color(0.435294, 1, 0.498039, 0.501961)
+z_index = 10
+texture = ExtResource("3_6j88b")
+
+[node name="GameUI" parent="." instance=ExtResource("5_53nla")]

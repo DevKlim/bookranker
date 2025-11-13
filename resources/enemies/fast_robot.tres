@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="EnemyResource" load_steps=3 format=3 uid="uid://dh5006w676uyl"]
+
+[ext_resource type="Script" path="res://scripts/resources/enemy_resource.gd" id="1_s5w57"]
+[ext_resource type="PackedScene" uid="uid://dlp6n5d8b2d7s" path="res://scenes/enemies/fast_enemy.tscn" id="2_a82q0"]
+
+[resource]
+script = ExtResource("1_s5w57")
+enemy_name = "Fast Robot"
+scene = ExtResource("2_a82q0")
+health = 30.0
+speed = 120.0

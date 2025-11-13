@@ -1,0 +1,18 @@
+[gd_resource type="TileSet" load_steps=3 format=3 uid="uid://wdd5tpfw5y8k"]
+
+[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="1_5x3u4"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_37k07"]
+resource_name = "Wiring"
+texture = ExtResource("1_5x3u4")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+0:0/0/texture_origin = Vector2i(32, 32)
+0:0/0/modulate = Color(0.6, 0.6, 0.6, 1)
+1:0/0 = 0
+1:0/0/texture_origin = Vector2i(32, 32)
+1:0/0/modulate = Color(0.9, 0.9, 0.2, 1)
+
+[resource]
+tile_size = Vector2i(64, 64)
+sources/0 = SubResource("TileSetAtlasSource_37k07")

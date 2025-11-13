@@ -1,0 +1,35 @@
+[gd_scene load_steps=8 format=3 uid="uid://cnb68n02f3s4p"]
+
+[ext_resource type="Script" path="res://scripts/ui/hotbar.gd" id="1_7g2s6"]
+[ext_resource type="Resource" uid="uid://cslqfubaf1q6q" path="res://resources/buildables/magic_dust_buildable.tres" id="2_26vna"]
+[ext_resource type="Resource" uid="uid://bxtu1v2385ypl" path="res://resources/buildables/lever_buildable.tres" id="3_g71l5"]
+[ext_resource type="Resource" uid="uid://c53k15l3h51e2" path="res://resources/buildables/fire_turret_buildable.tres" id="4_5y3y1"]
+[ext_resource type="Resource" uid="uid://b84i3hcyy27r0" path="res://resources/buildables/turret_buildable.tres" id="5_g57y6"]
+[ext_resource type="Resource" uid="uid://dq2h451j440e" path="res://resources/buildables/drill_buildable.tres" id="6_56417"]
+[ext_resource type="Resource" uid="uid://c6lpxm1gplbbm" path="res://resources/buildables/conveyor_buildable.tres" id="7_v88sc"]
+
+[node name="Hotbar" type="PanelContainer"]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -225.0
+offset_top = -100.0
+offset_right = 225.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+script = ExtResource("1_7g2s6")
+buildables = [ExtResource("2_26vna"), ExtResource("3_g71l5"), ExtResource("4_5y3y1"), ExtResource("5_g57y6"), ExtResource("6_56417"), ExtResource("7_v88sc")]
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10

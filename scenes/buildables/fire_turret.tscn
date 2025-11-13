@@ -1,0 +1,54 @@
+[gd_scene load_steps=10 format=3 uid="uid://dgq6002f2l2e7"]
+
+[ext_resource type="Script" path="res://scripts/entities/turret.gd" id="1_44c1i"]
+[ext_resource type="Script" path="res://scripts/components/power_consumer_component.gd" id="2_xay0n"]
+[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="3_d64v7"]
+[ext_resource type="Script" path="res://scripts/components/target_acquirer_component.gd" id="4_v8x6w"]
+[ext_resource type="Script" path="res://scripts/components/shooter_component.gd" id="5_58b76"]
+[ext_resource type="PackedScene" uid="uid://b82d334y6577q" path="res://scenes/entities/projectile.tscn" id="6_85qve"]
+[ext_resource type="Resource" uid="uid://cx6i1c81y3gwe" path="res://resources/elements/fire.tres" id="7_h88jc"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_21t63"]
+radius = 32.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_v75d1"]
+radius = 400.0
+
+[node name="Turret" type="StaticBody2D"]
+script = ExtResource("1_44c1i")
+
+[node name="TurretBase" type="Sprite2D" parent="."]
+modulate = Color(0.529412, 0.529412, 0.529412, 1)
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("3_d64v7")
+
+[node name="TurretHead" type="Sprite2D" parent="."]
+modulate = Color(1, 0.341176, 0.133333, 1)
+texture = ExtResource("3_d64v7")
+offset = Vector2(30, 0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_21t63")
+
+[node name="PowerConsumerComponent" type="Node" parent="."]
+script = ExtResource("2_xay0n")
+
+[node name="TargetAcquirerComponent" type="Node" parent="."]
+script = ExtResource("4_v8x6w")
+target_layers = 2
+
+[node name="DetectionArea" type="Area2D" parent="TargetAcquirerComponent"]
+collision_layer = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TargetAcquirerComponent/DetectionArea"]
+shape = SubResource("CircleShape2D_v75d1")
+
+[node name="ShooterComponent" type="Node" parent="."]
+script = ExtResource("5_58b76")
+projectile_scene = ExtResource("6_85qve")
+element = ExtResource("7_h88jc")
+
+[node name="FirePoint" type="Marker2D" parent="ShooterComponent"]
+position = Vector2(48, 0)
+
+[node name="FireRateTimer" type="Timer" parent="ShooterComponent"]

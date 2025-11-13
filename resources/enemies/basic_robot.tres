@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="EnemyResource" load_steps=3 format=3 uid="uid://dpsaweo0nyswo"]
+
+[ext_resource type="Script" path="res://scripts/resources/enemy_resource.gd" id="1_4n7g6"]
+[ext_resource type="PackedScene" uid="uid://cf67lsc67i5d1" path="res://scenes/entities/enemy.tscn" id="2_cnh1x"]
+
+[resource]
+script = ExtResource("1_4n7g6")
+enemy_name = "Basic Robot"
+scene = ExtResource("2_cnh1x")
+health = 50.0
+speed = 75.0

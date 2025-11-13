@@ -1,71 +1,103 @@
 extends Node2D
 
-@export var player_ui_scene: PackedScene
-@export var skill_bar_scene: PackedScene
+## The main script for the primary game scene. It handles player input for camera
+## movement and building, and sets up the initial game environment.
 
-@onready var player1 = $Player1
-@onready var player2 = $Player2
-@onready var camera = $Camera2D
+@export var camera_speed: float = 500.0
 
-var p1_spawn_pos: Vector2
-var p2_spawn_pos: Vector2
+@onready var camera: Camera2D = $Camera2D
+@onready var build_preview: Sprite2D = $BuildPreview
+@onready var game_ui: CanvasLayer = $GameUI
+@onready var tile_map: TileMapLayer = $TileMapLayer
+@onready var buildings_container: Node2D = $Buildings
 
-const MIN_ZOOM = 0.8
-const MAX_ZOOM = 1.5
-const ZOOM_MARGIN = 200
-const CAMERA_SMOOTHING = 5.0
 
-func _ready():
-	var death_zones = get_tree().get_nodes_in_group("death_zone")
-	for zone in death_zones:
-		zone.body_entered.connect(_on_death_zone_body_entered)
-		
-	if is_instance_valid(player1):
-		p1_spawn_pos = player1.global_position
-		setup_player_interfaces(player1, $UI/P1_UI_Anchor, $UI/P1_SkillBar_Anchor)
+func _ready() -> void:
+	print("Main scene initialized.")
+	build_preview.visible = false
+	BuildManager.build_mode_changed.connect(_on_build_mode_changed)
+	BuildManager.build_rotation_changed.connect(_on_build_rotation_changed)
+
+
+func _process(delta: float) -> void:
+	handle_camera_movement(delta)
+	handle_debug_display()
 	
-	if is_instance_valid(player2):
-		p2_spawn_pos = player2.global_position
-		setup_player_interfaces(player2, $UI/P2_UI_Anchor, $UI/P2_SkillBar_Anchor)
+	if BuildManager.is_building:
+		update_build_preview()
 
-func setup_player_interfaces(player_node: CharacterBody2D, ui_anchor: Control, skill_anchor: Control):
-	if player_ui_scene:
-		var player_ui = player_ui_scene.instantiate()
-		ui_anchor.add_child(player_ui)
-		player_ui.link_to_player(player_node)
-
-	if skill_bar_scene:
-		var skill_bar = skill_bar_scene.instantiate()
-		skill_anchor.add_child(skill_bar)
-		skill_bar.link_to_player(player_node)
-
-func _process(delta):
-	if not is_instance_valid(player1) or not is_instance_valid(player2):
+func _input(event: InputEvent) -> void:
+	# If a UI element has already processed this input, do nothing.
+	# This prevents us from building when clicking on a UI button.
+	if get_viewport().is_input_handled():
 		return
-	handle_camera(delta)
 
-func handle_camera(delta):
-	var midpoint = player1.global_position.lerp(player2.global_position, 0.5)
-	camera.global_position = camera.global_position.lerp(midpoint, delta * CAMERA_SMOOTHING)
+	if BuildManager.is_building:
+		# Check for left-click to place a buildable.
+		if event.is_action_pressed("build_place"): 
+			BuildManager.place_buildable(get_global_mouse_position())
+			get_viewport().set_input_as_handled()
+		# Check for right-click to cancel building.
+		elif event.is_action_pressed("build_cancel"):
+			BuildManager.exit_build_mode()
+			get_viewport().set_input_as_handled()
+		# Check for 'R' key to rotate.
+		elif event.is_action_pressed("build_rotate"):
+			BuildManager.rotate_buildable()
+			get_viewport().set_input_as_handled()
+	else: 
+		# If not in build mode, handle deconstruction with right-click.
+		if event.is_action_pressed("build_cancel"):
+			BuildManager.remove_buildable_at(get_global_mouse_position())
+			get_viewport().set_input_as_handled()
 
-	var screen_size = get_viewport().get_visible_rect().size / camera.zoom
-	var distance_x = abs(player1.global_position.x - player2.global_position.x) + ZOOM_MARGIN
-	var distance_y = abs(player1.global_position.y - player2.global_position.y) + ZOOM_MARGIN
+
+func handle_camera_movement(delta: float) -> void:
+	var move_vector = Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	camera.position += move_vector * camera_speed * delta
+
+func handle_debug_display() -> void:
+	var mouse_pos = get_global_mouse_position()
+	var tile_coord = tile_map.local_to_map(mouse_pos)
+	if game_ui and game_ui.has_method("update_debug_coords"):
+		game_ui.update_debug_coords(tile_coord)
+
+func _on_build_mode_changed(is_building: bool) -> void:
+	build_preview.visible = is_building
+	if is_building and BuildManager.selected_buildable:
+		# For wiring, don't show the preview sprite, as the tilemap handles it.
+		if BuildManager.selected_buildable.layer == BuildableResource.BuildLayer.MECH:
+			build_preview.texture = BuildManager.selected_buildable.icon
+			# Reset offset, as we will handle alignment via global_position
+			build_preview.offset = Vector2.ZERO
+			build_preview.visible = true
+		else:
+			build_preview.visible = false
+
+
+func _on_build_rotation_changed(new_rotation_degrees: float) -> void:
+	if is_instance_valid(build_preview):
+		build_preview.rotation_degrees = new_rotation_degrees
+
+
+func update_build_preview():
+	if not build_preview.visible:
+		return
+
+	var mouse_pos = get_global_mouse_position()
 	
-	var zoom_x = screen_size.x / distance_x
-	var zoom_y = screen_size.y / distance_y
+	if not is_instance_valid(BuildManager.tile_map):
+		return
+		
+	var tile_coord = BuildManager.tile_map.local_to_map(mouse_pos)
+	var snapped_pos = BuildManager.tile_map.map_to_local(tile_coord)
 	
-	var target_zoom = min(zoom_x, zoom_y)
-	target_zoom = clamp(target_zoom, MIN_ZOOM, MAX_ZOOM)
-	camera.zoom = lerp(camera.zoom, Vector2(target_zoom, target_zoom), delta * CAMERA_SMOOTHING)
-
-func _on_death_zone_body_entered(body):
-	if body is CharacterBody2D and body.is_in_group("player"):
-		var spawn_pos = p1_spawn_pos if body == player1 else p2_spawn_pos
-		respawn_player(body, spawn_pos)
-
-func respawn_player(player: CharacterBody2D, spawn_pos):
-	player.global_position = spawn_pos
-	player.velocity = Vector2.ZERO
-	player.get_node("StatsComponent").reset()
-	player.current_state = player.State.IDLE
+	# Apply the same vertical offset to the preview as the placed asset
+	# to correctly align its base with the tile center.
+	var vertical_offset = Vector2(0, -tile_map.tile_set.tile_size.y / 2.0)
+	build_preview.global_position = snapped_pos + vertical_offset
+	
+	if BuildManager.can_build_at(mouse_pos):
+		build_preview.modulate = Color(0.435, 1, 0.498, 0.5) # Greenish tint
+	else:
+		build_preview.modulate = Color(1, 0.435, 0.435, 0.5) # Reddish tint
