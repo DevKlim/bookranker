@@ -15,5 +15,3 @@ signal power_output_changed(new_output)
 		if power_generation != value:
 			power_generation = value
 			emit_signal("power_output_changed", power_generation)
-
-

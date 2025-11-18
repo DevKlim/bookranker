@@ -50,4 +50,4 @@ func _on_status_expired(status_name: String) -> void:
 
 
 func has_status(status_name: String) -> bool:
-	return active_statuses.has(status_name)
+	return active_statuses.has(status_name)

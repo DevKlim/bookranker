@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://cnb68n02f3s4p"]
+[gd_scene load_steps=9 format=3 uid="uid://cnb68n02f3s4p"]
 
 [ext_resource type="Script" path="res://scripts/ui/hotbar.gd" id="1_7g2s6"]
 [ext_resource type="Resource" uid="uid://cslqfubaf1q6q" path="res://resources/buildables/magic_dust_buildable.tres" id="2_26vna"]
@@ -7,6 +7,7 @@
 [ext_resource type="Resource" uid="uid://b84i3hcyy27r0" path="res://resources/buildables/turret_buildable.tres" id="5_g57y6"]
 [ext_resource type="Resource" uid="uid://dq2h451j440e" path="res://resources/buildables/drill_buildable.tres" id="6_56417"]
 [ext_resource type="Resource" uid="uid://c6lpxm1gplbbm" path="res://resources/buildables/conveyor_buildable.tres" id="7_v88sc"]
+[ext_resource type="Resource" uid="uid://cws757w1t0pxt" path="res://resources/buildables/remover_tool.tres" id="8_remover"]
 
 [node name="Hotbar" type="PanelContainer"]
 anchors_preset = 7
@@ -21,7 +22,7 @@ offset_bottom = -20.0
 grow_horizontal = 2
 grow_vertical = 0
 script = ExtResource("1_7g2s6")
-buildables = [ExtResource("2_26vna"), ExtResource("3_g71l5"), ExtResource("4_5y3y1"), ExtResource("5_g57y6"), ExtResource("6_56417"), ExtResource("7_v88sc")]
+buildables = [ExtResource("2_26vna"), ExtResource("3_g71l5"), ExtResource("4_5y3y1"), ExtResource("5_g57y6"), ExtResource("6_56417"), ExtResource("7_v88sc"), ExtResource("8_remover")]
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 2

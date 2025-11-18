@@ -41,5 +41,3 @@ func _physics_process(_delta: float) -> void:
 	
 	# move_and_slide() is a built-in CharacterBody2D function that handles movement and collisions.
 	_body.move_and_slide()
-
-

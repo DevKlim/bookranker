@@ -30,4 +30,4 @@ func apply_element(target: Node, element: ElementResource) -> void:
 	var status_name = element.element_name
 	if status_effects.has(status_name):
 		var effect_data = status_effects[status_name]
-		elemental_component.apply_status(status_name, effect_data)
+		elemental_component.apply_status(status_name, effect_data)

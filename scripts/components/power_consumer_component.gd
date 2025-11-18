@@ -30,5 +30,3 @@ func set_power_status(is_powered: bool) -> void:
 		# This allows entities to turn on/off based on power availability.
 		if parent and parent.has_method("_on_power_status_changed"):
 			parent._on_power_status_changed(has_power)
-
-

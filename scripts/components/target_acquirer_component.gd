@@ -78,5 +78,3 @@ func find_closest_target() -> void:
 	# If a closest body was found, set it as the new target.
 	if closest_body:
 		self.current_target = closest_body
-
-

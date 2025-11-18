@@ -7,4 +7,3 @@ func _on_spawn_wave_button_pressed() -> void:
 
 func _on_stop_wave_button_pressed() -> void:
 	WaveManager.stop_wave()
-

@@ -9,3 +9,5 @@ enemy_name = "Basic Robot"
 scene = ExtResource("2_cnh1x")
 health = 50.0
 speed = 75.0
+attack_damage = 10.0
+attack_speed = 1.0

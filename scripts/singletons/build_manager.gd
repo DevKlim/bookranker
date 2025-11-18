@@ -1,11 +1,8 @@
 extends Node
 
-## Manages the player's building actions. Tracks build mode status,
-## which buildable is currently selected, and placement on the grid.
-
 signal build_mode_changed(is_building)
 signal selected_buildable_changed(buildable_resource)
-signal build_rotation_changed(new_rotation_degrees)
+signal build_rotation_changed(new_rotation_anim_name)
 
 var is_building: bool = false:
 	set(value):
@@ -19,131 +16,109 @@ var selected_buildable: BuildableResource = null:
 			selected_buildable = value
 			emit_signal("selected_buildable_changed", selected_buildable)
 
-var build_rotation_degrees: float = 0.0
+const ROTATION_ANIMS: Array[StringName] = [&"idle_down", &"idle_left", &"idle_up", &"idle_right"]
+var _current_rotation_index: int = 0
 
 var tile_map: TileMapLayer
-var wiring_layer: TileMapLayer
 var _occupied_mech_tiles: Dictionary = {}
-var _occupied_wiring_tiles: Dictionary = {}
 
-func _ready() -> void:
-	print("BuildManager Initialized.")
+@onready var wiring_manager = get_node("/root/WiringManager")
+
+func _ready():
 	call_deferred("_initialize_tilemaps")
 
-func _initialize_tilemaps() -> void:
-	var main_scene = get_tree().current_scene
-	if main_scene:
-		tile_map = main_scene.get_node_or_null("TileMapLayer")
-		wiring_layer = main_scene.get_node_or_null("WiringLayer")
-	
-	if not is_instance_valid(tile_map):
-		printerr("BuildManager: Could not find TileMapLayer node!")
-	if not is_instance_valid(wiring_layer):
-		printerr("BuildManager: Could not find WiringLayer node!")
+func _initialize_tilemaps():
+	var main = get_tree().current_scene
+	tile_map = main.get_node_or_null("TileMapLayer")
 
-func enter_build_mode(buildable_to_build: BuildableResource) -> void:
-	self.selected_buildable = buildable_to_build
+func enter_build_mode(buildable: BuildableResource):
+	self.selected_buildable = buildable
 	self.is_building = true
-	self.build_rotation_degrees = 0.0 # Reset rotation
-	emit_signal("build_rotation_changed", build_rotation_degrees)
-	print("Entering build mode for: ", buildable_to_build.buildable_name)
+	_current_rotation_index = 0
+	emit_signal("build_rotation_changed", ROTATION_ANIMS[0])
 
-func exit_build_mode() -> void:
+func exit_build_mode():
 	self.is_building = false
 	self.selected_buildable = null
-	self.build_rotation_degrees = 0.0
-	print("Exiting build mode.")
 
-func rotate_buildable() -> void:
+func rotate_buildable():
 	if not is_building: return
-	build_rotation_degrees = fmod(build_rotation_degrees + 90.0, 360.0)
-	emit_signal("build_rotation_changed", build_rotation_degrees)
+	if selected_buildable and selected_buildable.layer != BuildableResource.BuildLayer.MECH:
+		return # Only mechs can be rotated for now
+	_current_rotation_index = (_current_rotation_index + 1) % ROTATION_ANIMS.size()
+	emit_signal("build_rotation_changed", ROTATION_ANIMS[_current_rotation_index])
 
-
-func can_build_at(world_position: Vector2) -> bool:
-	if not is_instance_valid(tile_map) or not selected_buildable:
-		return false
-
-	var tile_coord = tile_map.local_to_map(world_position)
-	var has_tile = tile_map.get_cell_source_id(tile_coord) != -1
-	if not has_tile:
-		return false
+func can_build_at(pos: Vector2) -> bool:
+	if not selected_buildable: return false
+	var tile_coord = tile_map.local_to_map(pos)
+	if tile_map.get_cell_source_id(tile_coord) == -1: return false
 
 	match selected_buildable.layer:
-		BuildableResource.BuildLayer.MECH:
-			return not _occupied_mech_tiles.has(tile_coord)
-		BuildableResource.BuildLayer.WIRING:
-			# Allow placing wires under mechs.
-			return not _occupied_wiring_tiles.has(tile_coord)
-	
+		BuildableResource.BuildLayer.MECH: return not _occupied_mech_tiles.has(tile_coord)
+		BuildableResource.BuildLayer.WIRING: return not wiring_manager.has_wire(tile_coord)
+		BuildableResource.BuildLayer.TOOL: return has_removable_at(pos)
 	return false
 
-func place_buildable(world_position: Vector2) -> void:
-	if not is_building or not selected_buildable or not can_build_at(world_position):
-		return
+func has_removable_at(world_pos: Vector2) -> bool:
+	var tile_coord = tile_map.local_to_map(world_pos)
+	return _occupied_mech_tiles.has(tile_coord) or wiring_manager.has_wire(tile_coord)
 
-	var tile_coord = tile_map.local_to_map(world_position)
-	
+func place_buildable(pos: Vector2):
+	if not is_building or not selected_buildable or not can_build_at(pos): return
+	var tile_coord = tile_map.local_to_map(pos)
+
 	match selected_buildable.layer:
-		BuildableResource.BuildLayer.MECH:
-			_place_mech(tile_coord)
-		BuildableResource.BuildLayer.WIRING:
-			_place_wiring(tile_coord)
-
-
-func remove_buildable_at(world_position: Vector2) -> void:
-	if not is_instance_valid(tile_map): return
+		BuildableResource.BuildLayer.MECH: _place_mech(tile_coord)
+		BuildableResource.BuildLayer.WIRING: _place_wiring(tile_coord)
+		BuildableResource.BuildLayer.TOOL: _remove_at_tile(tile_coord)
 	
-	var tile_coord = tile_map.local_to_map(world_position)
+
+func remove_buildable_at(pos: Vector2):
+	_remove_at_tile(tile_map.local_to_map(pos))
+
+func _remove_at_tile(coord: Vector2i):
+	if _occupied_mech_tiles.has(coord):
+		var building = _occupied_mech_tiles[coord]
+		if is_instance_valid(building): building.queue_free()
+		else: _occupied_mech_tiles.erase(coord)
+	elif wiring_manager.has_wire(coord):
+		wiring_manager.remove_wire(coord)
+
+func _place_mech(coord: Vector2i):
+	var snapped_pos = tile_map.map_to_local(coord)
+	var instance = selected_buildable.scene.instantiate()
+	get_tree().current_scene.get_node("Buildings").add_child(instance)
+	instance.global_position = snapped_pos + Vector2(0, -8)
+	if instance.has_method("set_build_rotation"):
+		instance.set_build_rotation(ROTATION_ANIMS[_current_rotation_index])
 	
-	# Priority: Remove mech first, then wiring.
-	if _occupied_mech_tiles.has(tile_coord):
-		var building = _occupied_mech_tiles[tile_coord]
-		if is_instance_valid(building):
-			building.queue_free() # The _on_mech_destroyed callback will handle cleanup.
-		else: # If instance is invalid, clean up dictionary manually.
-			_occupied_mech_tiles.erase(tile_coord)
-		print("Removed mech at ", tile_coord)
-	elif _occupied_wiring_tiles.has(tile_coord):
-		wiring_layer.set_cell(tile_coord, -1) # -1 source_id clears the tile.
-		_occupied_wiring_tiles.erase(tile_coord)
-		print("Removed wiring at ", tile_coord)
+	_occupied_mech_tiles[coord] = instance
+	LaneManager.register_buildable_at_tile(instance, coord)
+	instance.tree_exiting.connect(_on_mech_destroyed.bind(coord))
+
+func _place_wiring(coord: Vector2i):
+	var snapped_pos = tile_map.map_to_local(coord)
+	var instance = selected_buildable.scene.instantiate()
+	get_tree().current_scene.get_node("Wiring").add_child(instance)
+	instance.global_position = snapped_pos + Vector2(0, -8)
+
+	wiring_manager.add_wire(coord, instance)
+	instance.tree_exiting.connect(wiring_manager.remove_wire.bind(coord))
 
 
-func _place_mech(tile_coord: Vector2i):
-	var snapped_position = tile_map.map_to_local(tile_coord)
-	var new_instance = selected_buildable.scene.instantiate()
-	var buildings_container = get_tree().current_scene.get_node("Buildings")
-	buildings_container.add_child(new_instance)
-	new_instance.global_position = snapped_position
-	new_instance.rotation_degrees = build_rotation_degrees # Apply rotation
-	
-	_occupied_mech_tiles[tile_coord] = new_instance
-	new_instance.tree_exiting.connect(_on_mech_destroyed.bind(tile_coord))
-	print("Placed mech '%s' at tile %s" % [selected_buildable.buildable_name, tile_coord])
-
-
-func _place_wiring(tile_coord: Vector2i):
-	wiring_layer.set_cell(
-		tile_coord, 
-		selected_buildable.tile_source_id, 
-		selected_buildable.tile_atlas_coords
-	)
-	_occupied_wiring_tiles[tile_coord] = true # Just mark as occupied.
-	print("Placed wiring '%s' at tile %s" % [selected_buildable.buildable_name, tile_coord])
-
-
-func register_preplaced_building(building_node: Node2D) -> void:
+func register_preplaced_building(node: Node2D):
 	await get_tree().process_frame
-	if not is_instance_valid(tile_map) or not is_instance_valid(building_node): return
+	var coord = tile_map.local_to_map(node.global_position)
+	if not _occupied_mech_tiles.has(coord):
+		_occupied_mech_tiles[coord] = node
+		LaneManager.register_buildable_at_tile(node, coord)
+		node.tree_exiting.connect(_on_mech_destroyed.bind(coord))
 
-	var tile_coord = tile_map.local_to_map(building_node.global_position)
-	if not _occupied_mech_tiles.has(tile_coord):
-		_occupied_mech_tiles[tile_coord] = building_node
-		building_node.tree_exiting.connect(_on_mech_destroyed.bind(tile_coord))
-		print("Pre-placed building '%s' registered at tile %s" % [building_node.name, tile_coord])
+func _on_mech_destroyed(coord: Vector2i):
+	if _occupied_mech_tiles.has(coord):
+		_occupied_mech_tiles.erase(coord)
+		LaneManager.unregister_buildable_at_tile(coord)
 
-func _on_mech_destroyed(tile_coord: Vector2i):
-	if _occupied_mech_tiles.has(tile_coord):
-		_occupied_mech_tiles.erase(tile_coord)
-		print("Mech tile ", tile_coord, " is now free.")
+func get_mech_at(coord: Vector2i) -> Node2D:
+	return _occupied_mech_tiles.get(coord, null)
+

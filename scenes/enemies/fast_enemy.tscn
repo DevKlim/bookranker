@@ -1,9 +1,10 @@
-[gd_scene load_steps=6 format=3 uid="uid://dlp6n5d8b2d7s"]
+[gd_scene load_steps=7 format=3 uid="uid://dlp6n5d8b2d7s"]
 
 [ext_resource type="Script" path="res://scripts/entities/enemy.gd" id="1_17r5i"]
 [ext_resource type="Texture2D" uid="uid://byp23kokc8mnn" path="res://assets/enemies/rb1.png" id="2_2x2m2"]
 [ext_resource type="Script" path="res://scripts/components/health_component.gd" id="3_v6n1s"]
 [ext_resource type="Script" path="res://scripts/components/elemental_component.gd" id="4_v7qkl"]
+[ext_resource type="Script" path="res://scripts/components/attacker_component.gd" id="5_j566p"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_y485j"]
 radius = 4.0
@@ -30,3 +31,8 @@ max_health = 50.0
 
 [node name="ElementalComponent" type="Node" parent="."]
 script = ExtResource("4_v7qkl")
+
+[node name="AttackerComponent" type="Node" parent="."]
+script = ExtResource("5_j566p")
+
+[node name="AttackTimer" type="Timer" parent="AttackerComponent"]

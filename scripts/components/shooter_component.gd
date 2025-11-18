@@ -14,11 +14,11 @@ extends Node
 @export var element: ElementResource
 ## The time delay between shots, in seconds.
 @export var fire_rate: float = 1.0
-
+## Path to the Marker2D node used as the projectile spawn point.
+@export var fire_point_path: NodePath
 
 # A reference to a child Marker2D node that indicates where projectiles should spawn.
-@onready var fire_point: Marker2D = $FirePoint
-
+@onready var fire_point: Marker2D
 # A timer to control the rate of fire.
 @onready var fire_rate_timer: Timer = $FireRateTimer
 
@@ -28,7 +28,9 @@ var _can_shoot: bool = true
 ## Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	assert(projectile_scene, "ShooterComponent: projectile_scene is not set!")
-	assert(fire_point, "ShooterComponent requires a child Marker2D named 'FirePoint'.")
+	assert(fire_point_path, "ShooterComponent: fire_point_path is not set!")
+	fire_point = get_node_or_null(fire_point_path)
+	assert(fire_point, "ShooterComponent: could not find FirePoint node at path: " + str(fire_point_path))
 	assert(fire_rate_timer, "ShooterComponent requires a child Timer named 'FireRateTimer'.")
 
 	# Set up the fire rate timer.
@@ -63,4 +65,4 @@ func shoot_at(target: Node2D, target_lane_id: int) -> void:
 
 ## Called when the fire rate timer finishes, allowing the component to shoot again.
 func _on_fire_rate_timer_timeout() -> void:
-	_can_shoot = true
+	_can_shoot = true

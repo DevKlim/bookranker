@@ -9,3 +9,5 @@ enemy_name = "Fast Robot"
 scene = ExtResource("2_a82q0")
 health = 30.0
 speed = 120.0
+attack_damage = 5.0
+attack_speed = 2.0

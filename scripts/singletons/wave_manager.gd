@@ -6,20 +6,10 @@ signal wave_started(wave_number)
 signal wave_cleared(wave_number)
 
 # References to scene nodes
-var _tile_map: TileMapLayer
 var _enemies_container: Node2D
 
 # This array will be populated by loading all EnemyResource files.
 var _enemy_types: Array[EnemyResource] = []
-
-# Hardcoded tile coordinates for the 5 lanes on the top-right path
-var _lane_definitions: Array[Dictionary] = [
-	{"start": Vector2i(14, -39), "end": Vector2i(-1, -9)},
-	{"start": Vector2i(15, -38), "end": Vector2i(0, -8)},
-	{"start": Vector2i(15, -37), "end": Vector2i(0, -7)},
-	{"start": Vector2i(16, -36), "end": Vector2i(1, -6)},
-	{"start": Vector2i(16, -35), "end": Vector2i(1, -5)},
-]
 
 var wave_number: int = 0
 var enemies_remaining: int = 0
@@ -41,11 +31,8 @@ func _ready() -> void:
 func _initialize() -> void:
 	var main_scene = get_tree().current_scene
 	if main_scene:
-		_tile_map = main_scene.get_node_or_null("TileMapLayer")
 		_enemies_container = main_scene.get_node_or_null("Enemies")
 	
-	if not is_instance_valid(_tile_map):
-		printerr("WaveManager could not find 'TileMapLayer' node.")
 	if not is_instance_valid(_enemies_container):
 		printerr("WaveManager could not find 'Enemies' node.")
 		
@@ -73,8 +60,8 @@ func start_wave() -> void:
 		print("WaveManager: A wave is already in progress.")
 		return
 
-	if _enemy_types.is_empty() or not is_instance_valid(_tile_map):
-		printerr("WaveManager: Cannot start wave. No enemy types loaded or scene setup is incorrect.")
+	if _enemy_types.is_empty():
+		printerr("WaveManager: Cannot start wave. No enemy types loaded.")
 		return
 
 	wave_number += 1
@@ -115,16 +102,18 @@ func _spawn_enemy() -> void:
 	if not enemy_resource or not enemy_resource.scene:
 		printerr("WaveManager: Invalid EnemyResource selected for spawning.")
 		return
-		
-	var lane_index = randi() % _lane_definitions.size()
-	var lane_def = _lane_definitions[lane_index]
-	var start_pos = _tile_map.map_to_local(lane_def.start)
-	var end_pos = _tile_map.map_to_local(lane_def.end)
 	
-	var enemy_instance: CharacterBody2D = enemy_resource.scene.instantiate()
+	if LaneManager.lane_paths.keys().is_empty():
+		printerr("WaveManager: LaneManager has no paths defined. Cannot spawn enemy.")
+		return
+		
+	var lane_id = LaneManager.lane_paths.keys().pick_random()
+	var start_pos = LaneManager.get_lane_start_world_pos(lane_id)
+	
+	var enemy_instance: EnemyUnit = enemy_resource.scene.instantiate()
 	_enemies_container.add_child(enemy_instance)
 	
-	enemy_instance.initialize(enemy_resource, start_pos, end_pos, lane_index)
+	enemy_instance.initialize(enemy_resource, start_pos, lane_id)
 	enemy_instance.died.connect(on_enemy_defeated)
 
 
@@ -134,4 +123,4 @@ func on_enemy_defeated() -> void:
 	if enemies_remaining <= 0 and _spawn_timer.is_stopped():
 		emit_signal("wave_cleared", wave_number)
 		GameManager.current_state = GameManager.GameState.PRE_WAVE
-		print("Wave %d cleared! Ready for next wave." % wave_number)
+		print("Wave %d cleared! Ready for next wave." % wave_number)

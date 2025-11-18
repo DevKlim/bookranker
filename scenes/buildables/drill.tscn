@@ -1,21 +1,58 @@
-[gd_scene load_steps=5 format=3 uid="uid://cy88j2c12qf11"]
+[gd_scene load_steps=7 format=3 uid="uid://cy88j2c12qf11"]
 
-[ext_resource type="Script" uid="uid://cr0o0ofoe0h4a" path="res://scripts/components/power_consumer_component.gd" id="1_vqk5x"]
-[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="2_d1twn"]
-[ext_resource type="Script" uid="uid://but1xovn657cr" path="res://scripts/entities/buildings/drill.gd" id="3_6f7f3"]
+[ext_resource type="Script" path="res://scripts/components/power_consumer_component.gd" id="1_vqk5x"]
+[ext_resource type="Script" path="res://scripts/entities/buildings/drill.gd" id="2_6270s"]
+[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="3_7020s"]
+[ext_resource type="Script" path="res://scripts/components/health_component.gd" id="4_v7w46"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_mdd7b"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_7020s")
+}],
+"loop": true,
+"name": &"idle_down",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_7020s")
+}],
+"loop": true,
+"name": &"idle_left",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_7020s")
+}],
+"loop": true,
+"name": &"idle_right",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_7020s")
+}],
+"loop": true,
+"name": &"idle_up",
+"speed": 5.0
+}]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_7020s"]
 radius = 24.0
 height = 64.0
 
 [node name="Drill" type="StaticBody2D"]
-script = ExtResource("3_6f7f3")
+script = ExtResource("2_6270s")
 powered_color = Color(0.25098, 0.6, 0.290196, 1)
 unpowered_color = Color(0.0627451, 0.15, 0.072549, 1)
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 scale = Vector2(0.5, 0.5)
-texture = ExtResource("2_d1twn")
+sprite_frames = SubResource("SpriteFrames_mdd7b")
+animation = &"idle_down"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CapsuleShape2D_7020s")
@@ -23,3 +60,7 @@ shape = SubResource("CapsuleShape2D_7020s")
 [node name="PowerConsumerComponent" type="Node" parent="."]
 script = ExtResource("1_vqk5x")
 power_consumption = 2.0
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("4_v7w46")
+

@@ -21,4 +21,3 @@ func _on_build_turret_button_pressed() -> void:
 	# else:
 	# 	printerr("BuildTurretButton: turret_scene is not set!")
 	pass
-

@@ -42,4 +42,4 @@ func _on_body_entered(body: Node2D) -> void:
 			ElementManager.apply_element(body, _element)
 		
 		# Projectile is destroyed on impact
-		queue_free()
+		queue_free()

@@ -49,4 +49,3 @@ func end_game(player_won: bool) -> void:
 		# For now, this will close the game. In the future, it could
 		# transition to a Game Over screen.
 		get_tree().quit()
-

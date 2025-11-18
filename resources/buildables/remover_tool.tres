@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BuildableResource" load_steps=4 format=3 uid="uid://cws757w1t0pxt"]
+
+[ext_resource type="Script" uid="uid://qpm1dylmnjld" path="res://scripts/resources/buildable_resource.gd" id="1_4n20r"]
+[ext_resource type="Texture2D" uid="uid://cox5e320xhx4k" path="res://tilesets/tileset.png" id="2_h3q2e"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_remover_icon"]
+atlas = ExtResource("2_h3q2e")
+region = Rect2(96, 32, 32, 32)
+
+[resource]
+script = ExtResource("1_4n20r")
+buildable_name = "Remover"
+icon = SubResource("AtlasTexture_remover_icon")
+layer = 2

@@ -1,25 +1,20 @@
-[gd_scene load_steps=7 format=3 uid="uid://wdsglfb2b83d"]
+[gd_scene load_steps=6 format=3 uid="uid://wdsglfb2b83d"]
 
-[ext_resource type="Script" uid="uid://c7ki8xn44ikr1" path="res://scripts/entities/core.gd" id="1_d8i7k"]
-[ext_resource type="Script" uid="uid://b52oj3bcal4a1" path="res://scripts/components/health_component.gd" id="2_8jts7"]
-[ext_resource type="Texture2D" uid="uid://b6hforp7vuljc" path="res://assets/mechs/core.png" id="2_gmp2s"]
+[ext_resource type="Script" uid="uid://cep2y827y6dan" path="res://scripts/entities/core.gd" id="1_d8i7k"]
+[ext_resource type="Script" uid="uid://duudv3f6u8n6m" path="res://scripts/components/health_component.gd" id="2_8jts7"]
 [ext_resource type="Texture2D" uid="uid://cpyhv22s1c1xt" path="res://assets/mechs/coretop.png" id="2_qapo8"]
-[ext_resource type="Script" uid="uid://b2fkfjaa214cd" path="res://scripts/components/power_provider_component.gd" id="3_x2l5v"]
+[ext_resource type="Script" uid="uid://cgqs7pvpbdrdo" path="res://scripts/components/power_provider_component.gd" id="3_x2l5v"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_qapo8"]
 radius = 68.0294
 
 [node name="Core" type="StaticBody2D"]
+collision_layer = 5
 script = ExtResource("1_d8i7k")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 z_index = 1
 texture = ExtResource("2_qapo8")
-
-[node name="Sprite2D2" type="Sprite2D" parent="."]
-show_behind_parent = true
-z_index = -1
-texture = ExtResource("2_gmp2s")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_qapo8")

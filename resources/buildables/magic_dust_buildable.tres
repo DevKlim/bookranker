@@ -1,12 +1,16 @@
-[gd_resource type="Resource" script_class="BuildableResource" load_steps=3 format=3 uid="uid://cslqfubaf1q6q"]
+[gd_resource type="Resource" script_class="BuildableResource" load_steps=5 format=3 uid="uid://cslqfubaf1q6q"]
 
-[ext_resource type="Script" path="res://scripts/resources/buildable_resource.gd" id="1_w2013"]
-[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="2_a6n2v"]
+[ext_resource type="Script" uid="uid://qpm1dylmnjld" path="res://scripts/resources/buildable_resource.gd" id="1_w2013"]
+[ext_resource type="PackedScene" uid="uid://bc2xlxaqk4xfm" path="res://scenes/wiring/wire.tscn" id="2_scene"]
+[ext_resource type="Texture2D" uid="uid://oqa0umjd63c2" path="res://tilesets/wires.png" id="3_wires"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wire_icon"]
+atlas = ExtResource("3_wires")
+region = Rect2(32, 0, 32, 32)
 
 [resource]
 script = ExtResource("1_w2013")
-buildable_name = "Magic Dust"
-icon = ExtResource("2_a6n2v")
+buildable_name = "Wire"
+icon = SubResource("AtlasTexture_wire_icon")
 layer = 0
-tile_source_id = 0
-tile_atlas_coords = Vector2i(0, 0)
+scene = ExtResource("2_scene")

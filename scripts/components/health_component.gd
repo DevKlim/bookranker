@@ -57,5 +57,3 @@ func heal(heal_amount: float) -> void:
 func set_max_health(new_max: float) -> void:
 	max_health = new_max
 	self.current_health = max_health
-
-
