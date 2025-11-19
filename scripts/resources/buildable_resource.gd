@@ -10,6 +10,7 @@ enum BuildLayer {
 }
 
 @export var buildable_name: String = ""
+@export var description: String = ""
 @export var icon: Texture2D
 @export var layer: BuildLayer = BuildLayer.MECH
 

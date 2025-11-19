@@ -20,7 +20,14 @@ func _ready() -> void:
 		var button = Button.new()
 		button.icon = buildable.icon
 		button.custom_minimum_size = Vector2(64, 64)
-		button.tooltip_text = "%s (%d)" % [buildable.buildable_name, i + 1]
+		button.expand_icon = true
+		button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		
+		var tooltip = "%s (%d)" % [buildable.buildable_name, i + 1]
+		if not buildable.description.is_empty():
+			tooltip += "\n" + buildable.description
+		button.tooltip_text = tooltip
+		
 		button.pressed.connect(_on_button_pressed.bind(buildable))
 		container.add_child(button)
 		_buttons.append(button)

@@ -1,9 +1,10 @@
-[gd_scene load_steps=6 format=3 uid="uid://dpsa8knhxpybo"]
+[gd_scene load_steps=7 format=3 uid="uid://dpsa8knhxpybo"]
 
 [ext_resource type="Script" uid="uid://667ubkyimk3b" path="res://scripts/main.gd" id="1_57xwr"]
 [ext_resource type="PackedScene" uid="uid://wdsglfb2b83d" path="res://scenes/core.tscn" id="2_87q1w"]
-[ext_resource type="Texture2D" uid="uid://b6hforp7vuljc" path="res://assets/mechs/core.png" id="3_tefeu"]
 [ext_resource type="PackedScene" uid="uid://sk4jxbgm5ygn" path="res://scenes/tilemaps/map1.tscn" id="3_tbgi4"]
+[ext_resource type="Texture2D" uid="uid://b6hforp7vuljc" path="res://assets/mechs/core.png" id="3_tefeu"]
+[ext_resource type="TileSet" uid="uid://b8r5k8l4m6oap" path="res://tilesets/ore_tileset.tres" id="4_ore_ts"]
 [ext_resource type="PackedScene" uid="uid://c6o6gqf57o2b3" path="res://scenes/ui/game_ui.tscn" id="5_53nla"]
 
 [node name="Main" type="Node2D"]
@@ -29,14 +30,20 @@ position = Vector2(-0.5, -35.5)
 texture = ExtResource("3_tefeu")
 
 [node name="Buildings" type="Node2D" parent="."]
+modulate = Color(1, 1, 1, 0.7647059)
 z_index = 2
 y_sort_enabled = true
+texture_filter = 1
 
 [node name="Wiring" type="Node2D" parent="."]
 z_index = 1
 y_sort_enabled = true
 
 [node name="TileMapLayer" parent="." instance=ExtResource("3_tbgi4")]
+
+[node name="OreLayer" type="TileMapLayer" parent="."]
+texture_filter = 1
+tile_set = ExtResource("4_ore_ts")
 
 [node name="Projectiles" type="Node2D" parent="."]
 y_sort_enabled = true

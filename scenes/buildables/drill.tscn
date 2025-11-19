@@ -1,15 +1,16 @@
-[gd_scene load_steps=7 format=3 uid="uid://cy88j2c12qf11"]
+[gd_scene load_steps=8 format=3 uid="uid://cy88j2c12qf11"]
 
-[ext_resource type="Script" path="res://scripts/components/power_consumer_component.gd" id="1_vqk5x"]
-[ext_resource type="Script" path="res://scripts/entities/buildings/drill.gd" id="2_6270s"]
+[ext_resource type="Script" uid="uid://ck3jpoivik2fb" path="res://scripts/components/power_consumer_component.gd" id="1_vqk5x"]
+[ext_resource type="Script" uid="uid://dj4thqutyqmh2" path="res://scripts/entities/buildings/drill.gd" id="2_6270s"]
+[ext_resource type="Texture2D" uid="uid://c3hgpubm2kqe3" path="res://assets/buildables/drill.png" id="2_xnkdd"]
 [ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="3_7020s"]
-[ext_resource type="Script" path="res://scripts/components/health_component.gd" id="4_v7w46"]
+[ext_resource type="Script" uid="uid://duudv3f6u8n6m" path="res://scripts/components/health_component.gd" id="4_v7w46"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_mdd7b"]
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("3_7020s")
+"texture": ExtResource("2_xnkdd")
 }],
 "loop": true,
 "name": &"idle_down",
@@ -40,22 +41,20 @@ animations = [{
 "speed": 5.0
 }]
 
-[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_7020s"]
-radius = 24.0
-height = 64.0
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_drill"]
+size = Vector2(32, 32)
 
 [node name="Drill" type="StaticBody2D"]
 script = ExtResource("2_6270s")
-powered_color = Color(0.25098, 0.6, 0.290196, 1)
-unpowered_color = Color(0.0627451, 0.15, 0.072549, 1)
+unpowered_color = Color(1, 1, 1, 1)
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-scale = Vector2(0.5, 0.5)
+texture_filter = 1
 sprite_frames = SubResource("SpriteFrames_mdd7b")
 animation = &"idle_down"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-shape = SubResource("CapsuleShape2D_7020s")
+shape = SubResource("RectangleShape2D_drill")
 
 [node name="PowerConsumerComponent" type="Node" parent="."]
 script = ExtResource("1_vqk5x")
@@ -63,4 +62,3 @@ power_consumption = 2.0
 
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("4_v7w46")
-

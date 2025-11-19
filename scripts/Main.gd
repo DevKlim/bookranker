@@ -4,6 +4,9 @@ extends Node2D
 ## movement and building, and sets up the initial game environment.
 
 @export var camera_speed: float = 500.0
+@export var zoom_step: float = 0.5
+@export var min_zoom: float = 1.0
+@export var max_zoom: float = 6.0
 
 @onready var camera: Camera2D = $Camera2D
 @onready var build_preview: AnimatedSprite2D = $BuildPreview
@@ -28,26 +31,52 @@ func _process(delta: float) -> void:
 	
 	if BuildManager.is_building:
 		update_build_preview()
-		if Input.is_action_pressed("build_place"):
-			if not _is_mouse_over_ui():
-				BuildManager.place_buildable(get_global_mouse_position())
+		
+		var buildable = BuildManager.selected_buildable
+		if not buildable: return
+
+		# --- CORRECTED LOGIC ---
+		# Check if the selected item is a tool (like the remover).
+		if buildable.layer == BuildableResource.BuildLayer.TOOL:
+			# Tools should only activate once per click.
+			if Input.is_action_just_pressed("build_place"):
+				if not _is_mouse_over_ui():
+					BuildManager.place_buildable(get_global_mouse_position())
+		else:
+			# Placing actual buildings/wires can be held down.
+			if Input.is_action_pressed("build_place"):
+				if not _is_mouse_over_ui():
+					BuildManager.place_buildable(get_global_mouse_position())
 
 
 func _input(event: InputEvent) -> void:
 	if get_viewport().is_input_handled():
 		return
 
-	if BuildManager.is_building:
-		if event.is_action_pressed("build_cancel"):
+	# Handle Zoom
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
+			var target_zoom = camera.zoom + Vector2(zoom_step, zoom_step)
+			camera.zoom = target_zoom.clamp(Vector2(min_zoom, min_zoom), Vector2(max_zoom, max_zoom))
+		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
+			var target_zoom = camera.zoom - Vector2(zoom_step, zoom_step)
+			camera.zoom = target_zoom.clamp(Vector2(min_zoom, min_zoom), Vector2(max_zoom, max_zoom))
+
+	# Handle right-click ("build_cancel") for deleting or canceling build mode. This is single-click.
+	if Input.is_action_just_pressed("build_cancel"):
+		var mouse_pos = get_global_mouse_position()
+		# If the mouse is over something that can be removed, remove it.
+		if BuildManager.has_removable_at(mouse_pos) and not _is_mouse_over_ui():
+			BuildManager.remove_buildable_at(mouse_pos)
+		# Otherwise, if in build mode, exit build mode.
+		elif BuildManager.is_building:
 			BuildManager.exit_build_mode()
-			get_viewport().set_input_as_handled()
-		elif event.is_action_pressed("build_rotate"):
-			BuildManager.rotate_buildable()
-			get_viewport().set_input_as_handled()
-	else: 
-		if event.is_action_pressed("build_cancel"):
-			BuildManager.remove_buildable_at(get_global_mouse_position())
-			get_viewport().set_input_as_handled()
+		get_viewport().set_input_as_handled()
+
+	# Handle build-mode specific actions (that aren't cancel/delete). This is single-click.
+	elif BuildManager.is_building and Input.is_action_just_pressed("build_rotate"):
+		BuildManager.rotate_buildable()
+		get_viewport().set_input_as_handled()
 
 
 func handle_camera_movement(delta: float) -> void:
@@ -86,8 +115,24 @@ func _on_build_state_changed(_arg = null) -> void:
 			temp_instance.queue_free()
 		# For tools like the remover that don't have a scene
 		elif buildable.layer == BuildableResource.BuildLayer.TOOL:
-			build_preview.sprite_frames = null
-			build_preview.texture = buildable.icon
+			var frames = build_preview.sprite_frames
+			if not frames or not frames is SpriteFrames:
+				frames = SpriteFrames.new()
+				build_preview.sprite_frames = frames
+			
+			# Ensure we only have the 'default' animation for the tool
+			for anim in frames.get_animation_names():
+				if anim != &"default":
+					frames.remove_animation(anim)
+			
+			if not frames.has_animation(&"default"):
+				frames.add_animation(&"default")
+			
+			frames.clear(&"default")
+			if buildable.icon:
+				frames.add_frame(&"default", buildable.icon)
+
+			build_preview.play(&"default")
 			build_preview.visible = true
 
 	var in_wire_mode = BuildManager.is_building and BuildManager.selected_buildable and \

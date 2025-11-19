@@ -25,11 +25,6 @@ func _ready() -> void:
 	# and so enemies recognize it as a blocking entity.
 	BuildManager.register_preplaced_building(self)
 	
-	# Register the Core's tile as a power source for the wiring network.
-	await get_tree().process_frame # Wait a frame for managers to be ready
-	var tile_coord = LaneManager.tile_map.local_to_map(self.global_position)
-	WiringManager.add_power_source(tile_coord)
-	
 	# Log initial status for debugging.
 	print("Core is operational. Initial health: %d" % health_component.current_health)
 	print("Core power output: %d" % power_provider_component.power_generation)

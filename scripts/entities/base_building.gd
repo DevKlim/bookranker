@@ -22,15 +22,11 @@ func _get_main_sprite() -> AnimatedSprite2D:
 func _ready() -> void:
 	assert(power_consumer, "%s is missing PowerConsumerComponent!" % self.name)
 	assert(health_component, "%s is missing HealthComponent!" % self.name)
-	assert(_get_main_sprite(), "%s is missing an AnimatedSprite2D node!" % self.name)
 	
 	PowerGridManager.register_consumer(power_consumer)
 	health_component.died.connect(_on_died)
 	
-	# Set initial unpowered state visuals
 	_on_power_status_changed(false)
-
-	# Set default animation state
 	set_build_rotation(&"idle_down")
 
 
@@ -76,3 +72,27 @@ func get_sprite_frames() -> SpriteFrames:
 
 func _on_died(_node):
 	queue_free()
+
+## Helper to find the building adjacent in a specific direction.
+func get_neighbor(dir: Direction) -> Node2D:
+	var tile_coord = LaneManager.tile_map.local_to_map(global_position)
+	var log_coord = LaneManager.get_logical_from_tile(tile_coord)
+	if log_coord == Vector2i(-1, -1): return null
+	
+	var target_log = log_coord
+	
+	# Directions mapped to logical grid changes:
+	# DOWN (Depth - 1), LEFT (Lane + 1), UP (Depth + 1), RIGHT (Lane - 1)
+	match dir:
+		Direction.DOWN: target_log += Vector2i(0, -1)
+		Direction.LEFT: target_log += Vector2i(1, 0)
+		Direction.UP: target_log += Vector2i(0, 1)
+		Direction.RIGHT: target_log += Vector2i(-1, 0)
+	
+	var target_tile = LaneManager.get_tile_from_logical(target_log.x, target_log.y)
+	return LaneManager.get_buildable_at(target_tile)
+
+## Interface for buildings to accept items (e.g. from conveyors).
+## Returns true if item was accepted.
+func receive_item(item: ItemResource) -> bool:
+	return false

@@ -2,11 +2,11 @@
 
 [ext_resource type="Script" path="res://scripts/resources/buildable_resource.gd" id="1_45dgd"]
 [ext_resource type="PackedScene" uid="uid://dgq6002f2l2e7" path="res://scenes/buildables/fire_turret.tscn" id="2_4k57n"]
-[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="3_61q8q"]
+[ext_resource type="Texture2D" uid="uid://c54ilxu65w6w8" path="res://assets/buildables/turret.png" id="3_turret_icon"]
 
 [resource]
 script = ExtResource("1_45dgd")
 buildable_name = "Fire Turret"
-icon = ExtResource("3_61q8q")
+icon = ExtResource("3_turret_icon")
 layer = 1
 scene = ExtResource("2_4k57n")

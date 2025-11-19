@@ -10,5 +10,6 @@ region = Rect2(96, 32, 32, 32)
 [resource]
 script = ExtResource("1_4n20r")
 buildable_name = "Remover"
+description = "Removes placed buildings and wiring."
 icon = SubResource("AtlasTexture_remover_icon")
 layer = 2

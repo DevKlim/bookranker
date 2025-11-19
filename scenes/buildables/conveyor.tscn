@@ -51,6 +51,7 @@ script = ExtResource("2_h2q3s")
 unpowered_color = Color(1, 1, 1, 1)
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
 sprite_frames = SubResource("SpriteFrames_yklqg")
 animation = &"idle_down"
 

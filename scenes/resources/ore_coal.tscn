@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3 uid="uid://5j540tx7xxdk"]
+
+[ext_resource type="PackedScene" uid="uid://b6x8p2q7r5s1t" path="res://scenes/resources/resource_deposit.tscn" id="1_base"]
+[ext_resource type="Texture2D" uid="uid://beh3i36atxk2m" path="res://assets/ores/coal.png" id="2_0lmfe"]
+
+[node name="OreCoal" instance=ExtResource("1_base")]
+z_index = -1
+
+[node name="Sprite2D" parent="." index="0"]
+texture_filter = 1
+texture = ExtResource("2_0lmfe")

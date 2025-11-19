@@ -23,6 +23,7 @@ var tile_map: TileMapLayer
 var _occupied_mech_tiles: Dictionary = {}
 
 @onready var wiring_manager = get_node("/root/WiringManager")
+@onready var lane_manager = get_node("/root/LaneManager")
 
 func _ready():
 	call_deferred("_initialize_tilemaps")
@@ -51,7 +52,10 @@ func rotate_buildable():
 func can_build_at(pos: Vector2) -> bool:
 	if not selected_buildable: return false
 	var tile_coord = tile_map.local_to_map(pos)
-	if tile_map.get_cell_source_id(tile_coord) == -1: return false
+	
+	# Enforce boundaries: Cannot build outside the valid logical coordinate array
+	if not lane_manager.is_valid_tile(tile_coord):
+		return false
 
 	match selected_buildable.layer:
 		BuildableResource.BuildLayer.MECH: return not _occupied_mech_tiles.has(tile_coord)
@@ -61,6 +65,8 @@ func can_build_at(pos: Vector2) -> bool:
 
 func has_removable_at(world_pos: Vector2) -> bool:
 	var tile_coord = tile_map.local_to_map(world_pos)
+	if not lane_manager.is_valid_tile(tile_coord):
+		return false
 	return _occupied_mech_tiles.has(tile_coord) or wiring_manager.has_wire(tile_coord)
 
 func place_buildable(pos: Vector2):
@@ -77,12 +83,22 @@ func remove_buildable_at(pos: Vector2):
 	_remove_at_tile(tile_map.local_to_map(pos))
 
 func _remove_at_tile(coord: Vector2i):
+	# This function uses an if/elif structure to ensure only one item is
+	# removed per click, prioritizing the building on the MECH layer.
+
+	# First, check if there is a building on the tile.
 	if _occupied_mech_tiles.has(coord):
 		var building = _occupied_mech_tiles[coord]
-		if is_instance_valid(building): building.queue_free()
-		else: _occupied_mech_tiles.erase(coord)
+		if is_instance_valid(building):
+			building.queue_free()
+		# The function will exit here. It will NOT proceed to the 'elif' block below.
+		# The wire underneath will remain untouched until the next click.
+
+	# Only if there was NO building, check if there is a wire on the tile.
 	elif wiring_manager.has_wire(coord):
-		wiring_manager.remove_wire(coord)
+		var wire = wiring_manager.get_wire_instance(coord)
+		if is_instance_valid(wire):
+			wire.queue_free()
 
 func _place_mech(coord: Vector2i):
 	var snapped_pos = tile_map.map_to_local(coord)
@@ -121,4 +137,3 @@ func _on_mech_destroyed(coord: Vector2i):
 
 func get_mech_at(coord: Vector2i) -> Node2D:
 	return _occupied_mech_tiles.get(coord, null)
-
