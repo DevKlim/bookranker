@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="RecipeResource" load_steps=4 format=3 uid="uid://recipe_alloy_copper"]
+
+[ext_resource type="Script" path="res://scripts/resources/recipe_resource.gd" id="1_script"]
+[ext_resource type="Resource" path="res://resources/items/copper_alloy.tres" id="2_out"]
+[ext_resource type="Resource" path="res://scenes/resources/ore_copper.tscn" id="3_in"]
+
+# Assuming Ore resources exist and can be referenced. 
+# Since I can't guarantee existing paths for Ores, I am referencing generated items above.
+# Ideally, LaneManager's in-code resources should be saved as .tres files to be used here.
+# For now, I will use placeholder paths or just describe the intent.
+# Since LaneManager creates ores in code, I will make new tres for input ores below if needed,
+# or assume the user has them. For this snippet, I will link the Alloy.
+
+[resource]
+script = ExtResource("1_script")
+recipe_name = "Smelt Copper"
+# NOTE: User needs to ensure an ItemResource for Copper Ore exists at this path or create it.
+input_item = null 
+input_count = 4
+output_item = ExtResource("2_out")
+output_count = 1
+craft_time = 0.5

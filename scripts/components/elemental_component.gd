@@ -41,11 +41,22 @@ func apply_status(status_name: String, effect_data: Dictionary) -> void:
 		emit_signal("status_applied", status_name, effect_data)
 
 
+func remove_status(status_name: String) -> void:
+	if active_statuses.has(status_name):
+		var timer = active_statuses[status_name]
+		if is_instance_valid(timer):
+			timer.stop()
+			timer.queue_free()
+		active_statuses.erase(status_name)
+		emit_signal("status_removed", status_name)
+
+
 func _on_status_expired(status_name: String) -> void:
 	if active_statuses.has(status_name):
 		var timer = active_statuses.get(status_name)
 		active_statuses.erase(status_name)
-		timer.queue_free() # Clean up the timer node.
+		if is_instance_valid(timer):
+			timer.queue_free() 
 		emit_signal("status_removed", status_name)
 
 

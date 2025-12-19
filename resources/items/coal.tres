@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemResource" load_steps=4 format=3 uid="uid://b75xn06gl1i57"]
+
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://beh3i36atxk2m" path="res://assets/ores/coal.png" id="2_bdclq"]
+[ext_resource type="Resource" uid="uid://cx6i1c81y3gwe" path="res://resources/elements/fire.tres" id="3_elem"]
+
+[resource]
+script = ExtResource("1_script")
+item_name = "Coal"
+icon = ExtResource("2_bdclq")
+element = ExtResource("3_elem")

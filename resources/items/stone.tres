@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemResource" load_steps=3 format=3 uid="uid://f2yu5yfckp4d"]
+
+[ext_resource type="Texture2D" uid="uid://clpbo5uqegsea" path="res://assets/ores/iron.png" id="1_q1oyt"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+item_name = "Stone"
+icon = ExtResource("1_q1oyt")
+color = Color(0.5, 0.5, 0.5, 1)
+damage = 5.0

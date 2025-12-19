@@ -1,27 +1,52 @@
 extends Node
 
-## Manages all lane data, including paths, buildables, coordinate transformations, AND RESOURCES.
+## Manages all lane data, grid state, and resource mappings.
+## Acts as the central Grid Authority.
 
 @export_range(0.0, 1.0) var ore_rarity: float = 0.12
+
+# Generation offset determines logical grid placement in the physical world.
 @export var generation_offset: Vector2i = Vector2i(0, 0)
+
+@export_group("Visual Corrections (Logical Units)")
+## Visual offset for the Ore TileMapLayer.
+## X = Lane Shift (Width), Y = Depth Shift (Length).
+## Default (0,0) now maps to the legacy (1,1) position internally.
+@export var ore_offset: Vector2 = Vector2(0, 0)
+
+## Visual offset for Wiring entities.
+## X = Lane Shift (Width), Y = Depth Shift (Length).
+## Default (0,0) maps to the internal base offset (0.5, 0.5) for tile centering.
+@export var wire_offset: Vector2 = Vector2(0, 0)
+
+## Visual offset for Building entities.
+## X = Lane Shift (Width), Y = Depth Shift (Length).
+@export var building_offset: Vector2 = Vector2(0, 0)
+
+# Layer Z-Indices (Base values)
+const Z_LAYERS = {
+	"ore": 0,
+	"wire": 1,
+	"building": 5, 
+	"projectile": 20
+}
 
 var tile_map: TileMapLayer
 var ore_layer: TileMapLayer
 
 var lane_paths: Dictionary = {}
-var _tile_to_buildable_map: Dictionary = {}
+var grid_state: Dictionary = {}
 var _tile_to_logical_map: Dictionary = {}
 
-# Ore Grid Storage
-# Maps tile coordinates to the specific Ore ItemResource (excluding Stone/Base tile)
-var _ore_data: Dictionary = {} # { Vector2i: ItemResource }
-
-# Resource Registry
-var ores: Dictionary = {} # { "name": ItemResource }
-var ore_atlas_coords: Dictionary = {} # { "name": Vector2i }
+var ores: Dictionary = {} 
+var ore_tile_data: Dictionary = {} 
 
 const NUM_LANES = 5
 const LANE_LENGTH = 30
+
+# Cache for basis vectors to avoid recalculating every frame
+var _lane_basis_vec: Vector2 = Vector2.ZERO
+var _depth_basis_vec: Vector2 = Vector2.ZERO
 
 func _ready() -> void:
 	print("LaneManager Initialized.")
@@ -29,51 +54,45 @@ func _ready() -> void:
 	call_deferred("_initialize")
 
 func _initialize_resources() -> void:
-	var basic_icon = preload("res://icon.svg") # Placeholder icon
-	
-	# Elements
-	var fire_elem = preload("res://resources/elements/fire.tres")
-	
-	var stone = ItemResource.new()
-	stone.item_name = "Stone"
-	stone.icon = basic_icon
-	stone.color = Color.GRAY
-	stone.damage = 5.0
-	ores["Stone"] = stone
-	
-	var iron = ItemResource.new()
-	iron.item_name = "Iron"
-	iron.icon = basic_icon
-	iron.color = Color.SILVER
-	iron.damage = 15.0
-	ores["Iron"] = iron
-	ore_atlas_coords["Iron"] = Vector2i(0, 0)
-	
-	var coal = ItemResource.new()
-	coal.item_name = "Coal"
-	coal.icon = basic_icon
-	coal.color = Color.BLACK
-	coal.element = fire_elem
-	coal.damage = 10.0
-	ores["Coal"] = coal
-	ore_atlas_coords["Coal"] = Vector2i(1, 0)
-	
-	var copper = ItemResource.new()
-	copper.item_name = "Copper"
-	copper.icon = basic_icon
-	copper.color = Color(0.72, 0.45, 0.2) # Copper color
-	copper.damage = 12.0
-	ores["Copper"] = copper
-	ore_atlas_coords["Copper"] = Vector2i(2, 0)
-	
-	var lux = ItemResource.new()
-	lux.item_name = "Lux Ore"
-	lux.icon = basic_icon
-	lux.color = Color.CYAN
-	lux.damage = 25.0
-	ores["Lux"] = lux
-	ore_atlas_coords["Lux"] = Vector2i(3, 0)
+	var load_item = func(p_name: String, path: String, default_dmg: float, color: Color) -> ItemResource:
+		var item: ItemResource
+		if ResourceLoader.exists(path):
+			item = load(path)
+		else:
+			item = ItemResource.new()
+			item.item_name = p_name
+			item.damage = default_dmg
+			item.color = color
+		
+		if not item.icon:
+			var icon_path = "res://assets/ores/%s.png" % p_name.to_lower()
+			if ResourceLoader.exists(icon_path):
+				item.icon = load(icon_path)
+			else:
+				item.icon = load("res://icon.svg")
+		return item
 
+	ores["Stone"] = load_item.call("Stone", "res://resources/items/stone.tres", 5.0, Color.WHITE)
+	
+	# Assuming Alphabetical Order in the Atlas (Coal, Copper, Gold, Iron, Lux, Petroleum)
+	
+	ores["Coal"] = load_item.call("Coal", "res://resources/items/coal.tres", 10.0, Color.WHITE)
+	ore_tile_data["Coal"] = { "source": 0, "coords": Vector2i(0, 0) }
+	
+	ores["Copper"] = load_item.call("Copper", "res://resources/items/copper.tres", 12.0, Color.WHITE)
+	ore_tile_data["Copper"] = { "source": 0, "coords": Vector2i(1, 0) }
+
+	ores["Gold"] = load_item.call("Gold", "res://resources/items/gold.tres", 20.0, Color.WHITE)
+	ore_tile_data["Gold"] = { "source": 0, "coords": Vector2i(2, 0) }
+	
+	ores["Iron"] = load_item.call("Iron", "res://resources/items/iron.tres", 15.0, Color.WHITE)
+	ore_tile_data["Iron"] = { "source": 0, "coords": Vector2i(3, 0) }
+	
+	ores["Lux"] = load_item.call("Lux", "res://resources/items/lux.tres", 25.0, Color.WHITE)
+	ore_tile_data["Lux"] = { "source": 0, "coords": Vector2i(4, 0) }
+
+	ores["Petroleum"] = load_item.call("Petroleum", "res://resources/items/petroleum.tres", 8.0, Color.WHITE)
+	ore_tile_data["Petroleum"] = { "source": 0, "coords": Vector2i(5, 0) }
 
 func _initialize() -> void:
 	var main_scene = get_tree().current_scene
@@ -84,12 +103,42 @@ func _initialize() -> void:
 	if not is_instance_valid(tile_map):
 		printerr("LaneManager could not find TileMapLayer!")
 		return
-	if not is_instance_valid(ore_layer):
-		printerr("LaneManager could not find OreLayer!")
+	
+	_calculate_basis_vectors()
+	
+	# Apply visual correction to the OreLayer node itself
+	if is_instance_valid(ore_layer):
+		ore_layer.position = get_layer_offset("ore")
 	
 	_generate_lane_data()
 	_generate_ores()
-	print("LaneManager: Lane paths, logical mappings, and ores generated.")
+	print("LaneManager: Grid initialized.")
+
+func _calculate_basis_vectors() -> void:
+	if not is_instance_valid(tile_map): return
+	
+	# To determine the visual direction of "Lane" (X) and "Depth" (Y),
+	# we sample the physical layout of the grid generator.
+	
+	# Origin (Lane 0, Depth 0)
+	var t0 = _calculate_physical_coord(0, 0)
+	var p0 = tile_map.map_to_local(t0)
+	
+	# Lane Step (Lane 1, Depth 0)
+	var t_lane = _calculate_physical_coord(1, 0)
+	var p_lane = tile_map.map_to_local(t_lane)
+	
+	# Depth Step (Lane 0, Depth 1)
+	var t_depth = _calculate_physical_coord(0, 1)
+	var p_depth = tile_map.map_to_local(t_depth)
+	
+	_lane_basis_vec = p_lane - p0
+	_depth_basis_vec = p_depth - p0
+	
+	print("LaneManager Basis Vectors Calculated:")
+	print("  T0 (0,0): %s -> %s" % [t0, p0])
+	print("  Lane (X) Vector: ", _lane_basis_vec)
+	print("  Depth (Y) Vector: ", _depth_basis_vec)
 
 func _generate_lane_data() -> void:
 	_tile_to_logical_map.clear()
@@ -97,16 +146,15 @@ func _generate_lane_data() -> void:
 
 	for lane_id in range(NUM_LANES):
 		var physical_path: Array[Vector2i] = []
-		
 		for depth in range(LANE_LENGTH):
 			var tile = _calculate_physical_coord(lane_id, depth)
 			physical_path.append(tile)
 		
-		lane_paths[lane_id] = physical_path
-
-		for depth in range(LANE_LENGTH):
-			var tile_coord = physical_path[depth]
-			_tile_to_logical_map[tile_coord] = Vector2i(lane_id, depth)
+		if not physical_path.is_empty():
+			lane_paths[lane_id] = physical_path
+			for i in range(physical_path.size()):
+				var tile_coord = physical_path[i]
+				_tile_to_logical_map[tile_coord] = Vector2i(lane_id, i)
 
 func _calculate_physical_coord(lane_id: int, depth: int) -> Vector2i:
 	var start_y = -(7 + lane_id) + generation_offset.y
@@ -125,88 +173,150 @@ func _calculate_physical_coord(lane_id: int, depth: int) -> Vector2i:
 func _generate_ores() -> void:
 	if not is_instance_valid(ore_layer): return
 	
-	_ore_data.clear()
+	for coord in grid_state.keys():
+		if grid_state[coord].has("ore"):
+			grid_state[coord].erase("ore")
 	ore_layer.clear()
 	
-	var available_ores = ore_atlas_coords.keys()
+	var available_keys = ore_tile_data.keys()
 	
-	# Ore Generation Range:
-	# Lane: 1 to 5 (Include lane 5, Exclude lane 0) - Adjusted per request to swap direction.
-	# Depth: -1 to 29 (Include boundary -1)
-	for lane in range(1, 6):
+	# Calculate visual offset for data storage logic
+	# We start with the full render offset (including the +1,1 shift)
+	var render_offset = get_layer_offset("ore")
+	# We calculate the vector corresponding to the (1,1) logical shift
+	var shift_correction = (_lane_basis_vec * 1.0) + (_depth_basis_vec * 1.0)
+	# We subtract it, because the user reports data is 1 unit "higher" than visual
+	var data_offset = render_offset - shift_correction
+	
+	for lane in range(NUM_LANES):
 		for depth in range(-1, LANE_LENGTH):
 			if randf() < ore_rarity:
 				var tile_coord = _calculate_physical_coord(lane, depth)
-				var key = available_ores.pick_random()
-				add_ore_at(tile_coord, key)
+				if tile_map.get_cell_source_id(tile_coord) != -1:
+					var key = available_keys.pick_random()
+					
+					# Determine Visual Tile for Data Storage
+					# Use the corrected data_offset to align grid_state with visual appearance
+					var visual_pos = tile_map.map_to_local(tile_coord) + data_offset
+					var visual_tile = tile_map.local_to_map(visual_pos)
+					
+					add_ore_at(tile_coord, visual_tile, key)
 
-func add_ore_at(tile_coord: Vector2i, ore_key: String) -> void:
-	# Only check dictionary if within valid item keys
-	if not ores.has(ore_key): return
-	
-	# 1. Map Data
-	_ore_data[tile_coord] = ores[ore_key]
-	
-	# 2. Set Tile on OreLayer
-	if is_instance_valid(ore_layer) and ore_atlas_coords.has(ore_key):
-		var atlas_coord = ore_atlas_coords[ore_key]
-		# Source ID 0 is assumed to be the atlas source in ore_tileset.tres
-		ore_layer.set_cell(tile_coord, 0, atlas_coord)
+func register_entity(entity: Node, coord: Vector2i, layer: String) -> void:
+	if not grid_state.has(coord):
+		grid_state[coord] = {}
+	grid_state[coord][layer] = entity
 
-func remove_ore_at(tile_coord: Vector2i) -> void:
-	if _ore_data.has(tile_coord):
-		_ore_data.erase(tile_coord)
-	
-	if is_instance_valid(ore_layer):
-		ore_layer.set_cell(tile_coord, -1) # Remove tile
+func log_placement(entity: Node, coord: Vector2i, layer: String) -> void:
+	if not entity is Node2D: return
+	var logical = get_logical_from_tile(coord)
+	var world_pos = entity.global_position
+	var z_val = entity.z_index
+	var log_str = "N/A"
+	if logical != Vector2i(-1, -1):
+		log_str = "[L:%d, D:%d]" % [logical.x, logical.y]
+	print("GRID_PLACE: %s (%s) | Tile: %s | Logical: %s | Global: (%.1f, %.1f) | Z: %d" % 
+		[entity.name, layer, coord, log_str, world_pos.x, world_pos.y, z_val])
 
-func get_ore_at(tile_coord: Vector2i) -> ItemResource:
-	# 1. If a specific ore deposit exists (e.g. Coal, Iron), return it.
-	if _ore_data.has(tile_coord):
-		return _ore_data[tile_coord]
-	
-	# 2. Fallback: If it's a valid tile in the lane system, it yields Stone by default.
-	if _tile_to_logical_map.has(tile_coord):
-		return ores.get("Stone")
-		
+func unregister_entity(coord: Vector2i, layer: String) -> void:
+	if grid_state.has(coord) and grid_state[coord].has(layer):
+		grid_state[coord].erase(layer)
+		if grid_state[coord].is_empty():
+			grid_state.erase(coord)
+
+func get_entity_at(coord: Vector2i, layer: String) -> Node:
+	if grid_state.has(coord) and grid_state[coord].has(layer):
+		return grid_state[coord][layer]
 	return null
 
+# --- Coordinate Helpers (Adjusted for Visual Correction) ---
 
-func get_tile_from_logical(lane_id: int, depth: int) -> Vector2i:
-	if not lane_paths.has(lane_id):
-		return Vector2i(-1, -1)
-	var path = lane_paths[lane_id]
-	if depth >= 0 and depth < path.size():
-		return path[depth]
-	return Vector2i(-1, -1)
+## Returns the pixel offset based on logical grid basis vectors.
+func get_layer_offset(layer: String) -> Vector2:
+	if not is_instance_valid(tile_map): return Vector2.ZERO
+	if _lane_basis_vec == Vector2.ZERO: _calculate_basis_vectors()
+	
+	var logical_offset = Vector2.ZERO
+	match layer:
+		# BASE CORRECTION: (1, 1) is added to ore_offset to make (0,0) the new default that matches old behavior
+		"ore": logical_offset = ore_offset + Vector2(1, 1)
+		# BASE CORRECTION: (0.5, 0.5) is added to wire_offset to make (0,0) the new default
+		"wire": logical_offset = wire_offset + Vector2(0.5, 0.5)
+		"building": logical_offset = building_offset
+	
+	# Apply basis vectors: x -> lane, y -> depth
+	return (_lane_basis_vec * logical_offset.x) + (_depth_basis_vec * logical_offset.y)
 
-func get_logical_from_tile(tile_coord: Vector2i) -> Vector2i:
-	return _tile_to_logical_map.get(tile_coord, Vector2i(-1, -1))
+func tile_to_world(coord: Vector2i) -> Vector2:
+	if is_instance_valid(tile_map):
+		return tile_map.map_to_local(coord)
+	return Vector2.ZERO
+
+func world_to_tile(pos: Vector2) -> Vector2i:
+	if is_instance_valid(tile_map):
+		return tile_map.local_to_map(pos)
+	return Vector2i.ZERO
+
+func snap_node_to_grid(node: Node2D, layer: String) -> void:
+	# Calculate tile based on raw position relative to grid
+	# (Input pos assumed to be visual, so we subtract offset to find grid home)
+	var offset = get_layer_offset(layer)
+	var tile = world_to_tile(node.global_position - offset)
+	
+	# Get center of that tile
+	var centered_pos = tile_to_world(tile)
+	
+	# Apply offset back for visual position
+	node.global_position = centered_pos + offset
+	
+	if Z_LAYERS.has(layer):
+		node.z_index = Z_LAYERS[layer]
+
+# --- Resource Management ---
+
+func add_ore_at(source_tile: Vector2i, visual_tile: Vector2i, ore_key: String) -> void:
+	if not ores.has(ore_key): return
+	
+	# Store data at Visual Tile (where the player sees it, and where Drills look)
+	if not grid_state.has(visual_tile): grid_state[visual_tile] = {}
+	grid_state[visual_tile]["ore"] = ores[ore_key]
+	
+	# Render at Source Tile (because OreLayer position is shifted)
+	if is_instance_valid(ore_layer) and ore_tile_data.has(ore_key):
+		var data = ore_tile_data[ore_key]
+		ore_layer.set_cell(source_tile, data.source, data.coords)
+
+func get_ore_at(tile_coord: Vector2i) -> ItemResource:
+	if grid_state.has(tile_coord) and grid_state[tile_coord].has("ore"):
+		return grid_state[tile_coord]["ore"]
+	return null
+
+func get_ore_at_world_pos(world_pos: Vector2) -> ItemResource:
+	# No offset subtraction! 
+	# Data is now stored at the visual tile index directly.
+	var tile = world_to_tile(world_pos)
+	return get_ore_at(tile)
 
 func is_valid_tile(tile_coord: Vector2i) -> bool:
 	return _tile_to_logical_map.has(tile_coord)
 
-func register_buildable_at_tile(buildable: Node2D, tile_coord: Vector2i):
-	_tile_to_buildable_map[tile_coord] = buildable
+func get_logical_from_tile(tile_coord: Vector2i) -> Vector2i:
+	return _tile_to_logical_map.get(tile_coord, Vector2i(-1, -1))
 
-func unregister_buildable_at_tile(tile_coord: Vector2i):
-	if _tile_to_buildable_map.has(tile_coord):
-		_tile_to_buildable_map.erase(tile_coord)
+func get_tile_from_logical(lane_id: int, depth: int) -> Vector2i:
+	if not lane_paths.has(lane_id): return Vector2i(-1, -1)
+	if depth >= 0 and depth < lane_paths[lane_id].size():
+		return lane_paths[lane_id][depth]
+	return Vector2i(-1, -1)
 
-func get_buildable_at(tile_coord: Vector2i) -> Node2D:
-	return _tile_to_buildable_map.get(tile_coord, null)
-
-func get_path_for_lane(lane_id: int) -> Array:
-	return lane_paths.get(lane_id, [])
+func get_buildable_at(coord: Vector2i) -> Node:
+	return get_entity_at(coord, "building")
 
 func get_lane_start_world_pos(lane_id: int) -> Vector2:
-	if not tile_map: return Vector2.ZERO
-	if lane_paths.has(lane_id) and not lane_paths[lane_id].is_empty():
-		return tile_map.map_to_local(lane_paths[lane_id][-1])
-	return Vector2.ZERO
+	if not lane_paths.has(lane_id) or lane_paths[lane_id].is_empty(): return Vector2.ZERO
+	# Apply building offset so enemies spawn aligned with buildings
+	return tile_to_world(lane_paths[lane_id][-1]) + get_layer_offset("building")
 
 func get_lane_end_world_pos(lane_id: int) -> Vector2:
-	if not tile_map: return Vector2.ZERO
-	if lane_paths.has(lane_id) and not lane_paths[lane_id].is_empty():
-		return tile_map.map_to_local(lane_paths[lane_id][0])
-	return Vector2.ZERO
+	if not lane_paths.has(lane_id) or lane_paths[lane_id].is_empty(): return Vector2.ZERO
+	return tile_to_world(lane_paths[lane_id][0]) + get_layer_offset("building")

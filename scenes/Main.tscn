@@ -1,6 +1,6 @@
-[gd_scene load_steps=7 format=3 uid="uid://dpsa8knhxpybo"]
+[gd_scene load_steps=7 format=3 uid="uid://cuu12n352gtas"]
 
-[ext_resource type="Script" uid="uid://667ubkyimk3b" path="res://scripts/main.gd" id="1_57xwr"]
+[ext_resource type="Script" uid="uid://dtpxwh6l4a0ll" path="res://scripts/main.gd" id="1_57xwr"]
 [ext_resource type="PackedScene" uid="uid://wdsglfb2b83d" path="res://scenes/core.tscn" id="2_87q1w"]
 [ext_resource type="PackedScene" uid="uid://sk4jxbgm5ygn" path="res://scenes/tilemaps/map1.tscn" id="3_tbgi4"]
 [ext_resource type="Texture2D" uid="uid://b6hforp7vuljc" path="res://assets/mechs/core.png" id="3_tefeu"]
@@ -54,6 +54,7 @@ y_sort_enabled = true
 [node name="BuildPreview" type="AnimatedSprite2D" parent="."]
 modulate = Color(0.435294, 1, 0.498039, 0.501961)
 z_index = 10
+texture_filter = 1
 
 [node name="GameUI" parent="." instance=ExtResource("5_53nla")]
 visible = true

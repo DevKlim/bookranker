@@ -1,0 +1,63 @@
+[gd_scene load_steps=7 format=3 uid="uid://xgw5h3hq7u4n"]
+
+[ext_resource type="Script" path="res://scripts/entities/buildings/asourcer.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://c6u7v8w9x0y1z" path="res://assets/buildables/asourcer.png" id="2_icon"]
+[ext_resource type="Script" path="res://scripts/components/power_consumer_component.gd" id="3_power"]
+[ext_resource type="Script" path="res://scripts/components/health_component.gd" id="4_health"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_asourcer"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_icon")
+}],
+"loop": true,
+"name": &"idle_down",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_icon")
+}],
+"loop": true,
+"name": &"idle_left",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_icon")
+}],
+"loop": true,
+"name": &"idle_right",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_icon")
+}],
+"loop": true,
+"name": &"idle_up",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_asourcer"]
+size = Vector2(64, 32)
+
+[node name="Asourcer" type="StaticBody2D"]
+script = ExtResource("1_script")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_asourcer")
+animation = &"idle_down"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_asourcer")
+
+[node name="PowerConsumerComponent" type="Node" parent="."]
+script = ExtResource("3_power")
+power_consumption = 5.0
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("4_health")
+max_health = 100.0

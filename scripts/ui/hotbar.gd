@@ -1,76 +1,116 @@
 extends PanelContainer
 
-## Manages the build hotbar UI, creating buttons and handling input.
+## Manages the build hotbar UI with 10 slots. 
+## Supports drag-and-drop assignment of buildables.
 
-@export var buildables: Array[BuildableResource]
+const SLOT_COUNT = 10
 
 @onready var container: HBoxContainer = $MarginContainer/HBoxContainer
 
-var _hotkey_map: Dictionary = {}
+# Array[BuildableResource] - can contain nulls
+var slots: Array = []
 var _buttons: Array[Button] = []
 
+# Exposed property to configure default items in the inspector/scene
+@export var buildables: Array[BuildableResource] = []
+
 func _ready() -> void:
+	# Initialize slots array
+	slots.resize(SLOT_COUNT)
+	slots.fill(null)
+	
+	# Clear existing children
 	for child in container.get_children():
 		child.queue_free()
 
-	for i in range(buildables.size()):
-		var buildable = buildables[i]
-		if not is_instance_of(buildable, BuildableResource): continue
-
+	# Create Slot Buttons
+	for i in range(SLOT_COUNT):
 		var button = Button.new()
-		button.icon = buildable.icon
 		button.custom_minimum_size = Vector2(64, 64)
 		button.expand_icon = true
 		button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		button.text = str((i + 1) % 10) # 1, 2... 9, 0
+		button.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
 		
-		var tooltip = "%s (%d)" % [buildable.buildable_name, i + 1]
-		if not buildable.description.is_empty():
-			tooltip += "\n" + buildable.description
-		button.tooltip_text = tooltip
+		# Connect Click
+		button.pressed.connect(_on_slot_pressed.bind(i))
 		
-		button.pressed.connect(_on_button_pressed.bind(buildable))
+		# Setup Drag & Drop
+		button.set_drag_forwarding(Callable(), Callable(self, "_can_drop_on_slot"), Callable(self, "_drop_on_slot").bind(i))
+		
 		container.add_child(button)
 		_buttons.append(button)
-		
-		var action_name = "hotbar_%d" % (i + 1)
-		if InputMap.has_action(action_name):
-			_hotkey_map[action_name] = buildable
 	
-	BuildManager.build_mode_changed.connect(_update_button_visuals)
-	BuildManager.selected_buildable_changed.connect(_update_button_visuals)
-	_update_button_visuals()
+	# Pre-fill slots from export if present, otherwise load defaults from disk
+	if not buildables.is_empty():
+		for i in range(min(buildables.size(), SLOT_COUNT)):
+			slots[i] = buildables[i]
+	else:
+		_load_defaults()
 
+	BuildManager.build_mode_changed.connect(_update_visuals)
+	BuildManager.selected_buildable_changed.connect(_update_visuals)
+	_update_visuals()
 
-func _unhandled_input(event: InputEvent) -> void:
-	for action_name in _hotkey_map:
-		if event.is_action_pressed(action_name):
-			var buildable: BuildableResource = _hotkey_map[action_name]
-			_on_button_pressed(buildable)
-			get_viewport().set_input_as_handled()
-			return
+func _load_defaults() -> void:
+	# Automatically load all buildable resources from the folder
+	var dir = DirAccess.open("res://resources/buildables")
+	if dir:
+		dir.list_dir_begin()
+		var file_name = dir.get_next()
+		var idx = 0
+		while file_name != "" and idx < SLOT_COUNT:
+			if not dir.current_is_dir() and file_name.ends_with(".tres"):
+				var res = load("res://resources/buildables/" + file_name)
+				if res is BuildableResource:
+					slots[idx] = res
+					idx += 1
+			file_name = dir.get_next()
+	_update_visuals()
 
+func _unhandled_key_input(event: InputEvent) -> void:
+	# Check for number keys 1-9, 0
+	if event.is_pressed() and not event.is_echo():
+		for i in range(1, 11):
+			if Input.is_key_pressed(KEY_0 + (i % 10)): # 1->KEY_1... 10->KEY_0
+				_on_slot_pressed(i - 1)
+				get_viewport().set_input_as_handled()
+				return
 
-func _on_button_pressed(buildable: BuildableResource) -> void:
+func _on_slot_pressed(index: int) -> void:
+	var buildable = slots[index]
+	if not buildable: return
+
 	if BuildManager.is_building and BuildManager.selected_buildable == buildable:
 		BuildManager.exit_build_mode()
 	else:
 		BuildManager.enter_build_mode(buildable)
 
+# Drag & Drop Logic
+func _can_drop_on_slot(_at_position: Vector2, data: Variant) -> bool:
+	return typeof(data) == TYPE_DICTIONARY and data.get("type") == "buildable"
 
-func _update_button_visuals(_arg = null) -> void:
+func _drop_on_slot(_at_position: Vector2, data: Variant, slot_index: int) -> void:
+	var res = data.get("resource")
+	if res is BuildableResource:
+		slots[slot_index] = res
+		_update_visuals()
+
+func _update_visuals(_arg = null) -> void:
 	var selected = BuildManager.selected_buildable
-	var selected_layer = -1
-	if BuildManager.is_building and selected:
-		selected_layer = selected.layer
-
-	for i in range(_buttons.size()):
+	
+	for i in range(SLOT_COUNT):
 		var button = _buttons[i]
-		var buildable = buildables[i]
+		var buildable = slots[i]
 		
+		if buildable:
+			button.icon = buildable.icon
+			button.tooltip_text = "%s\nSlot %d" % [buildable.buildable_name, (i + 1) % 10]
+		else:
+			button.icon = null
+			button.tooltip_text = "Empty Slot %d" % ((i + 1) % 10)
+		
+		# Highlight Logic
 		button.modulate = Color.WHITE
-
-		if selected == buildable:
-			button.modulate = Color(1.3, 1.3, 1.3)
-		elif selected_layer != -1 and buildable.layer != selected_layer:
-			if selected_layer != BuildableResource.BuildLayer.TOOL:
-				button.modulate = Color(0.6, 0.6, 0.6)
+		if buildable and selected == buildable:
+			button.modulate = Color(0.5, 1.0, 0.5) # Greenish for active

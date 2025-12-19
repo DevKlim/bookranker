@@ -30,10 +30,18 @@ func _ready() -> void:
 func can_shoot() -> bool:
 	return _can_shoot
 
-## Attempts to fire a projectile using the provided item as ammo properties.
+## Attempts to fire a projectile at a specific target node.
 func shoot_at(target: Node2D, target_lane_id: int, ammo_item: ItemResource = null) -> void:
-	if not _can_shoot or not is_instance_valid(target):
-		return
+	if not is_instance_valid(target): return
+	var direction = fire_point.global_position.direction_to(target.global_position)
+	_spawn_projectile(direction, target_lane_id, ammo_item)
+
+## Attempts to fire a projectile in a specific direction vector.
+func shoot_in_direction(direction: Vector2, target_lane_id: int, ammo_item: ItemResource = null, override_start_pos: Vector2 = Vector2.INF) -> void:
+	_spawn_projectile(direction, target_lane_id, ammo_item, override_start_pos)
+
+func _spawn_projectile(direction: Vector2, target_lane_id: int, ammo_item: ItemResource, override_pos: Vector2 = Vector2.INF) -> void:
+	if not _can_shoot: return
 
 	var damage = base_damage
 	var element = base_element
@@ -41,7 +49,10 @@ func shoot_at(target: Node2D, target_lane_id: int, ammo_item: ItemResource = nul
 	var color = Color.WHITE
 
 	if ammo_item:
-		damage = ammo_item.damage
+		# ADDITIVE DAMAGE LOGIC
+		damage += ammo_item.damage
+		
+		# Element and Visuals are usually defined by the ammo
 		element = ammo_item.element
 		texture = ammo_item.icon
 		color = ammo_item.color
@@ -51,17 +62,20 @@ func shoot_at(target: Node2D, target_lane_id: int, ammo_item: ItemResource = nul
 	var projectile_container = main_scene.get_node("Projectiles")
 	projectile_container.add_child(projectile_instance)
 	
-	var direction = fire_point.global_position.direction_to(target.global_position)
+	var start_pos = fire_point.global_position
+	if override_pos != Vector2.INF:
+		start_pos = override_pos
 	
 	projectile_instance.initialize(
-		fire_point.global_position, 
+		start_pos, 
 		direction, 
 		projectile_speed, 
 		damage, 
 		target_lane_id, 
 		element,
 		texture,
-		color
+		color,
+		false # Disable pathing, shoot straight
 	)
 	
 	_can_shoot = false

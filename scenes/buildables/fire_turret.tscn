@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://dgq6002f2l2e7"]
+[gd_scene load_steps=12 format=3 uid="uid://bgysak0anvg0h"]
 
 [ext_resource type="Script" uid="uid://ctw2ritm8shpv" path="res://scripts/entities/turret.gd" id="1_44c1i"]
 [ext_resource type="Texture2D" uid="uid://c54ilxu65w6w8" path="res://assets/buildables/turret.png" id="2_cpgub"]

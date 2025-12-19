@@ -16,6 +16,8 @@ signal power_demand_changed(new_demand)
 			power_consumption = value
 			emit_signal("power_demand_changed", power_consumption)
 
+## If true, this component only receives power if the tile it is on has a powered wire.
+@export var requires_wire_connection: bool = true
 
 ## Tracks whether this component is currently receiving power from the grid.
 var has_power: bool = false

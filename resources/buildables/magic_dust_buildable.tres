@@ -11,6 +11,10 @@ region = Rect2(32, 0, 32, 32)
 [resource]
 script = ExtResource("1_w2013")
 buildable_name = "Wire"
+description = "Connects machines to power."
 icon = SubResource("AtlasTexture_wire_icon")
 layer = 0
+width = 1
+height = 1
+display_offset = Vector2(0, 0)
 scene = ExtResource("2_scene")

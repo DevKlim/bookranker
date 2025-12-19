@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ItemResource" load_steps=3 format=3 uid="uid://d38rqyvkq2m3d"]
+
+[ext_resource type="Texture2D" uid="uid://clpbo5uqegsea" path="res://assets/ores/iron.png" id="1_hklni"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+item_name = "Iron"
+icon = ExtResource("1_hklni")
+damage = 15.0

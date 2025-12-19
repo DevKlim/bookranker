@@ -1,8 +1,9 @@
-[gd_scene load_steps=5 format=3 uid="uid://c6o6gqf57o2b3"]
+[gd_scene load_steps=6 format=3 uid="uid://c6o6gqf57o2b3"]
 
 [ext_resource type="PackedScene" uid="uid://cnb68n02f3s4p" path="res://scenes/ui/hotbar.tscn" id="1_4n20r"]
 [ext_resource type="Script" uid="uid://bjtnsc3ogvl6n" path="res://scripts/ui/game_ui.gd" id="2_4h68c"]
 [ext_resource type="Script" uid="uid://0sum52dajhnj" path="res://scripts/ui/dev_ui.gd" id="2_h3q2e"]
+[ext_resource type="PackedScene" uid="uid://d2k4l5m6n7o8p" path="res://scenes/ui/inventory_gui.tscn" id="4_inventory"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1y7w7"]
 bg_color = Color(0.14902, 0.14902, 0.14902, 0.74902)
@@ -58,6 +59,19 @@ offset_bottom = -20.0
 grow_vertical = 0
 text = "Tile: (-, -)
 Lane: N/A"
+
+[node name="InventoryGUI" parent="." instance=ExtResource("4_inventory")]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -80.0
+offset_top = -50.0
+offset_right = 80.0
+offset_bottom = 50.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [connection signal="pressed" from="DevUIPanel/VBoxContainer/SpawnWaveButton" to="DevUIPanel" method="_on_spawn_wave_button_pressed"]
 [connection signal="pressed" from="DevUIPanel/VBoxContainer/StopWaveButton" to="DevUIPanel" method="_on_stop_wave_button_pressed"]

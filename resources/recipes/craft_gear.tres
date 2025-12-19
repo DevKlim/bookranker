@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RecipeResource" load_steps=4 format=3 uid="uid://recipe_craft_gear"]
+
+[ext_resource type="Script" path="res://scripts/resources/recipe_resource.gd" id="1_script"]
+[ext_resource type="Resource" uid="uid://item_iron_alloy" path="res://resources/items/iron_alloy.tres" id="2_in"]
+[ext_resource type="Resource" uid="uid://item_gear" path="res://resources/items/gear.tres" id="3_out"]
+
+[resource]
+script = ExtResource("1_script")
+recipe_name = "Assemble Gear"
+input_item = ExtResource("2_in")
+input_count = 2
+output_item = ExtResource("3_out")
+output_count = 1
+craft_time = 0.5

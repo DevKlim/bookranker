@@ -94,7 +94,8 @@ if __name__ == "__main__":
         '.stackdump',
         '.cfg',
         '.aseprite',
-        '.import'
+        '.import',
+        '.uid'
     }
 
     # Generate the structure

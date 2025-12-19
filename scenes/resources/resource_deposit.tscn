@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://b6x8p2q7r5s1t"]
 
-[ext_resource type="Script" path="res://scripts/entities/resource_deposit.gd" id="1_deposit"]
+[ext_resource type="Script" uid="uid://8bv1sw7i38ex" path="res://scripts/entities/resource_deposit.gd" id="1_deposit"]
 [ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="2_icon"]
 
 [node name="ResourceDeposit" type="Node2D"]

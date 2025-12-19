@@ -30,6 +30,10 @@ var current_target: Node2D = null:
 # Reference to the detection_area child node.
 @onready var detection_area: Area2D = $DetectionArea
 
+## Optional callback to validate targets. 
+## Should accept a Node2D and return a bool.
+var validation_callback: Callable = Callable()
+
 
 ## Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -70,6 +74,10 @@ func find_closest_target() -> void:
 	var parent_pos = get_parent().global_position
 
 	for body in overlapping_bodies:
+		# Validation Check
+		if validation_callback.is_valid() and not validation_callback.call(body):
+			continue
+
 		var distance_sq = parent_pos.distance_squared_to(body.global_position)
 		if distance_sq < min_distance_sq:
 			min_distance_sq = distance_sq

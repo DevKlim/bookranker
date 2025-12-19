@@ -8,6 +8,7 @@ var is_powered: bool = false
 var connections: Array[int] = []
 
 func _ready() -> void:
+	super._ready() # Call BaseWiring _ready to handle visual offset
 	assert(animated_sprite, "Wire scene requires an AnimatedSprite2D child.")
 	update_visuals()
 
@@ -26,15 +27,19 @@ func set_connections(p_connections: Array[int]) -> void:
 func update_visuals() -> void:
 	var state_prefix = "on_" if is_powered else "off_"
 	var suffix = "0"
+	
 	if not connections.is_empty():
-		suffix = "".join(connections.map(func(i): return str(i)))
-
+		# Join connections into string e.g. "12", "134"
+		suffix = ""
+		for c in connections:
+			suffix += str(c)
+	
 	var anim_name = state_prefix + suffix
 	
 	if animated_sprite.sprite_frames.has_animation(anim_name):
 		animated_sprite.play(anim_name)
 	else:
-		# Fallback to a default state if a specific connection animation is missing
+		# Fallback to simple dot/default if variation missing
 		var fallback_anim = state_prefix + "0"
 		if animated_sprite.sprite_frames.has_animation(fallback_anim):
 			animated_sprite.play(fallback_anim)
