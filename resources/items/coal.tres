@@ -8,4 +8,9 @@
 script = ExtResource("1_script")
 item_name = "Coal"
 icon = ExtResource("2_bdclq")
+damage = 3.0
 element = ExtResource("3_elem")
+modifiers = {
+"damage_mult": 1.05
+}
+is_ore = true

@@ -1,0 +1,88 @@
+[gd_scene load_steps=11 format=3 uid="uid://bxapumduow1x3"]
+
+[ext_resource type="Script" uid="uid://b1x44g7ittwg7" path="res://scripts/entities/buildings/conveyor.gd" id="1_nsgh5"]
+[ext_resource type="Texture2D" uid="uid://bclf0y7fpxq7m" path="res://assets/buildables/conveyor.png" id="2_0gdfl"]
+[ext_resource type="Script" uid="uid://ck3jpoivik2fb" path="res://scripts/components/power_consumer_component.gd" id="3_bdrs3"]
+[ext_resource type="Script" uid="uid://duudv3f6u8n6m" path="res://scripts/components/health_component.gd" id="4_o8oc2"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nsgh5"]
+atlas = ExtResource("2_0gdfl")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0gdfl"]
+atlas = ExtResource("2_0gdfl")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bdrs3"]
+atlas = ExtResource("2_0gdfl")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_o8oc2"]
+atlas = ExtResource("2_0gdfl")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_qlpa2"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nsgh5")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nsgh5")
+}],
+"loop": true,
+"name": &"idle_down",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0gdfl")
+}],
+"loop": true,
+"name": &"idle_left",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bdrs3")
+}],
+"loop": true,
+"name": &"idle_right",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_o8oc2")
+}],
+"loop": true,
+"name": &"idle_up",
+"speed": 10.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_yv65y"]
+size = Vector2(32, 32)
+
+[node name="Conveyor" type="StaticBody2D"]
+script = ExtResource("1_nsgh5")
+unpowered_color = Color(1, 1, 1, 1)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_qlpa2")
+animation = &"idle_down"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_yv65y")
+
+[node name="PowerConsumerComponent" type="Node" parent="."]
+script = ExtResource("3_bdrs3")
+power_consumption = 0.0
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("4_o8oc2")
+max_health = 50.0

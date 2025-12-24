@@ -1,13 +1,14 @@
-[gd_scene load_steps=7 format=3 uid="uid://cuu12n352gtas"]
+[gd_scene load_steps=8 format=3 uid="uid://6e4josh74xnb"]
 
-[ext_resource type="Script" uid="uid://dtpxwh6l4a0ll" path="res://scripts/main.gd" id="1_57xwr"]
+[ext_resource type="Script" uid="uid://dtpxwh6l4a0ll" path="res://scripts/Main.gd" id="1_57xwr"]
 [ext_resource type="PackedScene" uid="uid://wdsglfb2b83d" path="res://scenes/core.tscn" id="2_87q1w"]
 [ext_resource type="PackedScene" uid="uid://sk4jxbgm5ygn" path="res://scenes/tilemaps/map1.tscn" id="3_tbgi4"]
 [ext_resource type="Texture2D" uid="uid://b6hforp7vuljc" path="res://assets/mechs/core.png" id="3_tefeu"]
 [ext_resource type="TileSet" uid="uid://b8r5k8l4m6oap" path="res://tilesets/ore_tileset.tres" id="4_ore_ts"]
 [ext_resource type="PackedScene" uid="uid://c6o6gqf57o2b3" path="res://scenes/ui/game_ui.tscn" id="5_53nla"]
+[ext_resource type="Script" uid="uid://svbkned7l4nd" path="res://scripts/tools/data_importer.gd" id="7_nxtc6"]
 
-[node name="Main" type="Node2D"]
+[node name="Main2" type="Node2D"]
 script = ExtResource("1_57xwr")
 
 [node name="Camera2D" type="Camera2D" parent="."]
@@ -58,3 +59,9 @@ texture_filter = 1
 
 [node name="GameUI" parent="." instance=ExtResource("5_53nla")]
 visible = true
+
+[node name="Node2D" type="Node2D" parent="."]
+position = Vector2(0, -1)
+script = ExtResource("7_nxtc6")
+overwrite_existing = true
+target_item_select = "drill"

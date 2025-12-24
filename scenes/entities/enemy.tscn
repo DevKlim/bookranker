@@ -1,10 +1,10 @@
 [gd_scene load_steps=7 format=3 uid="uid://cf67lsc67i5d1"]
 
-[ext_resource type="Script" path="res://scripts/entities/enemy.gd" id="1_17r5i"]
+[ext_resource type="Script" uid="uid://87pk5o5eu28v" path="res://scripts/entities/enemy.gd" id="1_17r5i"]
 [ext_resource type="Texture2D" uid="uid://byp23kokc8mnn" path="res://assets/enemies/rb1.png" id="2_2x2m2"]
-[ext_resource type="Script" path="res://scripts/components/health_component.gd" id="3_v6n1s"]
-[ext_resource type="Script" path="res://scripts/components/elemental_component.gd" id="4_xgr82"]
-[ext_resource type="Script" path="res://scripts/components/attacker_component.gd" id="5_a3h63"]
+[ext_resource type="Script" uid="uid://duudv3f6u8n6m" path="res://scripts/components/health_component.gd" id="3_v6n1s"]
+[ext_resource type="Script" uid="uid://dg4gfri6lu5o2" path="res://scripts/components/elemental_component.gd" id="4_xgr82"]
+[ext_resource type="Script" uid="uid://bw7f6w3g67r4d" path="res://scripts/components/attacker_component.gd" id="5_a3h63"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_y485j"]
 radius = 4.0

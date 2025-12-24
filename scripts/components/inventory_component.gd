@@ -18,6 +18,8 @@ func _ready():
 func add_item(item: ItemResource, count: int = 1) -> int:
 	if not item: return count
 	
+	var initial_count = count
+	
 	# 1. Try to stack
 	for i in range(max_slots):
 		if slots[i] != null and slots[i].item == item:
@@ -40,7 +42,7 @@ func add_item(item: ItemResource, count: int = 1) -> int:
 					emit_signal("inventory_changed")
 					return 0
 	
-	if count < count: # If we added anything
+	if count < initial_count: # If we added anything
 		emit_signal("inventory_changed")
 		
 	return count # Return remaining amount

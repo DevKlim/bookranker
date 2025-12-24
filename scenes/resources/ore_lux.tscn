@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://dicpuhqgnebuw" path="res://assets/ores/lux.png" id="2_f5r72"]
 
 [node name="OreLux" instance=ExtResource("1_base")]
+position = Vector2(0, -2)
 
 [node name="Sprite2D" parent="." index="0"]
 texture_filter = 1

@@ -1,0 +1,120 @@
+[gd_scene load_steps=15 format=3 uid="uid://ba3jwrtt6ayhm"]
+
+[ext_resource type="Script" uid="uid://ctw2ritm8shpv" path="res://scripts/entities/turret.gd" id="1_bkkpc"]
+[ext_resource type="Texture2D" uid="uid://c54ilxu65w6w8" path="res://assets/buildables/turret.png" id="2_r6wdh"]
+[ext_resource type="Script" uid="uid://ck3jpoivik2fb" path="res://scripts/components/power_consumer_component.gd" id="3_qa7y6"]
+[ext_resource type="Script" uid="uid://cnm8y28bmosfv" path="res://scripts/components/target_acquirer_component.gd" id="4_lw4gm"]
+[ext_resource type="Script" uid="uid://vk0magbyev86" path="res://scripts/components/shooter_component.gd" id="5_ywg1v"]
+[ext_resource type="Script" uid="uid://1uckad6v513s" path="res://scripts/entities/projectile.gd" id="6_ovxtj"]
+[ext_resource type="Script" uid="uid://duudv3f6u8n6m" path="res://scripts/components/health_component.gd" id="7_a73n8"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bkkpc"]
+atlas = ExtResource("2_r6wdh")
+region = Rect2(0, 0, 32, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_r6wdh"]
+atlas = ExtResource("2_r6wdh")
+region = Rect2(96, 0, 32, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qa7y6"]
+atlas = ExtResource("2_r6wdh")
+region = Rect2(144, 0, 32, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lw4gm"]
+atlas = ExtResource("2_r6wdh")
+region = Rect2(48, 0, 32, 48)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_ywg1v"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bkkpc")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bkkpc")
+}],
+"loop": true,
+"name": &"idle_down",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_r6wdh")
+}],
+"loop": true,
+"name": &"idle_left",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qa7y6")
+}],
+"loop": true,
+"name": &"idle_right",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lw4gm")
+}],
+"loop": true,
+"name": &"idle_up",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_turret"]
+size = Vector2(32, 32)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_v75d1"]
+radius = 10000.0
+
+[node name="Basic Turret" type="StaticBody2D"]
+script = ExtResource("1_bkkpc")
+output_direction = 2
+input_direction = 0
+has_output = false
+
+[node name="Rotatable" type="Node2D" parent="."]
+
+[node name="TurretBase" type="AnimatedSprite2D" parent="Rotatable"]
+modulate = Color(0.529412, 0.529412, 0.529412, 1)
+sprite_frames = SubResource("SpriteFrames_ywg1v")
+animation = &"idle_down"
+
+[node name="FirePoint" type="Marker2D" parent="Rotatable"]
+position = Vector2(15, -13)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_turret")
+
+[node name="PowerConsumerComponent" type="Node" parent="."]
+script = ExtResource("3_qa7y6")
+power_consumption = 10.0
+
+[node name="TargetAcquirerComponent" type="Node" parent="."]
+script = ExtResource("4_lw4gm")
+target_layers = 2
+
+[node name="DetectionArea" type="Area2D" parent="TargetAcquirerComponent"]
+collision_layer = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TargetAcquirerComponent/DetectionArea"]
+visible = false
+shape = SubResource("CircleShape2D_v75d1")
+
+[node name="ShooterComponent" type="Node" parent="."]
+script = ExtResource("5_ywg1v")
+projectile_scene = ExtResource("6_ovxtj")
+base_damage = 5.0
+fire_point_path = NodePath("../Rotatable/FirePoint")
+
+[node name="FireRateTimer" type="Timer" parent="ShooterComponent"]
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("7_a73n8")
+max_health = 150.0

@@ -39,6 +39,8 @@ func initialize(enemy_resource: EnemyResource, start_pos: Vector2, p_lane_id: in
 	global_position = start_pos
 	lane_id = p_lane_id
 	
+	print("DEBUG: Enemy Spawned. Lane: %d, HP: %.0f, Pos: %s" % [lane_id, health_component.max_health, start_pos])
+	
 	_path = LaneManager.get_path_for_lane(lane_id)
 	if _path.is_empty():
 		printerr("Enemy spawned in lane %d has no path!" % lane_id)
@@ -125,6 +127,7 @@ func _on_reached_end():
 		queue_free()
 
 func _on_health_depleted(_node):
+	print("DEBUG: Enemy Died. Lane: %d" % lane_id)
 	emit_signal("died")
 	queue_free()
 

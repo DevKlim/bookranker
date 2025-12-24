@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BuildableResource" load_steps=5 format=3 uid="uid://b8idj7bgvrli3"]
+
+[ext_resource type="Texture2D" uid="uid://bclf0y7fpxq7m" path="res://assets/buildables/conveyor.png" id="1_souto"]
+[ext_resource type="PackedScene" uid="uid://bxapumduow1x3" path="res://scenes/generated/conveyor.tscn" id="2_cuod2"]
+[ext_resource type="Script" uid="uid://qpm1dylmnjld" path="res://scripts/resources/buildable_resource.gd" id="3_43ptq"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_souto"]
+atlas = ExtResource("1_souto")
+region = Rect2(0, 0, 32, 32)
+
+[resource]
+script = ExtResource("3_43ptq")
+buildable_name = "Conveyor"
+icon = SubResource("AtlasTexture_souto")
+scene = ExtResource("2_cuod2")

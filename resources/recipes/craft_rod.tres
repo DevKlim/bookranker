@@ -1,14 +1,13 @@
-[gd_resource type="Resource" script_class="RecipeResource" load_steps=4 format=3 uid="uid://recipe_craft_rod"]
+[gd_resource type="Resource" script_class="RecipeResource" load_steps=4 format=3 uid="uid://22hl8hk6o3ic"]
 
-[ext_resource type="Script" path="res://scripts/resources/recipe_resource.gd" id="1_script"]
-[ext_resource type="Resource" uid="uid://item_iron_alloy" path="res://resources/items/iron_alloy.tres" id="2_in"]
-[ext_resource type="Resource" uid="uid://item_rod" path="res://resources/items/rod.tres" id="3_out"]
+[ext_resource type="Resource" uid="uid://ccxtemo42mkml" path="res://resources/items/iron_alloy.tres" id="1_gkw81"]
+[ext_resource type="Resource" uid="uid://ci6qhchtaulll" path="res://resources/items/rod.tres" id="2_a6l0y"]
+[ext_resource type="Script" path="res://scripts/resources/recipe_resource.gd" id="3_8o85s"]
 
 [resource]
-script = ExtResource("1_script")
-recipe_name = "Assemble Rod"
-input_item = ExtResource("2_in")
-input_count = 1
-output_item = ExtResource("3_out")
+script = ExtResource("3_8o85s")
+recipe_name = "Craft Rod"
+input_item = ExtResource("1_gkw81")
+output_item = ExtResource("2_a6l0y")
 output_count = 2
 craft_time = 0.5

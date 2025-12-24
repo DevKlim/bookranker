@@ -1,84 +1,110 @@
 class_name ShooterComponent
 extends Node
 
-## A component that handles the logic for shooting projectiles.
+## Handles shooting with advanced stat calculations.
 
 @export var projectile_scene: PackedScene
 @export var projectile_speed: float = 600.0
-# Base stats if no item is provided (fallback)
 @export var base_damage: float = 10.0
 @export var base_element: ElementResource
-@export var fire_rate: float = 1.0
+@export var fire_rate: float = 1.0 
 @export var fire_point_path: NodePath
 
-@onready var fire_point: Marker2D
+@onready var fire_point: Marker2D = get_node_or_null(fire_point_path)
 @onready var fire_rate_timer: Timer = $FireRateTimer
 
 var _can_shoot: bool = true
+var _parent_building: Node
 
 func _ready() -> void:
-	assert(projectile_scene, "ShooterComponent: projectile_scene is not set!")
-	assert(fire_point_path, "ShooterComponent: fire_point_path is not set!")
-	fire_point = get_node_or_null(fire_point_path)
-	assert(fire_point, "ShooterComponent: could not find FirePoint node at path: " + str(fire_point_path))
-	assert(fire_rate_timer, "ShooterComponent requires a child Timer named 'FireRateTimer'.")
+	_parent_building = get_parent()
+	
+	# Retry loading projectile_scene if it's null (sometimes happens with cyclic load issues)
+	if not projectile_scene:
+		# Hard fallback to try and find the resource manually
+		var fallback_path = "res://scenes/entities/projectile.tscn"
+		if ResourceLoader.exists(fallback_path):
+			projectile_scene = load(fallback_path)
+			print("[%s] ShooterComponent: Recovered projectile_scene from fallback path." % _parent_building.name)
 
-	fire_rate_timer.wait_time = fire_rate
+	if not projectile_scene:
+		printerr("ERROR: [%s] ShooterComponent: projectile_scene is NULL. Shooting disabled." % _parent_building.name)
+		_can_shoot = false
+		return
+	else:
+		if not fire_point:
+			printerr("ERROR: [%s] ShooterComponent: Invalid fire_point_path." % _parent_building.name)
+			_can_shoot = false
+			return
+	
 	fire_rate_timer.one_shot = true
 	fire_rate_timer.timeout.connect(_on_fire_rate_timer_timeout)
+	_update_timer()
+
+func _update_timer() -> void:
+	var speed_mult = 1.0
+	if _parent_building and "stats" in _parent_building:
+		speed_mult = _parent_building.stats.get("speed_mult", 1.0)
+	
+	if speed_mult <= 0: speed_mult = 0.1
+	var rate = fire_rate * speed_mult
+	if rate > 0:
+		fire_rate_timer.wait_time = 1.0 / rate
+	else:
+		fire_rate_timer.wait_time = 999.0
 
 func can_shoot() -> bool:
 	return _can_shoot
 
-## Attempts to fire a projectile at a specific target node.
-func shoot_at(target: Node2D, target_lane_id: int, ammo_item: ItemResource = null) -> void:
-	if not is_instance_valid(target): return
-	var direction = fire_point.global_position.direction_to(target.global_position)
-	_spawn_projectile(direction, target_lane_id, ammo_item)
-
-## Attempts to fire a projectile in a specific direction vector.
 func shoot_in_direction(direction: Vector2, target_lane_id: int, ammo_item: ItemResource = null, override_start_pos: Vector2 = Vector2.INF) -> void:
-	_spawn_projectile(direction, target_lane_id, ammo_item, override_start_pos)
-
-func _spawn_projectile(direction: Vector2, target_lane_id: int, ammo_item: ItemResource, override_pos: Vector2 = Vector2.INF) -> void:
-	if not _can_shoot: return
-
-	var damage = base_damage
+	if not _can_shoot or not projectile_scene: return
+	
+	var stats = {}
+	if _parent_building and "stats" in _parent_building:
+		stats = _parent_building.stats
+	
+	var final_damage = base_damage
 	var element = base_element
 	var texture = null
 	var color = Color.WHITE
-
+	
 	if ammo_item:
-		# ADDITIVE DAMAGE LOGIC
-		damage += ammo_item.damage
-		
-		# Element and Visuals are usually defined by the ammo
+		final_damage += ammo_item.damage
 		element = ammo_item.element
 		texture = ammo_item.icon
 		color = ammo_item.color
-
-	var projectile_instance = projectile_scene.instantiate()
-	var main_scene = get_tree().current_scene
-	var projectile_container = main_scene.get_node("Projectiles")
-	projectile_container.add_child(projectile_instance)
 	
-	var start_pos = fire_point.global_position
-	if override_pos != Vector2.INF:
-		start_pos = override_pos
+	final_damage *= stats.get("damage_mult", 1.0)
 	
-	projectile_instance.initialize(
-		start_pos, 
-		direction, 
-		projectile_speed, 
-		damage, 
-		target_lane_id, 
-		element,
-		texture,
-		color,
-		false # Disable pathing, shoot straight
-	)
+	var is_magic = false
+	if element and "element_name" in element:
+		if element.element_name in ["Fire", "Shock", "Water", "Ice", "Chem"]:
+			is_magic = true
+			
+	if is_magic: final_damage += stats.get("magic_boost", 0.0)
+	else: final_damage += stats.get("phys_boost", 0.0)
+		
+	var is_crit = randf() < stats.get("crit_chance", 0.0)
+	if is_crit:
+		final_damage *= stats.get("crit_damage", 1.5)
+		
+	var proj = projectile_scene.instantiate()
+	get_tree().current_scene.get_node("Projectiles").add_child(proj)
+	
+	var start = fire_point.global_position
+	if override_start_pos != Vector2.INF: start = override_start_pos
+	
+	var extra_params = {
+		"shred": stats.get("armor_shred", 0.0),
+		"scale": stats.get("area_size", 1.0),
+		"is_crit": is_crit
+	}
+	
+	if proj.has_method("initialize"):
+		proj.initialize(start, direction, projectile_speed, final_damage, target_lane_id, element, texture, color, false, extra_params)
 	
 	_can_shoot = false
+	_update_timer()
 	fire_rate_timer.start()
 
 func _on_fire_rate_timer_timeout() -> void:

@@ -1,10 +1,17 @@
-[gd_resource type="Resource" script_class="ItemResource" load_steps=3 format=3 uid="uid://d38rqyvkq2m3d"]
+[gd_resource type="Resource" script_class="ItemResource" load_steps=4 format=3 uid="uid://d38rqyvkq2m3d"]
 
 [ext_resource type="Texture2D" uid="uid://clpbo5uqegsea" path="res://assets/ores/iron.png" id="1_hklni"]
+[ext_resource type="Resource" uid="uid://cb23tvipt2els" path="res://resources/elements/metal.tres" id="1_mvne0"]
 [ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="1_script"]
 
 [resource]
 script = ExtResource("1_script")
-item_name = "Iron"
+item_name = "Iron Ore"
 icon = ExtResource("1_hklni")
-damage = 15.0
+damage = 2.0
+element = ExtResource("1_mvne0")
+modifiers = {
+"armor": 1.0
+}
+is_ore = true
+ore_atlas_coords = Vector2i(3, 0)

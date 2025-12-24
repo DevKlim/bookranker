@@ -1,14 +1,13 @@
-[gd_resource type="Resource" script_class="RecipeResource" load_steps=4 format=3 uid="uid://recipe_craft_cable"]
+[gd_resource type="Resource" script_class="RecipeResource" load_steps=4 format=3 uid="uid://6qfaffsys6k7"]
 
-[ext_resource type="Script" path="res://scripts/resources/recipe_resource.gd" id="1_script"]
-[ext_resource type="Resource" uid="uid://item_copper_alloy" path="res://resources/items/copper_alloy.tres" id="2_in"]
-[ext_resource type="Resource" uid="uid://item_cable" path="res://resources/items/cable.tres" id="3_out"]
+[ext_resource type="Resource" uid="uid://cw1gqh7dw6wm7" path="res://resources/items/copper_alloy.tres" id="1_6owia"]
+[ext_resource type="Resource" uid="uid://b7kha05iq4lkw" path="res://resources/items/cable.tres" id="2_xaelf"]
+[ext_resource type="Script" path="res://scripts/resources/recipe_resource.gd" id="3_k31aw"]
 
 [resource]
-script = ExtResource("1_script")
-recipe_name = "Assemble Cable"
-input_item = ExtResource("2_in")
+script = ExtResource("3_k31aw")
+recipe_name = "Craft Cable"
+input_item = ExtResource("1_6owia")
 input_count = 2
-output_item = ExtResource("3_out")
-output_count = 1
+output_item = ExtResource("2_xaelf")
 craft_time = 0.5

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemResource" load_steps=4 format=3 uid="uid://ld11pj4ja6w6"]
+
+[ext_resource type="Resource" uid="uid://cb23tvipt2els" path="res://resources/elements/metal.tres" id="1_0mcx4"]
+[ext_resource type="Texture2D" uid="uid://xsesw3tykg6n" path="res://assets/ores/gold.png" id="2_bs0ao"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="3_qj68n"]
+
+[resource]
+script = ExtResource("3_qj68n")
+item_name = "Gold Ore"
+icon = ExtResource("2_bs0ao")
+damage = 3.0
+element = ExtResource("1_0mcx4")
+modifiers = {
+"luck": 1.0
+}
+is_ore = true
+ore_atlas_coords = Vector2i(2, 0)

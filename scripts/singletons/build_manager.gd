@@ -16,8 +16,8 @@ var selected_buildable: BuildableResource = null:
 			selected_buildable = value
 			emit_signal("selected_buildable_changed", selected_buildable)
 
-const ROTATION_ANIMS: Array[StringName] = [&"idle_down", &"idle_left", &"idle_up", &"idle_right"]
-var _current_rotation_index: int = 0
+# Default starting rotation
+var _current_rotation_anim: StringName = &"idle_down"
 var _current_build_layout: Array[Vector2i] = [Vector2i.ZERO]
 
 var tile_map: TileMapLayer
@@ -35,9 +35,10 @@ func _initialize_tilemaps():
 func enter_build_mode(buildable: BuildableResource):
 	self.selected_buildable = buildable
 	self.is_building = true
-	_current_rotation_index = 0
-	_update_current_layout_cache(ROTATION_ANIMS[0])
-	emit_signal("build_rotation_changed", ROTATION_ANIMS[0])
+	# Default to idle_down or deduce from resource if needed
+	_current_rotation_anim = &"idle_down"
+	_update_current_layout_cache(_current_rotation_anim)
+	emit_signal("build_rotation_changed", _current_rotation_anim)
 
 func exit_build_mode():
 	self.is_building = false
@@ -47,8 +48,33 @@ func rotate_buildable():
 	if not is_building: return
 	if selected_buildable and selected_buildable.layer != BuildableResource.BuildLayer.MECH:
 		return 
-	_current_rotation_index = (_current_rotation_index + 1) % ROTATION_ANIMS.size()
-	var new_anim = ROTATION_ANIMS[_current_rotation_index]
+	
+	# Dynamic Rotation Logic
+	# 1. Parse current suffix
+	var anim_str = String(_current_rotation_anim)
+	var parts = anim_str.split("_")
+	
+	var prefix = "idle"
+	var suffix = "down"
+	
+	if parts.size() >= 2:
+		suffix = parts[parts.size()-1]
+		# Rejoin everything before the last underscore as prefix
+		prefix = anim_str.left(anim_str.length() - suffix.length() - 1)
+	
+	# 2. Rotate Suffix
+	var new_suffix = "down"
+	match suffix:
+		"down": new_suffix = "left"
+		"left": new_suffix = "up"
+		"up": new_suffix = "right"
+		"right": new_suffix = "down"
+		_: new_suffix = "down" # Fallback
+	
+	# 3. Construct new animation name
+	var new_anim = StringName(prefix + "_" + new_suffix)
+	
+	_current_rotation_anim = new_anim
 	_update_current_layout_cache(new_anim)
 	emit_signal("build_rotation_changed", new_anim)
 
@@ -61,9 +87,11 @@ func _update_current_layout_cache(anim_name: StringName) -> void:
 	if temp.has_method("get_occupied_cells"):
 		_current_build_layout = temp.get_occupied_cells(anim_name)
 	else:
+		# Fallback if get_occupied_cells isn't dynamic or complex
 		var w = selected_buildable.width
 		var h = selected_buildable.height
-		if _current_rotation_index % 2 != 0:
+		# Simple heuristic: if rotating side (Left/Right), swap dimensions
+		if "left" in String(anim_name) or "right" in String(anim_name):
 			var swap = w; w = h; h = swap
 		
 		_current_build_layout.clear()
@@ -170,6 +198,10 @@ func _place_mech(coord: Vector2i):
 	var snapped_pos = LaneManager.tile_to_world(coord) + LaneManager.get_layer_offset("building")
 	var instance = selected_buildable.scene.instantiate()
 	
+	# Assign Name for tooltips/UI identification
+	if selected_buildable.buildable_name != "":
+		instance.name = selected_buildable.buildable_name
+	
 	# PLACE ROOT AT CENTER.
 	instance.global_position = snapped_pos
 	
@@ -180,7 +212,7 @@ func _place_mech(coord: Vector2i):
 	get_tree().current_scene.get_node("Buildings").add_child(instance)
 	
 	if instance.has_method("set_build_rotation"):
-		instance.set_build_rotation(ROTATION_ANIMS[_current_rotation_index])
+		instance.set_build_rotation(_current_rotation_anim)
 	
 	# Register extra tiles manually. Primary tile is registered by GridComponent.
 	var dynamic_layout = _get_dynamic_layout(coord)

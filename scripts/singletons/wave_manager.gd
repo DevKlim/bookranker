@@ -18,7 +18,8 @@ var _spawn_timer: Timer
 
 
 func _ready() -> void:
-	print("WaveManager Initialized.")
+	# Clear generic logs
+	# print("WaveManager Initialized.")
 	_spawn_timer = Timer.new()
 	_spawn_timer.one_shot = false
 	_spawn_timer.wait_time = 0.5
@@ -52,7 +53,7 @@ func _load_enemy_types() -> void:
 			if resource is EnemyResource:
 				_enemy_types.append(resource)
 	
-	print("WaveManager loaded %d enemy types." % _enemy_types.size())
+	# print("WaveManager loaded %d enemy types." % _enemy_types.size())
 
 
 func start_wave() -> void:
@@ -70,7 +71,7 @@ func start_wave() -> void:
 	
 	GameManager.current_state = GameManager.GameState.WAVE_IN_PROGRESS
 	emit_signal("wave_started", wave_number)
-	print("Wave %d started. Spawning %d enemies." % [wave_number, enemies_remaining])
+	print("DEBUG: Wave %d started. Planning %d enemies." % [wave_number, enemies_remaining])
 	_spawn_timer.start()
 
 
@@ -94,7 +95,7 @@ func _on_spawn_timer_timeout() -> void:
 		_enemies_to_spawn_this_wave -= 1
 	else:
 		_spawn_timer.stop()
-		print("All enemies for wave %d have been spawned." % wave_number)
+		print("DEBUG: All enemies for wave %d have been spawned." % wave_number)
 
 
 func _spawn_enemy() -> void:
@@ -110,6 +111,8 @@ func _spawn_enemy() -> void:
 	var lane_id = LaneManager.lane_paths.keys().pick_random()
 	var start_pos = LaneManager.get_lane_start_world_pos(lane_id)
 	
+	print("DEBUG: WaveManager Spawning %s on Lane %d" % [enemy_resource.enemy_name, lane_id])
+	
 	var enemy_instance: EnemyUnit = enemy_resource.scene.instantiate()
 	_enemies_container.add_child(enemy_instance)
 	
@@ -123,4 +126,4 @@ func on_enemy_defeated() -> void:
 	if enemies_remaining <= 0 and _spawn_timer.is_stopped():
 		emit_signal("wave_cleared", wave_number)
 		GameManager.current_state = GameManager.GameState.PRE_WAVE
-		print("Wave %d cleared! Ready for next wave." % wave_number)
+		print("DEBUG: Wave %d cleared!" % wave_number)

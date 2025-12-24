@@ -1,14 +1,13 @@
-[gd_resource type="Resource" script_class="RecipeResource" load_steps=4 format=3 uid="uid://recipe_smelt_iron"]
+[gd_resource type="Resource" script_class="RecipeResource" load_steps=4 format=3 uid="uid://dcovl6gcxa12n"]
 
-[ext_resource type="Script" path="res://scripts/resources/recipe_resource.gd" id="1_script"]
-[ext_resource type="Resource" uid="uid://item_iron" path="res://resources/items/iron.tres" id="2_in"]
-[ext_resource type="Resource" uid="uid://item_iron_alloy" path="res://resources/items/iron_alloy.tres" id="3_out"]
+[ext_resource type="Resource" uid="uid://d38rqyvkq2m3d" path="res://resources/items/iron.tres" id="1_rxwxl"]
+[ext_resource type="Resource" uid="uid://ccxtemo42mkml" path="res://resources/items/iron_alloy.tres" id="2_ff7x0"]
+[ext_resource type="Script" path="res://scripts/resources/recipe_resource.gd" id="3_4axfj"]
 
 [resource]
-script = ExtResource("1_script")
+script = ExtResource("3_4axfj")
 recipe_name = "Smelt Iron"
-input_item = ExtResource("2_in")
-input_count = 1
-output_item = ExtResource("3_out")
-output_count = 1
-craft_time = 2.0
+input_item = ExtResource("1_rxwxl")
+input_count = 4
+output_item = ExtResource("2_ff7x0")
+craft_time = 0.5

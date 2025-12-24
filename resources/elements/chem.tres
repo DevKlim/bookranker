@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ElementResource" load_steps=2 format=3 uid="uid://fs0iyq886ahb"]
+
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_28ewv"]
+
+[resource]
+script = ExtResource("1_28ewv")
+element_name = "Chemical"
+color = Color(0.29803923, 0.6862745, 0.3137255, 1)
+reaction_rules = {
+"fire": "explosion"
+}

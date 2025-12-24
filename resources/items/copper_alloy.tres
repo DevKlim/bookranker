@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="ItemResource" load_steps=3 format=3 uid="uid://item_copper_alloy"]
+[gd_resource type="Resource" script_class="ItemResource" load_steps=4 format=3 uid="uid://cw1gqh7dw6wm7"]
 
-[ext_resource type="Script" path="res://scripts/resources/item_resource.gd" id="1_script"]
+[ext_resource type="Resource" uid="uid://lrm1spfp7wm8" path="res://resources/elements/shock.tres" id="1_1o001"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="2_icon"]
 
 [resource]
@@ -9,3 +10,8 @@ item_name = "Copper Alloy"
 icon = ExtResource("2_icon")
 color = Color(0.8, 0.4, 0.1, 1)
 damage = 5.0
+element = ExtResource("1_1o001")
+modifiers = {
+"power_efficiency": 1.1,
+"speed_mult": 1.1
+}

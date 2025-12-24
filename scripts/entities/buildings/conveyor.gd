@@ -1,8 +1,13 @@
+@tool
 extends BaseBuilding
 
 const CAPACITY = 4
 const ITEM_SPACING = 1.0 / float(CAPACITY)
 const TRANSPORT_SPEED = 2.0 # Tiles per second
+
+## Visual settings for items on the belt
+@export var item_scale: Vector2 = Vector2(0.5, 0.5)
+@export var item_visual_offset: Vector2 = Vector2.ZERO
 
 # Array of Dictionary: { "item": ItemResource, "progress": float, "sprite": Sprite2D, "input_offset": Vector2 }
 # Index 0 is the item closest to the output (Head).
@@ -31,9 +36,12 @@ func _update_visuals_active() -> void:
 func _process(delta: float) -> void:
 	if Engine.is_editor_hint() or not is_active: return
 	
+	# The effective visual center of the conveyor (Building center + visual shift + manual adjustment)
+	var visual_center = visual_offset + item_visual_offset
+	
 	# Calculate Output Vector relative to center (Center -> Output Edge)
 	# This ensures the item travels towards the center of the target tile
-	var out_vec = _get_offset_for_dir(output_direction)
+	var out_vec = _get_offset_for_dir(output_direction) + visual_center
 	
 	# Iterate through items to move them
 	for i in range(items.size()):
@@ -54,16 +62,19 @@ func _process(delta: float) -> void:
 		if is_instance_valid(entry.sprite):
 			var current_pos = Vector2.ZERO
 			
+			# Input start point is relative to self
+			var in_pos = entry.input_offset
+			
 			if entry.progress <= 0.5:
-				# First half: Interpolate from Input Edge -> Center
+				# First half: Interpolate from Input Edge -> Visual Center
 				# Map progress 0.0-0.5 to t 0.0-1.0
 				var t = entry.progress * 2.0
-				current_pos = entry.input_offset.lerp(Vector2.ZERO, t)
+				current_pos = in_pos.lerp(visual_center, t)
 			else:
-				# Second half: Interpolate from Center -> Output Edge
+				# Second half: Interpolate from Visual Center -> Output Edge
 				# Map progress 0.5-1.0 to t 0.0-1.0
 				var t = (entry.progress - 0.5) * 2.0
-				current_pos = Vector2.ZERO.lerp(out_vec, t)
+				current_pos = visual_center.lerp(out_vec, t)
 				
 			entry.sprite.position = current_pos
 	
@@ -96,22 +107,36 @@ func receive_item(item: ItemResource, from_node: Node2D = null) -> bool:
 	var sprite = Sprite2D.new()
 	sprite.texture = item.icon
 	sprite.modulate = item.color
-	sprite.scale = Vector2(0.4, 0.4)
+	sprite.scale = item_scale
 	sprite.z_index = 1 # Ensure item renders above conveyor
 	
 	# Determine Input Offset (Where on the edge the item appears)
-	# Vector from Center -> Input Edge
+	# The visual center of THIS conveyor
+	var my_visual_center = visual_offset + item_visual_offset
+	
 	var input_offset = Vector2.ZERO
 	
 	if from_node:
-		# Calculate vector relative to self based on world positions.
-		# from_node center to self center = -input direction roughly.
-		# We want Self Center -> from_node Center = input_edge * 2 (approx).
-		# So input_edge = (from_node - self) * 0.5
-		input_offset = (from_node.global_position - self.global_position) * 0.5
+		# If neighbor has a visual offset, we should probably account for it to make the transition smooth.
+		# Ideally, we calculate the vector from Neighbor Visual Center -> My Visual Center.
+		# Cut that in half to find the "handoff" point in local space.
+		
+		var neighbor_visual_pos = from_node.global_position
+		if "visual_offset" in from_node:
+			neighbor_visual_pos += from_node.visual_offset
+		if "item_visual_offset" in from_node:
+			neighbor_visual_pos += from_node.item_visual_offset
+			
+		var my_visual_pos = global_position + my_visual_center
+		
+		# The vector from ME to NEIGHBOR
+		var vec_to_neighbor = neighbor_visual_pos - my_visual_pos
+		
+		# The edge is roughly halfway
+		input_offset = my_visual_center + (vec_to_neighbor * 0.5)
 	else:
-		# Fallback: Opposite of output direction
-		input_offset = -_get_offset_for_dir(output_direction)
+		# Fallback: Opposite of output direction + visual center
+		input_offset = my_visual_center - _get_offset_for_dir(output_direction)
 
 	# Initial position is at the input edge
 	sprite.position = input_offset

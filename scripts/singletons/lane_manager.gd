@@ -50,49 +50,34 @@ var _depth_basis_vec: Vector2 = Vector2.ZERO
 
 func _ready() -> void:
 	print("LaneManager Initialized.")
-	_initialize_resources()
+	_load_resources()
 	call_deferred("_initialize")
 
-func _initialize_resources() -> void:
-	var load_item = func(p_name: String, path: String, default_dmg: float, color: Color) -> ItemResource:
-		var item: ItemResource
-		if ResourceLoader.exists(path):
-			item = load(path)
-		else:
-			item = ItemResource.new()
-			item.item_name = p_name
-			item.damage = default_dmg
-			item.color = color
+func _load_resources() -> void:
+	# Scan for all items and register those that are Ores
+	ores.clear()
+	ore_tile_data.clear()
+	
+	var dir_path = "res://resources/items/"
+	var dir = DirAccess.open(dir_path)
+	if dir:
+		dir.list_dir_begin()
+		var file_name = dir.get_next()
+		while file_name != "":
+			if not dir.current_is_dir() and file_name.ends_with(".tres"):
+				var item = load(dir_path + file_name) as ItemResource
+				if item and item.is_ore:
+					ores[item.item_name] = item
+					# Source ID is assumed 0 for the main ore tileset
+					ore_tile_data[item.item_name] = { "source": 0, "coords": item.ore_atlas_coords }
+					print("LaneManager: Registered Ore '%s' at Atlas %s" % [item.item_name, item.ore_atlas_coords])
+			file_name = dir.get_next()
+	else:
+		printerr("LaneManager: Could not open items directory.")
 		
-		if not item.icon:
-			var icon_path = "res://assets/ores/%s.png" % p_name.to_lower()
-			if ResourceLoader.exists(icon_path):
-				item.icon = load(icon_path)
-			else:
-				item.icon = load("res://icon.svg")
-		return item
-
-	ores["Stone"] = load_item.call("Stone", "res://resources/items/stone.tres", 5.0, Color.WHITE)
-	
-	# Assuming Alphabetical Order in the Atlas (Coal, Copper, Gold, Iron, Lux, Petroleum)
-	
-	ores["Coal"] = load_item.call("Coal", "res://resources/items/coal.tres", 10.0, Color.WHITE)
-	ore_tile_data["Coal"] = { "source": 0, "coords": Vector2i(0, 0) }
-	
-	ores["Copper"] = load_item.call("Copper", "res://resources/items/copper.tres", 12.0, Color.WHITE)
-	ore_tile_data["Copper"] = { "source": 0, "coords": Vector2i(1, 0) }
-
-	ores["Gold"] = load_item.call("Gold", "res://resources/items/gold.tres", 20.0, Color.WHITE)
-	ore_tile_data["Gold"] = { "source": 0, "coords": Vector2i(2, 0) }
-	
-	ores["Iron"] = load_item.call("Iron", "res://resources/items/iron.tres", 15.0, Color.WHITE)
-	ore_tile_data["Iron"] = { "source": 0, "coords": Vector2i(3, 0) }
-	
-	ores["Lux"] = load_item.call("Lux", "res://resources/items/lux.tres", 25.0, Color.WHITE)
-	ore_tile_data["Lux"] = { "source": 0, "coords": Vector2i(4, 0) }
-
-	ores["Petroleum"] = load_item.call("Petroleum", "res://resources/items/petroleum.tres", 8.0, Color.WHITE)
-	ore_tile_data["Petroleum"] = { "source": 0, "coords": Vector2i(5, 0) }
+	# Fallback if no ores loaded (e.g. first run before import)
+	if ores.is_empty():
+		printerr("LaneManager: No Ores loaded! Please run DataImporter.")
 
 func _initialize() -> void:
 	var main_scene = get_tree().current_scene
@@ -172,6 +157,7 @@ func _calculate_physical_coord(lane_id: int, depth: int) -> Vector2i:
 
 func _generate_ores() -> void:
 	if not is_instance_valid(ore_layer): return
+	if ore_tile_data.is_empty(): return
 	
 	for coord in grid_state.keys():
 		if grid_state[coord].has("ore"):
@@ -320,3 +306,9 @@ func get_lane_start_world_pos(lane_id: int) -> Vector2:
 func get_lane_end_world_pos(lane_id: int) -> Vector2:
 	if not lane_paths.has(lane_id) or lane_paths[lane_id].is_empty(): return Vector2.ZERO
 	return tile_to_world(lane_paths[lane_id][0]) + get_layer_offset("building")
+
+## Returns the path array for a given lane ID.
+func get_path_for_lane(lane_id: int) -> Array[Vector2i]:
+	if lane_paths.has(lane_id):
+		return lane_paths[lane_id]
+	return []

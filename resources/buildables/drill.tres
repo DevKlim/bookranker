@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="BuildableResource" load_steps=5 format=3 uid="uid://dr3dix5bbggvi"]
+
+[ext_resource type="Texture2D" uid="uid://c3hgpubm2kqe3" path="res://assets/buildables/drill.png" id="1_iwtn5"]
+[ext_resource type="PackedScene" uid="uid://bwqa3h6jl8kks" path="res://scenes/generated/drill.tscn" id="2_ib4y5"]
+[ext_resource type="Script" uid="uid://qpm1dylmnjld" path="res://scripts/resources/buildable_resource.gd" id="3_xgtfc"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_iwtn5"]
+atlas = ExtResource("1_iwtn5")
+region = Rect2(0, 0, 32, 32)
+
+[resource]
+script = ExtResource("3_xgtfc")
+buildable_name = "Mining Drill"
+icon = SubResource("AtlasTexture_iwtn5")
+has_input = false
+scene = ExtResource("2_ib4y5")

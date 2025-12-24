@@ -1,14 +1,13 @@
-[gd_resource type="Resource" script_class="RecipeResource" load_steps=4 format=3 uid="uid://recipe_smelt_copper"]
+[gd_resource type="Resource" script_class="RecipeResource" load_steps=4 format=3 uid="uid://qyxfyuagxygk"]
 
-[ext_resource type="Script" path="res://scripts/resources/recipe_resource.gd" id="1_script"]
-[ext_resource type="Resource" uid="uid://item_copper" path="res://resources/items/copper.tres" id="2_in"]
-[ext_resource type="Resource" uid="uid://item_copper_alloy" path="res://resources/items/copper_alloy.tres" id="3_out"]
+[ext_resource type="Resource" uid="uid://diwea136j53ia" path="res://resources/items/copper.tres" id="1_gycpp"]
+[ext_resource type="Resource" uid="uid://cw1gqh7dw6wm7" path="res://resources/items/copper_alloy.tres" id="2_7xbam"]
+[ext_resource type="Script" path="res://scripts/resources/recipe_resource.gd" id="3_yoslb"]
 
 [resource]
-script = ExtResource("1_script")
+script = ExtResource("3_yoslb")
 recipe_name = "Smelt Copper"
-input_item = ExtResource("2_in")
-input_count = 1
-output_item = ExtResource("3_out")
-output_count = 1
-craft_time = 2.0
+input_item = ExtResource("1_gycpp")
+input_count = 4
+output_item = ExtResource("2_7xbam")
+craft_time = 0.5

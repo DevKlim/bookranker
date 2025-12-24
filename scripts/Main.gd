@@ -159,7 +159,6 @@ func _input(event: InputEvent) -> void:
 			camera.force_update_scroll()
 
 	if Input.is_action_just_pressed("build_cancel"):
-		var mouse_pos = get_global_mouse_position()
 		if BuildManager.is_building:
 			BuildManager.exit_build_mode()
 		selected_mech_coords = Vector2i(-1, -1)

@@ -24,8 +24,9 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 
-	center_offset = Vector2(0, 16)
-	
+	# Clear generic logs
+	# print("[%s] Turret Initializing..." % name)
+
 	inventory.name = "InventoryComponent"
 	inventory.max_slots = 1
 	inventory.slot_capacity = storage_cap 
@@ -36,6 +37,11 @@ func _ready() -> void:
 	super._ready() 
 	
 	set_build_rotation(&"idle_up")
+	
+	# Verify children
+	if not target_acquirer: printerr("[%s] MISSING TargetAcquirerComponent!" % name)
+	if not shooter: printerr("[%s] MISSING ShooterComponent!" % name)
+	if not rotatable: printerr("[%s] MISSING Rotatable!" % name)
 	
 	assert(target_acquirer, "Turret is missing TargetAcquirerComponent!")
 	assert(shooter, "Turret is missing ShooterComponent!")
@@ -83,8 +89,6 @@ func _process(_delta: float) -> void:
 				var shoot_dir = _get_shoot_dir_vector(output_direction)
 				
 				# 2. Determine Lane Filter
-				# If shooting UP/DOWN (Lane Axis), we only want to hit enemies in this lane index (Logical X)
-				# If shooting LEFT/RIGHT (Row Axis), we cross lanes, so filter is -1 (hit all)
 				var filter_lane_id = -1
 				
 				if output_direction == Direction.UP or output_direction == Direction.DOWN:
@@ -93,11 +97,12 @@ func _process(_delta: float) -> void:
 					if my_logical != Vector2i(-1, -1):
 						filter_lane_id = my_logical.x
 				
-				# 3. Calculate Start Position (Center of Tile) to ensure perfect alignment
-				var my_tile_map_coord = LaneManager.tile_map.local_to_map(global_position + center_offset)
-				var tile_center_world = LaneManager.tile_map.map_to_local(my_tile_map_coord)
+				# 3. Fire using center alignment to prevent visual lane drift
+				# We calculate the spawn position at the tile center (global_position)
+				# adjusted upwards by 16 pixels to match the turret barrel height roughly.
+				var spawn_pos = global_position + Vector2(0, -16)
 				
-				shooter.shoot_in_direction(shoot_dir, filter_lane_id, ammo, tile_center_world)
+				shooter.shoot_in_direction(shoot_dir, filter_lane_id, ammo, spawn_pos)
 				inventory.remove_item(ammo, 1)
 
 func _get_shoot_dir_vector(dir: Direction) -> Vector2:
@@ -122,7 +127,6 @@ func _get_shoot_dir_vector(dir: Direction) -> Vector2:
 	# Fallback to physical if logical failed or stayed same
 	if target_tile == my_tile or target_tile == Vector2i(-1, -1):
 		match dir:
-			# Swapped logic for UP and DOWN based on request
 			Direction.DOWN: target_tile = my_tile + Vector2i(0, -1)
 			Direction.UP:   target_tile = my_tile + Vector2i(0, 1)
 			Direction.LEFT: target_tile = my_tile + Vector2i(-1, 0)

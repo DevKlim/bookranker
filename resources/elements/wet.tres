@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ElementResource" load_steps=2 format=3 uid="uid://dukdaxcsgxqag"]
+
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_gyupw"]
+
+[resource]
+script = ExtResource("1_gyupw")
+element_name = "Water"
+color = Color(0.12941177, 0.5882353, 0.9529412, 1)
+reaction_rules = {
+"fire": "steam",
+"shock": "electrocute"
+}

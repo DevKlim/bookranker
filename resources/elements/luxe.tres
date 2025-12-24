@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="ElementResource" load_steps=2 format=3 uid="uid://egxg6ooqp1dl"]
+
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_euej8"]
+
+[resource]
+script = ExtResource("1_euej8")
+element_name = "Luxe"
+color = Color(0.9137255, 0.11764706, 0.3882353, 1)
