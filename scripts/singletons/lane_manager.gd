@@ -127,6 +127,7 @@ func _calculate_grid_coord(lane_id: int, depth: int) -> Vector2i:
 func _generate_ores() -> void:
 	if ores.is_empty(): return
 	
+	var count = 0
 	for lane in range(NUM_LANES):
 		for depth in range(0, LANE_LENGTH):
 			var tile_coord = _calculate_grid_coord(lane, depth)
@@ -151,6 +152,9 @@ func _generate_ores() -> void:
 			
 			if picked_ore:
 				_place_ore_block(tile_coord, picked_ore)
+				count += 1
+	
+	print("LaneManager: Placed %d ore blocks." % count)
 
 func _place_ore_block(coord: Vector2i, item: ItemResource) -> void:
 	if not grid_map: return

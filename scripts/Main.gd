@@ -18,6 +18,7 @@ extends Node3D
 @onready var buildings_container: Node3D = $Buildings
 @onready var grid_map: GridMap = $GridMap
 @onready var dev_map: GridMap = $DevMap
+@onready var core: Core = $Core
 
 # Container for the 3D preview
 var build_preview_container: Node3D
@@ -127,17 +128,41 @@ func _process(delta: float) -> void:
 	var ray = get_mouse_raycast()
 	var mouse_world_pos = Vector3.ZERO
 	
-	if ray:
+	# Logic to handle Core transparency and building "through" it
+	var hovering_core = false
+	if ray and ray.get("collider") == core:
+		hovering_core = true
+		if is_instance_valid(core):
+			core.set_transparent(true)
+			
+		# If building, we want to look BEHIND the core
 		if BuildManager.is_building:
-			var collider = ray.get("collider")
-			if collider is GridMap:
-				mouse_world_pos = ray.position + (ray.normal * 0.5)
+			# Re-cast excluding the Core
+			var ray_ex = get_mouse_raycast([core])
+			if ray_ex:
+				if ray_ex.get("collider") is GridMap:
+					mouse_world_pos = ray_ex.position + (ray_ex.normal * 0.5)
+				else:
+					mouse_world_pos = ray_ex.position - (ray_ex.normal * 0.1)
+			else:
+				mouse_world_pos = get_plane_intersection()
+		else:
+			mouse_world_pos = ray.position
+	else:
+		if is_instance_valid(core):
+			core.set_transparent(false)
+			
+		if ray:
+			if BuildManager.is_building:
+				var collider = ray.get("collider")
+				if collider is GridMap:
+					mouse_world_pos = ray.position + (ray.normal * 0.5)
+				else:
+					mouse_world_pos = ray.position - (ray.normal * 0.1)
 			else:
 				mouse_world_pos = ray.position - (ray.normal * 0.1)
 		else:
-			mouse_world_pos = ray.position - (ray.normal * 0.1)
-	else:
-		mouse_world_pos = get_plane_intersection()
+			mouse_world_pos = get_plane_intersection()
 
 	update_cursor_highlight(mouse_world_pos)
 	
@@ -191,12 +216,14 @@ func _process(delta: float) -> void:
 
 	update_arrow_indicator()
 
-func get_mouse_raycast() -> Dictionary:
+func get_mouse_raycast(exclude: Array = []) -> Dictionary:
 	var mouse_pos = get_viewport().get_mouse_position()
 	var from = camera.project_ray_origin(mouse_pos)
 	var to = from + camera.project_ray_normal(mouse_pos) * 1000.0
 	var space_state = get_world_3d().direct_space_state
 	var query = PhysicsRayQueryParameters3D.create(from, to)
+	if not exclude.is_empty():
+		query.exclude = exclude
 	return space_state.intersect_ray(query)
 
 func get_plane_intersection() -> Vector3:
@@ -251,10 +278,22 @@ func handle_debug_display() -> void:
 	var world_pos = (ray.position - ray.normal * 0.1) if ray else get_plane_intersection()
 	
 	var cell = Vector3i.ZERO
+	var ore_info = "None"
+	
 	if grid_map:
 		cell = grid_map.local_to_map(grid_map.to_local(world_pos))
+		
+		# Query LaneManager using the specific tile center to be precise
+		var tile_center = LaneManager.tile_to_world(Vector2i(cell.x, cell.z))
+		# Check slightly above floor (Y=0.5) to match Drill query logic
+		var check_pos = tile_center + Vector3(0, 0.5, 0)
+		
+		var ore = LaneManager.get_ore_at_world_pos(check_pos)
+		if ore:
+			ore_info = ore.item_name
+			
 	if game_ui:
-		game_ui.set_debug_text("Cell: %s" % str(cell))
+		game_ui.set_debug_text("Cell: %s\nOre: %s" % [str(cell), ore_info])
 
 func update_arrow_indicator() -> void:
 	arrow_indicator.visible = false

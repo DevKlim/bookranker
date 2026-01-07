@@ -62,6 +62,10 @@ func update_network() -> void:
 		visited[POWER_SOURCE_COORD] = true
 		if is_instance_valid(_wires[POWER_SOURCE_COORD]):
 			_wires[POWER_SOURCE_COORD].set_powered(true)
+	else:
+		# Warn just in case, though it's valid to not have started wiring yet
+		# print("WiringManager: No wire connected to Main Power Source at %s" % POWER_SOURCE_COORD)
+		pass
 	
 	# 3. Propagate Power (Redstone logic: Adjacent wires share power)
 	while not queue.is_empty():

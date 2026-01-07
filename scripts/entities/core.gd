@@ -7,6 +7,11 @@ extends StaticBody3D
 # References to the Core's components.
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var power_provider_component: PowerProviderComponent = $PowerProviderComponent
+@onready var mesh_instance: MeshInstance3D = $Core
+
+# Original material storage for toggling transparency
+var _default_material: Material
+var _transparent_material: StandardMaterial3D
 
 
 ## Called when the node enters the scene tree for the first time.
@@ -18,15 +23,42 @@ func _ready() -> void:
 	# Connect to the health component's 'died' signal to handle game over.
 	health_component.died.connect(_on_died)
 	
+	# Set power generation to 100 as requested
+	power_provider_component.power_generation = 100.0
+	
 	# Register the Core as a power provider in the global power grid.
 	PowerGridManager.register_provider(power_provider_component)
 
-	# Register the Core's position with the BuildManager so nothing can be built on it,
-	# and so enemies recognize it as a blocking entity.
-	BuildManager.register_preplaced_building(self)
+	# Register the Core's footprint (5x5 area) in the LaneManager to prevent building overlap.
+	# The Core is centered at logical tile (0, 2).
+	# A 5x5 area implies offsets of -2 to +2 in both X and Z directions from the center.
+	var center_tile = Vector2i(-3, 2)
+	for x_off in range(-2, 3):
+		for z_off in range(-2, 3):
+			var tile_pos = center_tile + Vector2i(x_off, z_off)
+			LaneManager.register_entity(self, tile_pos, "building")
+	
+	# Prepare transparency materials
+	if mesh_instance:
+		_default_material = mesh_instance.get_active_material(0)
+		# If no material exists, create a basic one
+		if not _default_material:
+			_default_material = StandardMaterial3D.new()
+			_default_material.albedo_color = Color(0.2, 0.5, 1.0) # Core Blue
+			mesh_instance.material_override = _default_material
+			
+		_transparent_material = StandardMaterial3D.new()
+		# Copy basics
+		if _default_material is StandardMaterial3D:
+			_transparent_material.albedo_color = _default_material.albedo_color
+		else:
+			_transparent_material.albedo_color = Color(0.2, 0.5, 1.0)
+			
+		_transparent_material.albedo_color.a = 0.3
+		_transparent_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	
 	# Log initial status for debugging.
-	print("Core is operational. Initial health: %d" % health_component.current_health)
+	print("Core is operational at %s. Initial health: %d" % [global_position, health_component.current_health])
 	print("Core power output: %d" % power_provider_component.power_generation)
 
 
@@ -37,3 +69,13 @@ func _on_died(_node_that_died) -> void:
 	GameManager.end_game(false) # player_won = false
 	# The Core disappears from the game.
 	queue_free()
+
+func set_transparent(is_transparent: bool) -> void:
+	if not mesh_instance: return
+	
+	if is_transparent:
+		if mesh_instance.material_override != _transparent_material:
+			mesh_instance.material_override = _transparent_material
+	else:
+		if mesh_instance.material_override != _default_material:
+			mesh_instance.material_override = _default_material

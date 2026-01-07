@@ -3,9 +3,11 @@ class_name Drill
 extends BaseBuilding
 
 @export var storage_cap: int = 100
+@export var drill_speed: float = 5.0
 
 @onready var inventory: InventoryComponent = InventoryComponent.new()
 var mine_timer: Timer
+var _mesh_visual: Node3D
 
 func _init() -> void:
 	has_input = false
@@ -20,40 +22,67 @@ func _ready() -> void:
 	add_child(inventory)
 	
 	mine_timer = Timer.new()
+	mine_timer.name = "MineTimer"
 	mine_timer.wait_time = 2.0
 	mine_timer.one_shot = false
 	mine_timer.timeout.connect(_on_mine_timer_timeout)
 	add_child(mine_timer)
 	
+	_mesh_visual = get_node_or_null("BlockVisual")
+	
 	super._ready()
+	
+	# Initial state check
+	_update_mining_state()
 
 func _on_power_status_changed(has_power: bool) -> void:
+	# Base class handles is_active flag
 	super._on_power_status_changed(has_power)
-	if has_power:
-		mine_timer.start()
+	_update_mining_state()
+	print("Drill %s Power Status Changed: %s" % [name, is_active])
+
+func _update_mining_state() -> void:
+	if is_active:
+		if mine_timer.is_stopped():
+			mine_timer.start()
+			print("Drill %s started mining." % name)
 	else:
 		mine_timer.stop()
+		print("Drill %s stopped mining." % name)
+
+func _process(delta: float) -> void:
+	if Engine.is_editor_hint(): return
+	
+	# Visual Feedback: Spin the drill bit if active
+	if is_active and is_instance_valid(_mesh_visual):
+		_mesh_visual.rotate_y(drill_speed * delta)
+	
+	# Output Logic: Continuously try to output if items are available
+	if is_active and inventory.has_item():
+		try_output_from_inventory(inventory)
 
 func _on_mine_timer_timeout() -> void:
 	if not is_active: return
 	
-	# Determine logical center of the tile this drill sits on
-	# Global position is typically centered on X/Z for buildings due to snap
-	var check_pos = global_position
+	# Mining Logic
+	var tile_coord = LaneManager.world_to_tile(global_position)
 	
-	# Query LaneManager for ore using world coordinates.
-	var ore = LaneManager.get_ore_at_world_pos(check_pos)
+	# Get center of the tile at Y=0 (floor)
+	var floor_pos = LaneManager.tile_to_world(tile_coord)
+	
+	var ore = LaneManager.get_ore_at_world_pos(floor_pos)
 	
 	if ore:
 		if inventory.has_space_for(ore):
-			inventory.add_item(ore, 1)
-	
-	if inventory.has_item():
-		try_output_from_inventory(inventory)
-
-func _process(_delta: float) -> void:
-	if Engine.is_editor_hint(): return
-	
-	# Continuously try to output if items are available
-	if is_active and inventory.has_item():
-		try_output_from_inventory(inventory)
+			var remainder = inventory.add_item(ore, 1)
+			if remainder == 0:
+				print("Drill mined: %s at %s" % [ore.item_name, str(tile_coord)])
+			else:
+				print("Drill inventory full.")
+	else:
+		# Verbose Debugging for "Why isn't it mining?"
+		if LaneManager.grid_map:
+			var cell_item = LaneManager.grid_map.get_cell_item(Vector3i(tile_coord.x, 0, tile_coord.y))
+			print("Drill at %s found GridMap ID: %d. (Expected valid Ore ID)" % [tile_coord, cell_item])
+		else:
+			print("Drill Error: LaneManager GridMap not assigned.")

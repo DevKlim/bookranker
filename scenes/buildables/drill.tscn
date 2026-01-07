@@ -1,88 +1,7 @@
-[gd_scene load_steps=11 format=4 uid="uid://dkrn6jnj3i7cg"]
+[gd_scene load_steps=4 format=3 uid="uid://dkrn6jnj3i7cg"]
 
 [ext_resource type="Script" uid="uid://dj4thqutyqmh2" path="res://scripts/entities/buildings/drill.gd" id="1_58pji"]
-[ext_resource type="Texture2D" uid="uid://c3hgpubm2kqe3" path="res://assets/buildables/drill.png" id="1_edetc"]
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_58pji"]
-albedo_texture = ExtResource("1_edetc")
-texture_filter = 0
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_die7d"]
-albedo_texture = ExtResource("1_edetc")
-texture_filter = 0
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0ximr"]
-albedo_texture = ExtResource("1_edetc")
-texture_filter = 0
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_xnkdd"]
-albedo_texture = ExtResource("1_edetc")
-texture_filter = 0
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qtvju"]
-albedo_texture = ExtResource("1_edetc")
-texture_filter = 0
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bamck"]
-albedo_texture = ExtResource("1_edetc")
-texture_filter = 0
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_5ckq4"]
-_surfaces = [{
-"aabb": AABB(-0.5, 1, -0.5, 1, 1e-05, 1),
-"attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
-"format": 34359738391,
-"material": SubResource("StandardMaterial3D_58pji"),
-"primitive": 3,
-"uv_scale": Vector4(0, 0, 0, 0),
-"vertex_count": 6,
-"vertex_data": PackedByteArray("AAAAvwAAgD8AAAC/AAAAPwAAgD8AAAC/AAAAPwAAgD8AAAA/AAAAvwAAgD8AAAC/AAAAPwAAgD8AAAA/AAAAvwAAgD8AAAA//3///wAA/z//f///AAD/P/9///8AAP8//3///wAA/z//f///AAD/P/9///8AAP8/")
-}, {
-"aabb": AABB(-0.5, 0, -0.5, 1, 1e-05, 1),
-"attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
-"format": 34359738391,
-"material": SubResource("StandardMaterial3D_die7d"),
-"primitive": 3,
-"uv_scale": Vector4(0, 0, 0, 0),
-"vertex_count": 6,
-"vertex_data": PackedByteArray("AAAAvwAAAAAAAAA/AAAAPwAAAAAAAAA/AAAAPwAAAAAAAAC/AAAAvwAAAAAAAAA/AAAAPwAAAAAAAAC/AAAAvwAAAAAAAAC//38AAAAA/z//fwAAAAD/P/9/AAAAAP8//38AAAAA/z//fwAAAAD/P/9/AAAAAP8/")
-}, {
-"aabb": AABB(-0.5, 0, 0.5, 1, 1, 1e-05),
-"attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
-"format": 34359738391,
-"material": SubResource("StandardMaterial3D_0ximr"),
-"primitive": 3,
-"uv_scale": Vector4(0, 0, 0, 0),
-"vertex_count": 6,
-"vertex_data": PackedByteArray("AAAAvwAAgD8AAAA/AAAAPwAAgD8AAAA/AAAAPwAAAAAAAAA/AAAAvwAAgD8AAAA/AAAAPwAAAAAAAAA/AAAAvwAAAAAAAAA//3//fwAA/z//f/9/AAD/P/9//38AAP8//3//fwAA/z//f/9/AAD/P/9//38AAP8/")
-}, {
-"aabb": AABB(-0.5, 0, -0.5, 1, 1, 1e-05),
-"attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
-"format": 34359738391,
-"material": SubResource("StandardMaterial3D_xnkdd"),
-"primitive": 3,
-"uv_scale": Vector4(0, 0, 0, 0),
-"vertex_count": 6,
-"vertex_data": PackedByteArray("AAAAPwAAgD8AAAC/AAAAvwAAgD8AAAC/AAAAvwAAAAAAAAC/AAAAPwAAgD8AAAC/AAAAvwAAAAAAAAC/AAAAPwAAAAAAAAC//////////z//////////P/////////8//////////z//////////P/////////8/")
-}, {
-"aabb": AABB(-0.5, 0, -0.5, 1e-05, 1, 1),
-"attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
-"format": 34359738391,
-"material": SubResource("StandardMaterial3D_qtvju"),
-"primitive": 3,
-"uv_scale": Vector4(0, 0, 0, 0),
-"vertex_count": 6,
-"vertex_data": PackedByteArray("AAAAvwAAgD8AAAC/AAAAvwAAgD8AAAA/AAAAvwAAAAAAAAA/AAAAvwAAgD8AAAC/AAAAvwAAAAAAAAA/AAAAvwAAAAAAAAC/AAD/f///AAAAAP9///8AAAAA/3///wAAAAD/f///AAAAAP9///8AAAAA/3///wAA")
-}, {
-"aabb": AABB(0.5, 0, -0.5, 1e-05, 1, 1),
-"attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
-"format": 34359738391,
-"material": SubResource("StandardMaterial3D_bamck"),
-"primitive": 3,
-"uv_scale": Vector4(0, 0, 0, 0),
-"vertex_count": 6,
-"vertex_data": PackedByteArray("AAAAPwAAgD8AAAA/AAAAPwAAgD8AAAC/AAAAPwAAAAAAAAC/AAAAPwAAgD8AAAA/AAAAPwAAAAAAAAC/AAAAPwAAAAAAAAA/////f/9//z////9//3//P////3//f/8/////f/9//z////9//3//P////3//f/8/")
-}]
+[ext_resource type="PackedScene" uid="uid://b3adldfgqbyhs" path="res://scenes/buildables/drill.glb" id="2_58pji"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_nrls0"]
 
@@ -90,9 +9,9 @@ _surfaces = [{
 script = ExtResource("1_58pji")
 has_input = false
 
-[node name="BlockVisual" type="MeshInstance3D" parent="."]
-mesh = SubResource("ArrayMesh_5ckq4")
-
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
 shape = SubResource("BoxShape3D_nrls0")
+
+[node name="drill" parent="." instance=ExtResource("2_58pji")]
+transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, -0.5, -0.2)

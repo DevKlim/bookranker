@@ -3,7 +3,6 @@ extends Node
 ## Manages the entire power grid, tracking all providers and consumers.
 ## It calculates the net power and tells consumers if they have power.
 
-
 ## Signal emitted when the grid's status is updated.
 signal grid_updated(total_power, total_demand, net_power)
 
@@ -18,26 +17,22 @@ var net_power: float = 0.0
 
 @onready var wiring_manager = get_node("/root/WiringManager")
 @onready var build_manager = get_node("/root/BuildManager")
+@onready var lane_manager = get_node("/root/LaneManager") 
 
-
-## Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	print("PowerGridManager Initialized.")
 	wiring_manager.network_updated.connect(update_grid)
 
-
-## Recalculates the entire power grid's status.
-## Accepts optional argument to satisfy signal connections that pass values (like property setters).
 func update_grid(_arg = null) -> void:
-	# 1. Calculate total generation from all providers (Core, etc.)
+	# 1. Calculate total generation
 	total_power_generation = 0.0
 	for provider in providers:
 		if is_instance_valid(provider):
 			total_power_generation += provider.power_generation
 
-	# 2. Separate consumers into two groups based on eligibility
+	# 2. Check Consumer Eligibility (Wire Connection)
 	var eligible_consumers: Array[PowerConsumerComponent] = []
-	var grid_valid = is_instance_valid(build_manager.grid_map)
+	var disconnected_count = 0
 	
 	for consumer in consumers:
 		if not is_instance_valid(consumer): continue
@@ -45,57 +40,52 @@ func update_grid(_arg = null) -> void:
 		var is_eligible = true
 		
 		if consumer.requires_wire_connection:
-			if grid_valid:
-				var parent = consumer.get_parent()
-				if parent:
-					# Use GridMap to determine the cell
-					var local_pos = build_manager.grid_map.to_local(parent.global_position)
-					var cell = build_manager.grid_map.local_to_map(local_pos)
-					# Convert to logical grid (Vector2i) for WiringManager
-					var logic_coord = Vector2i(cell.x, cell.z)
-					
-					if not wiring_manager.is_powered(logic_coord):
-						is_eligible = false
+			var parent = consumer.get_parent()
+			if parent and parent is Node3D:
+				# Use LaneManager to get the logical tile of the building
+				var logic_coord = lane_manager.world_to_tile(parent.global_position)
+				
+				# Check if the wire at this coordinate is powered (connected to source)
+				if not wiring_manager.is_powered(logic_coord):
+					is_eligible = false
+					# Optional: Debug only if we suspect issues
+					# print("PowerGrid: %s at %s is disconnected from power source." % [parent.name, logic_coord])
 			else:
-				# If grid is not ready yet, we can't verify connection.
-				# Default to false to prevent free power before init.
 				is_eligible = false
 		
 		if is_eligible:
 			eligible_consumers.append(consumer)
 		else:
 			consumer.set_power_status(false)
+			disconnected_count += 1
 
-	# 3. Calculate demand for the eligible consumers only
+	# 3. Calculate Demand
 	total_power_demand = 0.0
 	for consumer in eligible_consumers:
 		total_power_demand += consumer.power_consumption
 
-	# 4. Determine power availability
+	# 4. Determine Grid Status
 	net_power = total_power_generation - total_power_demand
 	var has_sufficient_main_power: bool = net_power >= 0
 	
-	# 5. Inform each eligible consumer of its status
+	print("--- Power Grid Update ---")
+	print("Gen: %.1f | Demand: %.1f | Net: %.1f" % [total_power_generation, total_power_demand, net_power])
+	print("Consumers: %d Total | %d Eligible | %d Disconnected" % [consumers.size(), eligible_consumers.size(), disconnected_count])
+
+	# 5. Apply Status
 	for consumer in eligible_consumers:
 		consumer.set_power_status(has_sufficient_main_power)
 		
-	# 6. Emit signal for UI.
 	emit_signal("grid_updated", total_power_generation, total_power_demand, net_power)
 
-
-## Adds a provider to the grid and connects its signals.
 func register_provider(provider: PowerProviderComponent) -> void:
 	if not providers.has(provider):
 		providers.append(provider)
-		# Ensure we don't double connect
 		if not provider.power_output_changed.is_connected(update_grid):
 			provider.power_output_changed.connect(update_grid)
-		
 		provider.tree_exiting.connect(func(): unregister_provider(provider))
 		update_grid()
 
-
-## Removes a provider from the grid.
 func unregister_provider(provider: PowerProviderComponent) -> void:
 	if providers.has(provider):
 		if provider.is_connected("power_output_changed", update_grid):
@@ -103,19 +93,14 @@ func unregister_provider(provider: PowerProviderComponent) -> void:
 		providers.erase(provider)
 		update_grid()
 
-
-## Adds a consumer to the grid and connects its signals.
 func register_consumer(consumer: PowerConsumerComponent) -> void:
 	if not consumers.has(consumer):
 		consumers.append(consumer)
 		if not consumer.power_demand_changed.is_connected(update_grid):
 			consumer.power_demand_changed.connect(update_grid)
-			
 		consumer.tree_exiting.connect(func(): unregister_consumer(consumer))
 		update_grid()
 
-
-## Removes a consumer from the grid.
 func unregister_consumer(consumer: PowerConsumerComponent) -> void:
 	if consumers.has(consumer):
 		if consumer.is_connected("power_demand_changed", update_grid):

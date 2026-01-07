@@ -36,6 +36,7 @@ func _ready() -> void:
 	_setup_health_component()
 	_setup_inventory_component()
 	
+	# Initialize as false, waiting for PowerGrid to update us
 	_on_power_status_changed(false)
 
 func _setup_visuals() -> void:
@@ -82,6 +83,10 @@ func _setup_inventory_component() -> void:
 		inventory_component = get_node_or_null("InputInventory")
 
 func _on_power_status_changed(has_power: bool) -> void:
+	# Debug check to confirm buildings receive the signal
+	if is_active != has_power:
+		print("Building %s (%s) Power Changed: %s" % [name, str(self), has_power])
+		
 	is_active = has_power
 	var animated_sprite = _get_main_sprite()
 	if is_instance_valid(animated_sprite):
