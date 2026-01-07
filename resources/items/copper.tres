@@ -14,4 +14,7 @@ modifiers = {
 "speed_mult": 1.05
 }
 is_ore = true
-ore_atlas_coords = Vector2i(1, 0)
+ore_block_name = "Copper Ore"
+min_depth = 2
+max_depth = 25
+rarity = 0.15

@@ -1,129 +1,195 @@
 extends Node
 
-## Manages the spawning of enemy waves using Enemy Resources.
+## Manages the spawning of enemy waves defined in data/waves.json.
 
-signal wave_started(wave_number)
-signal wave_cleared(wave_number)
+signal wave_started(wave_index)
+signal wave_cleared(wave_index)
 
-# References to scene nodes
-var _enemies_container: Node2D
+# References
+var _enemies_container: Node3D
 
-# This array will be populated by loading all EnemyResource files.
-var _enemy_types: Array[EnemyResource] = []
+# Data
+var _enemy_registry: Dictionary = {} # Map "id" -> EnemyResource
+var _waves_config: Array = [] # Array of Dictionary (Wave Data)
 
-var wave_number: int = 0
-var enemies_remaining: int = 0
-var _enemies_to_spawn_this_wave: int = 0
-var _spawn_timer: Timer
-
+# State
+var current_wave_index: int = 0 # 0-based index matching _waves_config array
+var enemies_alive: int = 0
+var is_wave_active: bool = false
+var _abort_wave: bool = false
 
 func _ready() -> void:
-	# Clear generic logs
-	# print("WaveManager Initialized.")
-	_spawn_timer = Timer.new()
-	_spawn_timer.one_shot = false
-	_spawn_timer.wait_time = 0.5
-	_spawn_timer.timeout.connect(_on_spawn_timer_timeout)
-	add_child(_spawn_timer)
-	
 	call_deferred("_initialize")
-
 
 func _initialize() -> void:
 	var main_scene = get_tree().current_scene
 	if main_scene:
 		_enemies_container = main_scene.get_node_or_null("Enemies")
 	
-	if not is_instance_valid(_enemies_container):
-		printerr("WaveManager could not find 'Enemies' node.")
+	if not _enemies_container:
+		printerr("WaveManager: 'Enemies' node not found in Main scene.")
 		
-	_load_enemy_types()
+	_load_enemy_registry()
+	_load_waves_config()
+	print("WaveManager: Initialized with %d waves and %d enemy types." % [_waves_config.size(), _enemy_registry.size()])
 
+func _load_enemy_registry() -> void:
+	_enemy_registry.clear()
+	var dir_path = "res://resources/enemies"
+	var dir = DirAccess.open(dir_path)
+	if dir:
+		dir.list_dir_begin()
+		var file_name = dir.get_next()
+		while file_name != "":
+			if not dir.current_is_dir() and file_name.ends_with(".tres"):
+				var res = load(dir_path + "/" + file_name)
+				if res is EnemyResource:
+					# Use filename as ID (e.g. "basic_robot.tres" -> "basic_robot")
+					var id = file_name.get_basename()
+					_enemy_registry[id] = res
+			file_name = dir.get_next()
+	else:
+		printerr("WaveManager: Could not open resources/enemies.")
 
-## Automatically loads all .tres files from the enemy resources folder.
-func _load_enemy_types() -> void:
-	var dir = DirAccess.open("res://resources/enemies")
-	if not dir:
-		printerr("Could not open directory res://resources/enemies. No enemies will spawn.")
+func _load_waves_config() -> void:
+	var file = FileAccess.open("res://data/waves.json", FileAccess.READ)
+	if file:
+		var json = JSON.new()
+		var error = json.parse(file.get_as_text())
+		if error == OK:
+			var data = json.get_data()
+			if data.has("waves"):
+				_waves_config = data["waves"]
+		else:
+			printerr("WaveManager: Failed to parse waves.json.")
+	else:
+		printerr("WaveManager: waves.json not found.")
+
+## Starts a specific wave by index (0-based).
+func start_wave(index: int) -> void:
+	if is_wave_active:
+		print("WaveManager: Wave already in progress.")
 		return
-	
-	for file_name in dir.get_files():
-		if file_name.ends_with(".tres"):
-			var resource = load("res://resources/enemies/" + file_name)
-			if resource is EnemyResource:
-				_enemy_types.append(resource)
-	
-	# print("WaveManager loaded %d enemy types." % _enemy_types.size())
-
-
-func start_wave() -> void:
-	if GameManager.current_state == GameManager.GameState.WAVE_IN_PROGRESS:
-		print("WaveManager: A wave is already in progress.")
+		
+	if index < 0 or index >= _waves_config.size():
+		printerr("WaveManager: Invalid wave index %d." % index)
 		return
 
-	if _enemy_types.is_empty():
-		printerr("WaveManager: Cannot start wave. No enemy types loaded.")
-		return
-
-	wave_number += 1
-	_enemies_to_spawn_this_wave = 5 + (wave_number * 2)
-	enemies_remaining = _enemies_to_spawn_this_wave
+	current_wave_index = index
+	var wave_data = _waves_config[index]
 	
 	GameManager.current_state = GameManager.GameState.WAVE_IN_PROGRESS
-	emit_signal("wave_started", wave_number)
-	print("DEBUG: Wave %d started. Planning %d enemies." % [wave_number, enemies_remaining])
-	_spawn_timer.start()
+	is_wave_active = true
+	_abort_wave = false
+	enemies_alive = 0
+	
+	emit_signal("wave_started", current_wave_index + 1) # Display as 1-based
+	print("WaveManager: Starting Wave %d (ID: %s)" % [current_wave_index + 1, wave_data.get("id")])
+	
+	_spawn_wave_routine(wave_data)
 
-
+## Stops the current wave and clears enemies.
 func stop_wave() -> void:
-	if GameManager.current_state != GameManager.GameState.WAVE_IN_PROGRESS:
-		return
-		
-	_spawn_timer.stop()
-	for enemy in _enemies_container.get_children():
-		enemy.queue_free()
-		
-	enemies_remaining = 0
-	_enemies_to_spawn_this_wave = 0
+	if not is_wave_active: return
+	
+	_abort_wave = true
+	is_wave_active = false
+	
+	if is_instance_valid(_enemies_container):
+		for child in _enemies_container.get_children():
+			child.queue_free()
+			
+	enemies_alive = 0
 	GameManager.current_state = GameManager.GameState.PRE_WAVE
-	print("Wave %d stopped by user." % wave_number)
+	print("WaveManager: Wave stopped manually.")
 
+# Correction for wave completion logic
+var _spawning_finished: bool = false
 
-func _on_spawn_timer_timeout() -> void:
-	if _enemies_to_spawn_this_wave > 0:
-		_spawn_enemy()
-		_enemies_to_spawn_this_wave -= 1
-	else:
-		_spawn_timer.stop()
-		print("DEBUG: All enemies for wave %d have been spawned." % wave_number)
-
-
-func _spawn_enemy() -> void:
-	var enemy_resource = _enemy_types.pick_random()
-	if not enemy_resource or not enemy_resource.scene:
-		printerr("WaveManager: Invalid EnemyResource selected for spawning.")
-		return
+func _spawn_wave_routine(wave_data: Dictionary) -> void:
+	_spawning_finished = false
+	var groups = wave_data.get("groups", [])
 	
-	if LaneManager.lane_paths.keys().is_empty():
-		printerr("WaveManager: LaneManager has no paths defined. Cannot spawn enemy.")
+	for group in groups:
+		if _abort_wave: return
+		
+		var enemy_id = group.get("enemy_id", "")
+		var count = group.get("count", 0)
+		var interval = group.get("interval", 1.0)
+		
+		if not _enemy_registry.has(enemy_id):
+			printerr("WaveManager: Unknown enemy_id '%s'" % enemy_id)
+			continue
+			
+		var res = _enemy_registry[enemy_id]
+		
+		for i in range(count):
+			if _abort_wave: return
+			
+			_spawn_enemy(res)
+			
+			# Wait interval
+			await get_tree().create_timer(interval).timeout
+
+	_spawning_finished = true
+	# Finished spawning all groups. Check immediately in case everything died already.
+	if enemies_alive == 0:
+		_complete_wave()
+	else:
+		print("WaveManager: All enemies spawned for Wave %d. Waiting for clear." % (current_wave_index + 1))
+
+func _spawn_enemy(res: EnemyResource) -> void:
+	if not res.scene: return
+	
+	# Determine Spawn Point
+	var start_pos = Vector3.ZERO
+	var lane_id = -1
+	
+	# 1. Check for Map Spawners (Debug GridMap)
+	if not LaneManager.spawn_points.is_empty():
+		start_pos = LaneManager.spawn_points.pick_random()
+		
+		# Attempt to detect lane from spawn position
+		var tile = LaneManager.world_to_tile(start_pos)
+		var estimated_lane = tile.y - LaneManager.generation_offset.y
+		# Verify if this matches a valid lane index
+		if estimated_lane >= 0 and estimated_lane < LaneManager.NUM_LANES:
+			lane_id = estimated_lane
+		else:
+			lane_id = -1 # Free roam
+			
+	# 2. Fallback to Lane Paths
+	elif not LaneManager.lane_paths.keys().is_empty():
+		lane_id = LaneManager.lane_paths.keys().pick_random()
+		start_pos = LaneManager.get_lane_end_world_pos(lane_id)
+	else:
+		printerr("WaveManager: No spawn points available.")
 		return
 		
-	var lane_id = LaneManager.lane_paths.keys().pick_random()
-	var start_pos = LaneManager.get_lane_start_world_pos(lane_id)
+	var enemy = res.scene.instantiate()
+	if not enemy is CharacterBody3D:
+		printerr("WaveManager: Enemy scene root is not CharacterBody3D. Skipping.")
+		enemy.queue_free()
+		return
+		
+	_enemies_container.add_child(enemy)
+	enemies_alive += 1
 	
-	print("DEBUG: WaveManager Spawning %s on Lane %d" % [enemy_resource.enemy_name, lane_id])
-	
-	var enemy_instance: EnemyUnit = enemy_resource.scene.instantiate()
-	_enemies_container.add_child(enemy_instance)
-	
-	enemy_instance.initialize(enemy_resource, start_pos, lane_id)
-	enemy_instance.died.connect(on_enemy_defeated)
+	if enemy.has_method("initialize"):
+		enemy.initialize(res, start_pos, lane_id)
+		enemy.died.connect(_on_enemy_died)
 
+func _on_enemy_died() -> void:
+	enemies_alive -= 1
+	if enemies_alive <= 0 and _spawning_finished and is_wave_active and not _abort_wave:
+		_complete_wave()
 
-func on_enemy_defeated() -> void:
-	enemies_remaining -= 1
-	
-	if enemies_remaining <= 0 and _spawn_timer.is_stopped():
-		emit_signal("wave_cleared", wave_number)
-		GameManager.current_state = GameManager.GameState.PRE_WAVE
-		print("DEBUG: Wave %d cleared!" % wave_number)
+func _complete_wave() -> void:
+	if not is_wave_active: return
+	is_wave_active = false
+	GameManager.current_state = GameManager.GameState.POST_WAVE
+	emit_signal("wave_cleared", current_wave_index + 1)
+	print("WaveManager: Wave %d Cleared!" % (current_wave_index + 1))
+
+func get_total_waves() -> int:
+	return _waves_config.size()

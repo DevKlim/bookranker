@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3 uid="uid://ch00r6k52pvds"]
+
+[ext_resource type="Script" uid="uid://bxegahcffjl0d" path="res://scripts/entities/buildings/wire.gd" id="1_dsrih"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s1t47"]
+
+[node name="Wire" type="StaticBody3D"]
+script = ExtResource("1_dsrih")
+
+[node name="AnimatedSprite3D" type="AnimatedSprite3D" parent="."]
+pixel_size = 0.03
+axis = 1
+texture_filter = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("BoxShape3D_s1t47")

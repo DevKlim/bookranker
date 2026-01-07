@@ -2,138 +2,108 @@
 class_name TurretBuilding
 extends BaseBuilding
 
-# Component references
-@onready var target_acquirer: TargetAcquirerComponent = $TargetAcquirerComponent
-@onready var shooter: ShooterComponent = $ShooterComponent
-@onready var rotatable: Node2D = $Rotatable
+# Components
+var target_acquirer: TargetAcquirerComponent
+var shooter: ShooterComponent
+var rotatable: Node3D
 
 @export var storage_cap: int = 100
-
-# Add Inventory
 @onready var inventory: InventoryComponent = InventoryComponent.new()
 
 func _init() -> void:
-	# Configure capabilities for Editor & Runtime
 	has_output = false
 	has_input = true
 
-func _get_main_sprite() -> AnimatedSprite2D:
-	return get_node_or_null("Rotatable/TurretBase")
+func _get_main_sprite() -> AnimatedSprite3D:
+	return get_node_or_null("Rotatable/AnimatedSprite3D")
 
 func _ready() -> void:
-	if Engine.is_editor_hint():
-		return
-
-	# Clear generic logs
-	# print("[%s] Turret Initializing..." % name)
+	if Engine.is_editor_hint(): return
 
 	inventory.name = "InventoryComponent"
 	inventory.max_slots = 1
 	inventory.slot_capacity = storage_cap 
 	add_child(inventory)
 
-	target_acquirer.validation_callback = _is_valid_target
-
+	target_acquirer = get_node_or_null("TargetAcquirerComponent")
+	shooter = get_node_or_null("ShooterComponent")
+	rotatable = get_node_or_null("Rotatable")
+	
+	if not target_acquirer:
+		printerr("Turret %s missing TargetAcquirerComponent!" % name)
+		
+	if target_acquirer:
+		target_acquirer.validation_callback = _is_valid_target
+	
 	super._ready() 
 	
-	set_build_rotation(&"idle_up")
+	var s = _get_main_sprite()
+	if s: s.play("idle_up")
 	
-	# Verify children
-	if not target_acquirer: printerr("[%s] MISSING TargetAcquirerComponent!" % name)
-	if not shooter: printerr("[%s] MISSING ShooterComponent!" % name)
-	if not rotatable: printerr("[%s] MISSING Rotatable!" % name)
+	if rotatable and visual_offset != Vector3.ZERO:
+		rotatable.position = visual_offset
+
+func _is_valid_target(body: Node3D) -> bool:
+	if not (body is EnemyUnit): return false
 	
-	assert(target_acquirer, "Turret is missing TargetAcquirerComponent!")
-	assert(shooter, "Turret is missing ShooterComponent!")
-	assert(rotatable, "Turret is missing a Node2D named 'Rotatable'!")
-
-	target_acquirer.target_acquired.connect(_on_target_acquired)
-
-func _is_valid_target(body: Node2D) -> bool:
-	var my_center = global_position + center_offset
-	var my_tile = LaneManager.tile_map.local_to_map(my_center)
+	var my_tile = LaneManager.world_to_tile(global_position)
 	var my_logical = LaneManager.get_logical_from_tile(my_tile)
 	
-	var enemy_tile = LaneManager.tile_map.local_to_map(body.global_position)
+	var enemy_tile = LaneManager.world_to_tile(body.global_position)
 	var enemy_logical = LaneManager.get_logical_from_tile(enemy_tile)
 	
 	if my_logical == Vector2i(-1, -1) or enemy_logical == Vector2i(-1, -1):
 		return false
 	
-	# Check alignment based on output direction axis
 	match output_direction:
-		Direction.UP, Direction.DOWN:
-			return my_logical.x == enemy_logical.x
-		Direction.LEFT, Direction.RIGHT:
-			return my_logical.y == enemy_logical.y
+		Direction.RIGHT: return (my_logical.x == enemy_logical.x) and (enemy_logical.y > my_logical.y)
+		Direction.LEFT:  return (my_logical.x == enemy_logical.x) and (enemy_logical.y < my_logical.y)
+		Direction.DOWN:  return (my_logical.y == enemy_logical.y) and (enemy_logical.x > my_logical.x)
+		Direction.UP:    return (my_logical.y == enemy_logical.y) and (enemy_logical.x < my_logical.x)
 			
 	return false
 
-func _on_power_status_changed(has_power: bool) -> void:
-	super._on_power_status_changed(has_power)
-
-func _on_target_acquired(_target: Node2D) -> void:
-	pass
-
 func _process(_delta: float) -> void:
-	if Engine.is_editor_hint() or not is_active:
-		return
+	if Engine.is_editor_hint() or not is_active: return
+	if not target_acquirer or not shooter: return
 		
 	var current_target = target_acquirer.current_target
-	if is_instance_valid(current_target):
-		var ammo = inventory.get_first_item()
-		if ammo:
-			if shooter.can_shoot():
+	
+	if is_instance_valid(current_target) and not current_target.is_queued_for_deletion():
+		# Rotate
+		if is_instance_valid(rotatable):
+			var target_pos = current_target.global_position
+			var flat_target = Vector3(target_pos.x, rotatable.global_position.y, target_pos.z)
+			if rotatable.global_position.distance_squared_to(flat_target) > 0.1:
+				rotatable.look_at(flat_target, Vector3.UP)
+				rotatable.rotation.x = 0
+				rotatable.rotation.z = 0
+		
+		# Shoot
+		if shooter.can_shoot():
+			var ammo = inventory.get_first_item()
+			if ammo:
+				var shoot_dir = Vector3.ZERO
+				match output_direction:
+					Direction.RIGHT: shoot_dir = Vector3(1, 0, 0)
+					Direction.LEFT:  shoot_dir = Vector3(-1, 0, 0)
+					Direction.DOWN:  shoot_dir = Vector3(0, 0, 1)
+					Direction.UP:    shoot_dir = Vector3(0, 0, -1)
 				
-				# 1. Determine direction based on tile geometry
-				var shoot_dir = _get_shoot_dir_vector(output_direction)
-				
-				# 2. Determine Lane Filter
-				var filter_lane_id = -1
-				
-				if output_direction == Direction.UP or output_direction == Direction.DOWN:
-					var my_tile = LaneManager.tile_map.local_to_map(global_position + center_offset)
-					var my_logical = LaneManager.get_logical_from_tile(my_tile)
-					if my_logical != Vector2i(-1, -1):
-						filter_lane_id = my_logical.x
-				
-				# 3. Fire using center alignment to prevent visual lane drift
-				# We calculate the spawn position at the tile center (global_position)
-				# adjusted upwards by 16 pixels to match the turret barrel height roughly.
-				var spawn_pos = global_position + Vector2(0, -16)
-				
-				shooter.shoot_in_direction(shoot_dir, filter_lane_id, ammo, spawn_pos)
+				var t_lane = -1
+				if current_target.has_method("get_lane_id"):
+					t_lane = current_target.get_lane_id()
+
+				print("Turret Firing: Dir %s | Target %s | Item %s" % [shoot_dir, current_target.name, ammo.item_name])
+				shooter.shoot_in_direction(shoot_dir, t_lane, ammo)
 				inventory.remove_item(ammo, 1)
+			else:
+				# Debug for one-shot issue: warn if target acquired but no ammo
+				# Use a timer check or simple counter to avoid spamming console every frame
+				if Engine.get_frames_drawn() % 60 == 0:
+					print("Turret locked on %s but NO AMMO!" % current_target.name)
 
-func _get_shoot_dir_vector(dir: Direction) -> Vector2:
-	# Calculate vectors based on tile centers to ensure axis alignment
-	var my_tile = LaneManager.tile_map.local_to_map(global_position + center_offset)
-	var my_pos = LaneManager.tile_map.map_to_local(my_tile)
-	
-	var target_tile = my_tile
-	
-	# Try logical neighbors first (Lane Logic)
-	var my_logical = LaneManager.get_logical_from_tile(my_tile)
-	if my_logical != Vector2i(-1, -1):
-		var target_logical = my_logical
-		match dir:
-			# Swapped logic for UP and DOWN based on request
-			Direction.DOWN: target_logical += Vector2i(0, 1)
-			Direction.UP:   target_logical += Vector2i(0, -1)
-			Direction.LEFT: target_logical += Vector2i(1, 0)
-			Direction.RIGHT:target_logical += Vector2i(-1, 0)
-		target_tile = LaneManager.get_tile_from_logical(target_logical.x, target_logical.y)
-	
-	# Fallback to physical if logical failed or stayed same
-	if target_tile == my_tile or target_tile == Vector2i(-1, -1):
-		match dir:
-			Direction.DOWN: target_tile = my_tile + Vector2i(0, -1)
-			Direction.UP:   target_tile = my_tile + Vector2i(0, 1)
-			Direction.LEFT: target_tile = my_tile + Vector2i(-1, 0)
-			Direction.RIGHT:target_tile = my_tile + Vector2i(1, 0)
-			
-	var target_pos = LaneManager.tile_map.map_to_local(target_tile)
-	return my_pos.direction_to(target_pos)
-
-func receive_item(item: ItemResource, _from_node: Node2D = null) -> bool:
-	return inventory.add_item(item) == 0
+func receive_item(item: Resource, _from_node: Node3D = null, _extra_data: Dictionary = {}) -> bool:
+	var i = item as ItemResource
+	if not i: return false
+	return inventory.add_item(i) == 0

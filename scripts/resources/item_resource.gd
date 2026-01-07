@@ -1,21 +1,23 @@
 class_name ItemResource
 extends Resource
 
-@export var item_name: String = "Item"
+@export var item_name: String = "New Item"
 @export var icon: Texture2D
 @export var color: Color = Color.WHITE
 @export var stack_size: int = 50
-@export var damage: float = 10.0
+@export var is_projectile: bool = false
 
-## The element associated with this item.
-## Typed as Resource to prevent parsing order errors, but expects ElementResource.
-@export var element: Resource
-
-## Dictionary for building mods (e.g., {"damage_multiplier": 1.5})
+@export_group("Combat Specs")
+@export var damage: float = 0.0
+## If is_projectile is true, this scene is instantiated.
+## Otherwise, the generic projectile scene is used with the item's icon.
+@export var projectile_scene: PackedScene
+@export var element: ElementResource
 @export var modifiers: Dictionary = {}
 
-@export_group("Ore Data")
-## If true, LaneManager will treat this item as a valid ore to generate on the map.
+@export_group("Ore Generation")
 @export var is_ore: bool = false
-## The coordinates on the Ore Tileset Atlas (Source 0) for this ore.
-@export var ore_atlas_coords: Vector2i = Vector2i.ZERO
+@export var ore_block_name: String = ""
+@export var min_depth: int = 0
+@export var max_depth: int = 30
+@export_range(0.0, 1.0) var rarity: float = 0.0

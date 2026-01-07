@@ -1,67 +1,64 @@
 [gd_scene load_steps=8 format=3 uid="uid://6e4josh74xnb"]
 
 [ext_resource type="Script" uid="uid://dtpxwh6l4a0ll" path="res://scripts/Main.gd" id="1_57xwr"]
-[ext_resource type="PackedScene" uid="uid://wdsglfb2b83d" path="res://scenes/core.tscn" id="2_87q1w"]
-[ext_resource type="PackedScene" uid="uid://sk4jxbgm5ygn" path="res://scenes/tilemaps/map1.tscn" id="3_tbgi4"]
-[ext_resource type="Texture2D" uid="uid://b6hforp7vuljc" path="res://assets/mechs/core.png" id="3_tefeu"]
-[ext_resource type="TileSet" uid="uid://b8r5k8l4m6oap" path="res://tilesets/ore_tileset.tres" id="4_ore_ts"]
 [ext_resource type="PackedScene" uid="uid://c6o6gqf57o2b3" path="res://scenes/ui/game_ui.tscn" id="5_53nla"]
+[ext_resource type="PackedScene" uid="uid://cfiefqw38fixn" path="res://scenes/tilemaps/map.tscn" id="5_tbgi4"]
 [ext_resource type="Script" uid="uid://svbkned7l4nd" path="res://scripts/tools/data_importer.gd" id="7_nxtc6"]
 
-[node name="Main2" type="Node2D"]
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1"]
+sky_top_color = Color(0.384314, 0.454902, 0.54902, 1)
+sky_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
+
+[sub_resource type="Sky" id="Sky_1"]
+sky_material = SubResource("ProceduralSkyMaterial_1")
+
+[sub_resource type="Environment" id="Environment_1"]
+background_mode = 2
+sky = SubResource("Sky_1")
+ambient_light_source = 3
+
+[node name="Main" type="Node3D"]
 script = ExtResource("1_57xwr")
 
-[node name="Camera2D" type="Camera2D" parent="."]
-offset = Vector2(0, -60)
-zoom = Vector2(3, 3)
-limit_left = -1000
-limit_top = -1000
-limit_right = 1000
-limit_bottom = 500
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_1")
 
-[node name="Core" parent="." instance=ExtResource("2_87q1w")]
-top_level = true
-z_index = 3
-position = Vector2(-0.5, -35.5)
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 10, 0)
+shadow_enabled = true
 
-[node name="CoreBottom" type="Sprite2D" parent="."]
-show_behind_parent = true
-z_index = -1
-position = Vector2(-0.5, -35.5)
-texture = ExtResource("3_tefeu")
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(0.70710677, 0.49999976, -0.49999976, 0, 0.7071065, 0.7071065, 0.70710677, -0.49999976, 0.49999976, 0, 10, 10)
+projection = 1
+size = 20.0
 
-[node name="Buildings" type="Node2D" parent="."]
-modulate = Color(1, 1, 1, 0.7647059)
-z_index = 2
-y_sort_enabled = true
-texture_filter = 1
+[node name="Buildings" type="Node3D" parent="."]
 
-[node name="Wiring" type="Node2D" parent="."]
-z_index = 1
-y_sort_enabled = true
+[node name="Wiring" type="Node3D" parent="."]
 
-[node name="TileMapLayer" parent="." instance=ExtResource("3_tbgi4")]
+[node name="OreLayer" type="Node3D" parent="."]
 
-[node name="OreLayer" type="TileMapLayer" parent="."]
-texture_filter = 1
-tile_set = ExtResource("4_ore_ts")
+[node name="Projectiles" type="Node3D" parent="."]
 
-[node name="Projectiles" type="Node2D" parent="."]
-y_sort_enabled = true
+[node name="Enemies" type="Node3D" parent="."]
 
-[node name="Enemies" type="Node2D" parent="."]
-y_sort_enabled = true
-
-[node name="BuildPreview" type="AnimatedSprite2D" parent="."]
-modulate = Color(0.435294, 1, 0.498039, 0.501961)
-z_index = 10
-texture_filter = 1
+[node name="BuildPreview" type="Node3D" parent="."]
 
 [node name="GameUI" parent="." instance=ExtResource("5_53nla")]
 visible = true
 
-[node name="Node2D" type="Node2D" parent="."]
-position = Vector2(0, -1)
+[node name="DataImporter" type="Node" parent="."]
 script = ExtResource("7_nxtc6")
+target_category = "Buildables"
 overwrite_existing = true
-target_item_select = "drill"
+target_item_id = "conveyor"
+
+[node name="GridMap" parent="." instance=ExtResource("5_tbgi4")]
+
+[node name="DevMap" type="GridMap" parent="."]
+visible = false
+cell_size = Vector3(1, 1, 1)
+data = {
+"cells": PackedInt32Array(65560, 0, 0, 65560, 1, 0, 65560, 2, 0, 65560, 3, 0, 65560, 4, 0)
+}
+metadata/_editor_floor_ = Vector3(0, 1, 0)

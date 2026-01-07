@@ -1,0 +1,137 @@
+[gd_scene load_steps=20 format=4 uid="uid://b0hs05nc4gpx6"]
+
+[ext_resource type="Texture2D" uid="uid://bmku38ij0732l" path="res://assets/buildables/turret_top.png" id="1_f6grb"]
+[ext_resource type="Script" uid="uid://ctw2ritm8shpv" path="res://scripts/entities/turret.gd" id="1_ptgrk"]
+[ext_resource type="Texture2D" uid="uid://wibclkqsbhob" path="res://assets/buildables/turret_bottom.png" id="2_ptgrk"]
+[ext_resource type="Texture2D" uid="uid://dy7nwuj7ynobs" path="res://assets/buildables/turret_front.png" id="3_vq1lf"]
+[ext_resource type="Texture2D" uid="uid://b1qvxcrly6lf1" path="res://assets/buildables/turret_back.png" id="4_3r0qv"]
+[ext_resource type="Texture2D" uid="uid://bfwraq3pg1bx8" path="res://assets/buildables/turret_side.png" id="5_23tpl"]
+[ext_resource type="Script" uid="uid://cnm8y28bmosfv" path="res://scripts/components/target_acquirer_component.gd" id="6_nilrr"]
+[ext_resource type="Script" uid="uid://vk0magbyev86" path="res://scripts/components/shooter_component.gd" id="7_lbhbp"]
+[ext_resource type="Script" uid="uid://dad3f8h2j4k5l" path="res://scripts/components/inventory_component.gd" id="8_ax5ag"]
+[ext_resource type="Resource" uid="uid://ci6qhchtaulll" path="res://resources/items/rod.tres" id="9_w66yh"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cxrml"]
+albedo_texture = ExtResource("1_f6grb")
+texture_filter = 0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_175d2"]
+albedo_texture = ExtResource("2_ptgrk")
+texture_filter = 0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ot4k2"]
+albedo_texture = ExtResource("3_vq1lf")
+texture_filter = 0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ry8kb"]
+albedo_texture = ExtResource("4_3r0qv")
+texture_filter = 0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5frvh"]
+albedo_texture = ExtResource("5_23tpl")
+texture_filter = 0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0owqb"]
+albedo_texture = ExtResource("5_23tpl")
+texture_filter = 0
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_hsy45"]
+_surfaces = [{
+"aabb": AABB(-0.5, 2, -0.25, 1, 1e-05, 0.5),
+"attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
+"format": 34359738391,
+"material": SubResource("StandardMaterial3D_cxrml"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 6,
+"vertex_data": PackedByteArray("AAAAvwAAAEAAAIC+AAAAPwAAAEAAAIC+AAAAPwAAAEAAAIA+AAAAvwAAAEAAAIC+AAAAPwAAAEAAAIA+AAAAvwAAAEAAAIA+/3///wAA/z//f///AAD/P/9///8AAP8//3///wAA/z//f///AAD/P/9///8AAP8/")
+}, {
+"aabb": AABB(-0.5, 0, -0.25, 1, 1e-05, 0.5),
+"attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
+"format": 34359738391,
+"material": SubResource("StandardMaterial3D_175d2"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 6,
+"vertex_data": PackedByteArray("AAAAvwAAAAAAAIA+AAAAPwAAAAAAAIA+AAAAPwAAAAAAAIC+AAAAvwAAAAAAAIA+AAAAPwAAAAAAAIC+AAAAvwAAAAAAAIC+/38AAAAA/z//fwAAAAD/P/9/AAAAAP8//38AAAAA/z//fwAAAAD/P/9/AAAAAP8/")
+}, {
+"aabb": AABB(-0.5, 0, 0.25, 1, 2, 1e-05),
+"attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
+"format": 34359738391,
+"material": SubResource("StandardMaterial3D_ot4k2"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 6,
+"vertex_data": PackedByteArray("AAAAvwAAAEAAAIA+AAAAPwAAAEAAAIA+AAAAPwAAAAAAAIA+AAAAvwAAAEAAAIA+AAAAPwAAAAAAAIA+AAAAvwAAAAAAAIA+/3//fwAA/z//f/9/AAD/P/9//38AAP8//3//fwAA/z//f/9/AAD/P/9//38AAP8/")
+}, {
+"aabb": AABB(-0.5, 0, -0.25, 1, 2, 1e-05),
+"attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
+"format": 34359738391,
+"material": SubResource("StandardMaterial3D_ry8kb"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 6,
+"vertex_data": PackedByteArray("AAAAPwAAAEAAAIC+AAAAvwAAAEAAAIC+AAAAvwAAAAAAAIC+AAAAPwAAAEAAAIC+AAAAvwAAAAAAAIC+AAAAPwAAAAAAAIC+/////////z//////////P/////////8//////////z//////////P/////////8/")
+}, {
+"aabb": AABB(-0.5, 0, -0.25, 1e-05, 2, 0.5),
+"attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
+"format": 34359738391,
+"material": SubResource("StandardMaterial3D_5frvh"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 6,
+"vertex_data": PackedByteArray("AAAAvwAAAEAAAIC+AAAAvwAAAEAAAIA+AAAAvwAAAAAAAIA+AAAAvwAAAEAAAIC+AAAAvwAAAAAAAIA+AAAAvwAAAAAAAIC+AAD/f///AAAAAP9///8AAAAA/3///wAAAAD/f///AAAAAP9///8AAAAA/3///wAA")
+}, {
+"aabb": AABB(0.5, 0, -0.25, 1e-05, 2, 0.5),
+"attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
+"format": 34359738391,
+"material": SubResource("StandardMaterial3D_0owqb"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 6,
+"vertex_data": PackedByteArray("AAAAPwAAAEAAAIA+AAAAPwAAAEAAAIC+AAAAPwAAAAAAAIC+AAAAPwAAAEAAAIA+AAAAPwAAAAAAAIC+AAAAPwAAAAAAAIA+////f/9//z////9//3//P////3//f/8/////f/9//z////9//3//P////3//f/8/")
+}]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_hn88v"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_nin61"]
+radius = 5.0
+
+[node name="Turret" type="StaticBody3D"]
+script = ExtResource("1_ptgrk")
+powered_color = null
+unpowered_color = Color(1, 1, 1, 1)
+output_direction = null
+input_direction = 0
+has_output = false
+
+[node name="Rotatable" type="Node3D" parent="."]
+
+[node name="BlockVisual" type="MeshInstance3D" parent="Rotatable"]
+mesh = SubResource("ArrayMesh_hsy45")
+
+[node name="ProjectileOrigin" type="Marker3D" parent="Rotatable"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0.6)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("BoxShape3D_hn88v")
+
+[node name="TargetAcquirerComponent" type="Node" parent="."]
+script = ExtResource("6_nilrr")
+target_layers = 1
+
+[node name="DetectionArea" type="Area3D" parent="TargetAcquirerComponent"]
+
+[node name="Shape" type="CollisionShape3D" parent="TargetAcquirerComponent/DetectionArea"]
+shape = SubResource("SphereShape3D_nin61")
+
+[node name="ShooterComponent" type="Node" parent="."]
+script = ExtResource("7_lbhbp")
+base_damage = 5.0
+fire_point_path = NodePath("../Rotatable/ProjectileOrigin")
+
+[node name="InventoryComponent" type="Node" parent="."]
+script = ExtResource("8_ax5ag")
+slot_capacity = 100
+allowed_items = Array[Resource]([ExtResource("9_w66yh")])

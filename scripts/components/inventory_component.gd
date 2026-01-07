@@ -1,12 +1,26 @@
 class_name InventoryComponent
 extends Node
 
-## Simple inventory to hold items.
+## Inventory that holds items, with optional filtering and I/O configuration.
 
 signal inventory_changed
 
 @export var max_slots: int = 1
 @export var slot_capacity: int = 50
+
+@export_group("Permissions")
+## If true, items can be inserted into this inventory by external systems (conveyors, etc).
+@export var can_receive: bool = true
+## If true, items can be extracted from this inventory by external systems.
+@export var can_output: bool = true
+## If true, this inventory ignores directional logic (accepts/outputs from any side).
+@export var omni_directional: bool = false
+
+@export_group("Filters")
+## If not empty, ONLY items in this list can be added (Whitelist).
+@export var allowed_items: Array[Resource] = []
+## Items in this list cannot be added (Blacklist). Checked before whitelist.
+@export var denied_items: Array[Resource] = []
 
 # Array of Dictionaries: { "item": ItemResource, "count": int } or null
 var slots: Array = []
@@ -15,8 +29,32 @@ func _ready():
 	slots.resize(max_slots)
 	slots.fill(null)
 
+func is_item_allowed(item: ItemResource) -> bool:
+	if not item: return false
+	
+	# 1. Blacklist Check (Priority)
+	if not denied_items.is_empty():
+		if _is_in_list(item, denied_items):
+			return false
+	
+	# 2. Whitelist Check
+	if not allowed_items.is_empty():
+		return _is_in_list(item, allowed_items)
+			
+	return true
+
+func _is_in_list(item: ItemResource, list: Array[Resource]) -> bool:
+	# Check reference equality
+	if item in list: return true
+	# Check path equality (for different instances of same resource)
+	for entry in list:
+		if entry and entry.resource_path == item.resource_path:
+			return true
+	return false
+
 func add_item(item: ItemResource, count: int = 1) -> int:
 	if not item: return count
+	if not is_item_allowed(item): return count
 	
 	var initial_count = count
 	
@@ -65,6 +103,8 @@ func remove_item(item: ItemResource, count: int = 1) -> bool:
 	return false
 
 func has_space_for(item: ItemResource) -> bool:
+	if not is_item_allowed(item): return false
+	
 	# Check for stack space
 	for i in range(max_slots):
 		if slots[i] != null and slots[i].item == item:

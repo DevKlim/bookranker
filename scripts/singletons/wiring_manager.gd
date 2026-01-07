@@ -1,26 +1,30 @@
 extends Node
 
 ## Manages the state of the wire network, including power propagation and visuals.
+## Implements a Redstone-like grid logic in 3D (X, Z plane).
+## Visuals are handled by assigning connection flags to the Wire entities.
 
 signal network_updated
 
-# { tile_coord: WireInstance }
+# Dictionary storing { Vector2i(x, z): WireInstance }
 var _wires: Dictionary = {}
 
-@onready var lane_manager = get_node("/root/LaneManager")
+# The fixed power source coordinate in the grid (X=0, Z=2)
+const POWER_SOURCE_COORD = Vector2i(0, 2)
 
 func _ready() -> void:
-	print("WiringManager Initialized.")
+	print("WiringManager (Redstone Mode) Initialized.")
 
 func add_wire(coord: Vector2i, instance: Node) -> void:
+	# coord is the 3D grid coordinate projected to 2D (x, z)
 	if not _wires.has(coord):
 		_wires[coord] = instance
-		update_network()
+		call_deferred("update_network")
 
 func remove_wire(coord: Vector2i) -> void:
 	if _wires.has(coord):
 		_wires.erase(coord)
-		update_network()
+		call_deferred("update_network")
 
 func has_wire(coord: Vector2i) -> bool:
 	return _wires.has(coord)
@@ -29,93 +33,78 @@ func get_wire_instance(coord: Vector2i) -> Node:
 	return _wires.get(coord, null)
 
 func is_powered(coord: Vector2i) -> bool:
-	if _wires.has(coord):
-		var wire_instance = _wires[coord]
-		if is_instance_valid(wire_instance):
-			return wire_instance.is_powered
+	var w = _wires.get(coord, null)
+	if is_instance_valid(w) and "is_powered" in w:
+		return w.is_powered
+	
+	# Check if this exact coordinate is the power source, even without a wire (for external checks)
+	if coord == POWER_SOURCE_COORD:
+		return true
+		
 	return false
 
-## Propagates power using logical grid coordinates to support non-contiguous physical layouts.
+## Recalculates power flow and visual connections for the entire grid.
+## Uses BFS to propagate power from the source coordinate.
 func update_network() -> void:
-	# 1. Reset
+	# 1. Reset all wires to unpowered state
 	for wire_instance in _wires.values():
-		if is_instance_valid(wire_instance):
+		if is_instance_valid(wire_instance) and wire_instance.has_method("set_powered"):
 			wire_instance.set_powered(false)
 
-	# 2. Source: Logical [2, 0] (Start of middle lane)
-	var source_logical = Vector2i(2, 0)
-	var source_physical = lane_manager.get_tile_from_logical(source_logical.x, source_logical.y)
-	
-	if source_physical == Vector2i(-1, -1) or not has_wire(source_physical):
-		_update_all_visuals()
-		emit_signal("network_updated")
-		return
-
-	# 3. BFS
+	# 2. Setup BFS from Power Source
 	var queue: Array[Vector2i] = []
 	var visited: Dictionary = {}
 
-	queue.push_back(source_physical)
-	visited[source_physical] = true
+	# Force power source logic: 
+	# If there is a wire at (2,0), ensure it turns on immediately.
+	if has_wire(POWER_SOURCE_COORD):
+		queue.append(POWER_SOURCE_COORD)
+		visited[POWER_SOURCE_COORD] = true
+		if is_instance_valid(_wires[POWER_SOURCE_COORD]):
+			_wires[POWER_SOURCE_COORD].set_powered(true)
 	
+	# 3. Propagate Power (Redstone logic: Adjacent wires share power)
 	while not queue.is_empty():
-		var current_phys_coord = queue.pop_front()
+		var current = queue.pop_front()
 		
-		if has_wire(current_phys_coord):
-			if is_instance_valid(_wires[current_phys_coord]):
-				_wires[current_phys_coord].set_powered(true)
-		
-		var current_log_coord = lane_manager.get_logical_from_tile(current_phys_coord)
-		if current_log_coord == Vector2i(-1, -1): continue
-
-		# Logical Neighbors: Down (d-1), Left (l+1), Up (d+1), Right (l-1)
-		var neighbors_logical = [
-			current_log_coord + Vector2i(0, -1), # Down
-			current_log_coord + Vector2i(1, 0),  # Left
-			current_log_coord + Vector2i(0, 1),  # Up
-			current_log_coord + Vector2i(-1, 0)  # Right
+		# Check 4 Neighbors: Right(+X), Left(-X), Down(+Z), Up(-Z)
+		var neighbors = [
+			current + Vector2i(1, 0),
+			current + Vector2i(-1, 0),
+			current + Vector2i(0, 1),
+			current + Vector2i(0, -1)
 		]
+		
+		for n in neighbors:
+			if has_wire(n) and not visited.has(n):
+				visited[n] = true
+				if is_instance_valid(_wires[n]):
+					_wires[n].set_powered(true)
+				queue.push_back(n)
 
-		for neighbor_log_coord in neighbors_logical:
-			var neighbor_phys_coord = lane_manager.get_tile_from_logical(neighbor_log_coord.x, neighbor_log_coord.y)
-			if neighbor_phys_coord == Vector2i(-1, -1): continue
-			
-			if has_wire(neighbor_phys_coord) and not visited.has(neighbor_phys_coord):
-				visited[neighbor_phys_coord] = true
-				queue.push_back(neighbor_phys_coord)
-	
-	_update_all_visuals()
-	emit_signal("network_updated")
-
-func _update_all_visuals() -> void:
+	# 4. Update Visual Connections for ALL wires (regardless of power)
+	# This determines if they draw lines or the "dot"
 	for coord in _wires:
 		_update_single_wire_visual(coord)
+		
+	emit_signal("network_updated")
 
 func _update_single_wire_visual(coord: Vector2i) -> void:
 	var wire_instance = _wires.get(coord)
 	if not is_instance_valid(wire_instance): return
+	if not wire_instance.has_method("set_connections"): return
 
-	var logical_coord = lane_manager.get_logical_from_tile(coord)
 	var connections: Array[int] = []
 	
-	if logical_coord != Vector2i(-1, -1):
-		var ln = logical_coord.x
-		var d = logical_coord.y
-		
-		# 1: Depth-1 (Down)
-		var neighbor_down_phys = lane_manager.get_tile_from_logical(ln, d - 1)
-		if has_wire(neighbor_down_phys): connections.append(1)
-
-		# 2: Lane+1 (Left)
-		var neighbor_left_phys = lane_manager.get_tile_from_logical(ln + 1, d)
-		if has_wire(neighbor_left_phys): connections.append(2)
-
-		# 3: Depth+1 (Up)
-		var neighbor_up_phys = lane_manager.get_tile_from_logical(ln, d + 1)
-		if has_wire(neighbor_up_phys): connections.append(3)
-
-		# 4: Lane-1 (Right)
-		var neighbor_right_phys = lane_manager.get_tile_from_logical(ln - 1, d)
-		if has_wire(neighbor_right_phys): connections.append(4)
+	# Godot 3D Wire Directions (Matches wire.gd visual mapping)
+	# 1: Left (-X)
+	# 2: Down (+Z)
+	# 3: Right (+X)
+	# 4: Up (-Z)
 	
+	if has_wire(coord + Vector2i(-1, 0)): connections.append(1)
+	if has_wire(coord + Vector2i(0, 1)):  connections.append(2)
+	if has_wire(coord + Vector2i(1, 0)):  connections.append(3)
+	if has_wire(coord + Vector2i(0, -1)): connections.append(4)
+
 	wire_instance.set_connections(connections)

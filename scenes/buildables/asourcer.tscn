@@ -1,0 +1,35 @@
+[gd_scene load_steps=6 format=3 uid="uid://cubesy3iln26a"]
+
+[ext_resource type="Texture2D" uid="uid://b7f7l0qxlhg8e" path="res://assets/buildables/asourcer.png" id="1_1vjmn"]
+[ext_resource type="Script" uid="uid://dcefefn1futhu" path="res://scripts/entities/buildings/asourcer.gd" id="1_3435d"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3435d"]
+atlas = ExtResource("1_1vjmn")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_5mko6"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3435d")
+}],
+"loop": true,
+"name": &"idle_down",
+"speed": 5.0
+}]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_scjjb"]
+
+[node name="Asourcer" type="StaticBody3D"]
+script = ExtResource("1_3435d")
+
+[node name="AnimatedSprite3D" type="AnimatedSprite3D" parent="."]
+pixel_size = 0.03
+axis = 1
+texture_filter = 0
+sprite_frames = SubResource("SpriteFrames_5mko6")
+animation = &"idle_down"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("BoxShape3D_scjjb")

@@ -194,24 +194,31 @@ func _update_recipes() -> void:
 		
 	if not current_context: return
 	
-	# Check if context requires recipe selection
-	if current_context.has_method("requires_recipe_selection"):
-		if not current_context.requires_recipe_selection():
-			return
+	# Check if context has recipes
+	var recipes = current_context.get("recipes")
+	if not recipes or not (recipes is Array):
+		return
 
 	# Generate buttons
-	var recipes = current_context.get("recipes")
-	if recipes and recipes is Array:
-		for recipe in recipes:
-			if recipe is RecipeResource:
-				var btn = Button.new()
-				btn.icon = recipe.output_item.icon
-				btn.modulate = recipe.output_item.color
-				btn.custom_minimum_size = Vector2(40, 40)
-				btn.expand_icon = true
-				btn.tooltip_text = "Craft %s\nInput: %s x%d" % [recipe.output_item.item_name, recipe.input_item.item_name, recipe.input_count]
+	for recipe in recipes:
+		if recipe is RecipeResource:
+			var btn = Button.new()
+			btn.icon = recipe.output_item.icon
+			btn.modulate = recipe.output_item.color
+			btn.custom_minimum_size = Vector2(40, 40)
+			btn.expand_icon = true
+			btn.tooltip_text = "Output: %s\nInput: %s x%d" % [recipe.output_item.item_name, recipe.input_item.item_name, recipe.input_count]
+			
+			# If manual selection is required (Asourcer), hook up selection logic
+			# If auto (Burnace), just show it (or allow click to view details if needed, for now just decorative for Burnace)
+			if current_context.has_method("set_recipe"):
 				btn.pressed.connect(_on_recipe_selected.bind(recipe))
-				recipe_container.add_child(btn)
+			else:
+				# For auto machines, maybe dim them slightly or just keep them informative
+				btn.mouse_default_cursor_shape = Control.CURSOR_ARROW
+				btn.focus_mode = Control.FOCUS_NONE
+				
+			recipe_container.add_child(btn)
 
 func _on_recipe_selected(recipe: RecipeResource) -> void:
 	if current_context and current_context.has_method("set_recipe"):

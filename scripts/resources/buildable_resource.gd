@@ -24,8 +24,8 @@ enum BuildLayer {
 
 @export_group("Visual Settings")
 ## The visual offset from the tile center (snapped position) for this building.
-## Defaults to (0, -8) which centers a standard 32x32 sprite on a 32x16 isometric tile.
-@export var display_offset: Vector2 = Vector2(0, -8)
+## Changed default to ZERO for 3D context. Old default (0, -8) was for 2D pixels.
+@export var display_offset: Vector2 = Vector2.ZERO
 
 ## For MECH layer items
 @export_group("Mech Settings")

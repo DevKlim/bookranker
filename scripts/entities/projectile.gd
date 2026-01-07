@@ -1,128 +1,122 @@
-extends Area2D
+class_name Projectile
+extends Area3D
 
-# REMOVED class_name to prevent global scope conflicts.
-# CHANGED types to 'Resource' or 'Node' to break cyclic dependency chains.
+@export var default_scale: Vector3 = Vector3(1.0, 1.0, 1.0)
+@export var visual_offset: Vector3 = Vector3.ZERO
 
-@export var default_scale: Vector2 = Vector2(1.0, 1.0)
-@export var visual_offset: Vector2 = Vector2.ZERO
-
-var _velocity: Vector2 = Vector2.ZERO
+var _velocity: Vector3 = Vector3.ZERO
 var _damage: float = 0.0
-var _element: Resource = null # Was ElementResource
+var _element: Resource = null
 var lane_id: int = -1
 var speed: float = 0.0
-var _shred: float = 0.0
+var lifetime: float = 5.0
 
-var current_path_index: int = -1
-var path: Array = []
+@onready var sprite: Sprite3D = $Sprite3D
 
-@onready var sprite: Sprite2D = $Sprite2D
+const OUTLINE_SHADER_CODE = """
+shader_type spatial;
+render_mode unshaded, cull_disabled, blend_mix; 
+uniform sampler2D texture_albedo : source_color, filter_nearest;
+uniform vec4 outline_color : source_color = vec4(1.0, 1.0, 1.0, 1.0);
+uniform float width : hint_range(0.0, 10.0) = 1.0;
+void fragment() {
+	vec4 tex = texture(texture_albedo, UV);
+	vec4 base_col = tex * COLOR; 
+	vec2 size = vec2(textureSize(texture_albedo, 0));
+	float px_x = width / size.x;
+	float px_y = width / size.y;
+	float a = texture(texture_albedo, UV + vec2(px_x, 0.0)).a;
+	a += texture(texture_albedo, UV + vec2(-px_x, 0.0)).a;
+	a += texture(texture_albedo, UV + vec2(0.0, px_y)).a;
+	a += texture(texture_albedo, UV + vec2(0.0, -px_y)).a;
+	if (base_col.a < 0.1 && a > 0.1) { ALBEDO = outline_color.rgb; ALPHA = 1.0; } 
+	else { ALBEDO = base_col.rgb; ALPHA = base_col.a; if (base_col.a < 0.05) discard; }
+}
+"""
 
 func _ready() -> void:
-	# Apply defaults if not initialized via code
+	collision_mask = 2 # Enemies
+	collision_layer = 0
+	
 	if sprite:
 		sprite.scale = default_scale
 		sprite.position = visual_offset
 
 func _physics_process(delta: float) -> void:
-	if path.is_empty():
-		global_position += _velocity * delta
+	if _velocity == Vector3.ZERO:
+		lifetime -= delta
+		if lifetime <= 0: queue_free()
 		return
 
-	var target_index = current_path_index + 1
-	if target_index < path.size():
-		var target_tile = path[target_index]
-		var target_pos = LaneManager.tile_map.map_to_local(target_tile)
-		var direction = global_position.direction_to(target_pos)
-		var dist = global_position.distance_to(target_pos)
-		var move = speed * delta
-		rotation = direction.angle()
-		
-		if dist <= move:
-			global_position = target_pos
-			current_path_index = target_index
-		else:
-			global_position += direction * move
-	else:
+	position += _velocity * delta
+	
+	lifetime -= delta
+	if lifetime <= 0:
 		queue_free()
 
-# using loose typing (Resource) here to prevent dependency cycle
-func initialize(start_pos: Vector2, dir: Vector2, p_speed: float, dmg: float, p_lane: int, p_elem: Resource = null, tex: Texture2D = null, col: Color = Color.WHITE, use_path: bool = false, extra_params: Dictionary = {}) -> void:
+func initialize(start_pos: Vector3, dir: Vector3, p_speed: float, dmg: float, p_lane: int, p_elem: Resource = null, tex: Texture2D = null, col: Color = Color.WHITE, _use_path: bool = false, extra_params: Dictionary = {}) -> void:
 	global_position = start_pos
-	speed = p_speed
-	_velocity = dir * speed
-	rotation = dir.angle()
+	
+	# Scale speed. ~600px/s -> 12m/s
+	speed = p_speed * 0.02
+	if speed < 2.0: speed = 10.0
+	
+	_velocity = dir.normalized() * speed
+	
+	print("Projectile Init: Pos %s | Vel %s | Dmg %s | Lane %d" % [str(start_pos), str(_velocity), str(dmg), p_lane])
+	
+	if dir != Vector3.ZERO:
+		look_at(global_position + dir, Vector3.UP)
+		
 	_damage = dmg
 	lane_id = p_lane
 	_element = p_elem
 	
-	print("DEBUG: Projectile Spawned. Lane: %d, Pos: %s, Speed: %.1f" % [lane_id, start_pos, speed])
-	
-	# Explicitly set Z-Index to the Projectile layer to render above buildings
-	z_index = LaneManager.Z_LAYERS["projectile"]
-	
 	if sprite:
-		# Force centering to ensure projectile aligns exactly with spawn point
 		sprite.position = visual_offset
-		sprite.offset = Vector2.ZERO
-		sprite.centered = true
-		sprite.scale = default_scale
-		
 		if tex: sprite.texture = tex
 		
-		# Check if element is valid and has color property before accessing
 		if _element and "color" in _element:
-			sprite.self_modulate = _element.color
+			sprite.modulate = _element.color
 		else:
-			sprite.self_modulate = col
-		
-		if extra_params.get("is_crit", false):
-			sprite.modulate = Color(2.0, 0.5, 0.5, 1.0)
-	
-	if extra_params.has("scale"):
-		# Multiply base scale by dynamic scale
-		scale = Vector2.ONE * extra_params["scale"]
-	
-	if extra_params.has("shred"):
-		_shred = extra_params["shred"]
-	
-	if use_path: _initialize_path_tracking()
-	
-	# Connect safely
+			sprite.modulate = col
+			
+		var s = extra_params.get("scale", 1.0)
+		if typeof(s) == TYPE_FLOAT or typeof(s) == TYPE_INT:
+			sprite.scale = default_scale * float(s)
+
+		var shader = Shader.new()
+		shader.code = OUTLINE_SHADER_CODE
+		var mat = ShaderMaterial.new()
+		mat.shader = shader
+		mat.set_shader_parameter("texture_albedo", tex)
+		mat.resource_local_to_scene = true
+		sprite.material_override = mat
+
 	if not body_entered.is_connected(_on_body_entered):
 		body_entered.connect(_on_body_entered)
 
-func _initialize_path_tracking() -> void:
-	if LaneManager.lane_paths.has(lane_id):
-		path = LaneManager.lane_paths[lane_id]
-		var tile = LaneManager.tile_map.local_to_map(global_position)
-		current_path_index = path.find(tile)
-		if current_path_index == -1:
-			var min_dist = INF
-			for i in range(path.size()):
-				var wp = LaneManager.tile_map.map_to_local(path[i])
-				var d = global_position.distance_squared_to(wp)
-				if d < min_dist:
-					min_dist = d
-					current_path_index = i
+func _on_body_entered(body: Node3D) -> void:
+	# Debug print for any collision attempt
+	print("Projectile Collision with: %s at %s" % [body.name, body.global_position])
+	
+	if not (body is CharacterBody3D): return
 
-func _on_body_entered(body: Node2D) -> void:
-	# Duck typing to avoid Class Reference (EnemyUnit)
+	var e_lane = -1
 	if body.has_method("get_lane_id"):
-		var e_lane = body.get_lane_id()
+		e_lane = body.get_lane_id()
+	
+	if self.lane_id == -1 or e_lane == self.lane_id or e_lane == -1:
+		print(">> VALID HIT on %s! Applying %s damage." % [body.name, _damage])
+		var hc = body.get_node_or_null("HealthComponent")
+		if hc: 
+			hc.take_damage(_damage, _element)
+		elif body.has_method("take_damage"):
+			body.take_damage(_damage)
 		
-		# Allow cross-lane shooting if projectile was spawned with lane_id -1 (Turret Row Axis Mode)
-		if self.lane_id == -1 or e_lane == self.lane_id:
-			print("DEBUG: Projectile hit %s on Lane %d" % [body.name, e_lane])
-			var hc = body.get_node_or_null("HealthComponent")
-			if hc:
-				hc.take_damage(_damage)
+		if _element: 
+			ElementManager.apply_element(body, _element)
 			
-			if _element: 
-				ElementManager.apply_element(body, _element)
-			queue_free()
-		else:
-			# Debugging mismatches
-			# print("DEBUG: Projectile ignored collision. ProjLane: %d, BodyLane: %d" % [self.lane_id, e_lane])
-			pass
-
+		queue_free()
+	else:
+		print(">> Lane Mismatch! Proj Lane: %d, Enemy Lane: %d" % [self.lane_id, e_lane])

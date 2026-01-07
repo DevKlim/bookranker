@@ -14,3 +14,6 @@ modifiers = {
 "damage_mult": 1.05
 }
 is_ore = true
+ore_block_name = "Coal Ore"
+max_depth = 10
+rarity = 0.05

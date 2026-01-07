@@ -1,17 +1,13 @@
-[gd_resource type="Resource" script_class="BuildableResource" load_steps=5 format=3 uid="uid://qy84r7b6lnkr"]
+[gd_resource type="Resource" script_class="BuildableResource" load_steps=4 format=3 uid="uid://qy84r7b6lnkr"]
 
 [ext_resource type="Texture2D" uid="uid://c54ilxu65w6w8" path="res://assets/buildables/turret.png" id="1_32m5o"]
-[ext_resource type="PackedScene" uid="uid://ba3jwrtt6ayhm" path="res://scenes/generated/turret.tscn" id="2_0dr0n"]
+[ext_resource type="PackedScene" uid="uid://b0hs05nc4gpx6" path="res://scenes/buildables/turret.tscn" id="2_0dr0n"]
 [ext_resource type="Script" uid="uid://qpm1dylmnjld" path="res://scripts/resources/buildable_resource.gd" id="2_qrdne"]
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_qrdne"]
-atlas = ExtResource("1_32m5o")
-region = Rect2(0, 0, 32, 48)
 
 [resource]
 script = ExtResource("2_qrdne")
-buildable_name = "Basic Turret"
-icon = SubResource("AtlasTexture_qrdne")
+buildable_name = "Turret"
+icon = ExtResource("1_32m5o")
+height = 2
 has_output = false
-display_offset = Vector2(0, -16)
 scene = ExtResource("2_0dr0n")

@@ -1,5 +1,5 @@
 class_name Core
-extends StaticBody2D
+extends StaticBody3D
 
 ## The main script for the Core entity, the player's primary objective to defend.
 

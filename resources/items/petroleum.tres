@@ -14,4 +14,6 @@ modifiers = {
 "cooldown": 0.95
 }
 is_ore = true
-ore_atlas_coords = Vector2i(5, 0)
+ore_block_name = "Petroleum"
+min_depth = 15
+rarity = 0.1

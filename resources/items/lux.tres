@@ -16,4 +16,6 @@ modifiers = {
 "magic_boost": 2.0
 }
 is_ore = true
-ore_atlas_coords = Vector2i(4, 0)
+ore_block_name = "Lux Ore"
+min_depth = 25
+rarity = 0.05

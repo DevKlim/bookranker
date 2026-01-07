@@ -1,12 +1,9 @@
-[gd_scene load_steps=3 format=3 uid="uid://bc2xlxaqk4xfm"]
+[gd_scene load_steps=2 format=3 uid="uid://bc2xlxaqk4xfm"]
 
-[ext_resource type="Script" uid="uid://bxegahcffjl0d" path="res://scripts/entities/buildings/wire.gd" id="1_v4m2m"]
-[ext_resource type="SpriteFrames" uid="uid://crfvp5mc6tbk1" path="res://resources/buildables/wire.tres" id="2_2hxsr"]
+[ext_resource type="Script" uid="uid://c8j3i6f8q5x2y" path="res://scripts/entities/buildings/wire.gd" id="1_wire"]
 
-[node name="Wire" type="Node2D"]
-script = ExtResource("1_v4m2m")
+[node name="Wire" type="Node3D"]
+script = ExtResource("1_wire")
 
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-texture_filter = 1
-sprite_frames = ExtResource("2_2hxsr")
-animation = &"on_4"
+[node name="Sprite3D" type="Sprite3D" parent="."]
+visible = false

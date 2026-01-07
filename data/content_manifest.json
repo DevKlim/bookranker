@@ -1,71 +1,93 @@
 {
     "jsonguide": {
-        "basic_entry_guide": {
-            "id": "Unique string ID used for filenames and references.",
-            "name": "Display name.",
-            "texture": "Path to icon/sprite (e.g. 'res://assets/icon.png').",
-            "template": "Path to the base .tscn scene to instantiate.",
-            "description": "Flavor text."
-        },
-        "grid_guide": {
-            "width": "Width in tiles (int, default 1).",
-            "height": "Height in tiles (int, default 1).",
-            "layer": "Physical layer: 'building' (default) or 'wire'."
-        },
-        "logic_guide": {
-            "has_input": "Bool. Can this accept items?",
-            "has_output": "Bool. Can this eject items?",
-            "health": "Float. Max HP.",
-            "power_cost": "Float. Power consumption.",
-            "power_gen": "Float. Power production.",
-            "speed": "Float. Movement speed (Enemies).",
-            "input_dir": "Int Enum (0=DOWN, 1=LEFT, 2=UP, 3=RIGHT).",
-            "output_dir": "Int Enum (0=DOWN, 1=LEFT, 2=UP, 3=RIGHT)."
-        },
-        "recipe_guide": {
-            "inputs": "Dictionary { 'item_id': count }.",
-            "output": "String item_id of result.",
-            "count": "Int amount produced.",
-            "time": "Float seconds to craft."
-        },
-        "params_guide": {
-            "info": "Injects values directly into script properties on the scene.",
-            "syntax": "Key: 'NodeName:property' or 'Component/Child:property'.",
-            "example": "'ShooterComponent:base_damage': 50.0"
-        },
-        "visuals_guide": {
-            "texture": "Path to the spritesheet",
-            "width": "Width of a single frame",
-            "height": "Height of a single frame",
-            "animations": {
-                "anim_name": { 
-                    "row": "Row index in sheet (0-based)", 
-                    "count": "Number of frames", 
-                    "speed": "FPS (default 5)",
-                    "loop": "bool"
-                }
-            }
-        },
-        "modifiers_guide": {
-            "speed_mult": "Multiplier (default 1.0). Affects movement speed of projectile, crafting/production speeds.",
-            "cooldown": "Multiplier (default 1.0). Affects fire rate, mechanic activation speed.",
-            "power_efficiency": "Multiplier (default 1.0). Multiplies power consumption.",
-            "output_count": "Additive (default 0.0). Chance to duplicate output or add extra items.",
-            "luck": "Additive (default 0.0). General purpose luck stat.",
-            "xp_gain": "Multiplier (default 1.0).",
-            "max_health_mult": "Multiplier (default 1.0). Buffs building HP.",
-            "health_regen": "Additive (default 0.0). HP per second.",
-            "armor": "Additive (default 0.0). Flat damage reduction.",
-            "thorns": "Additive (default 0.0). Damage reflected.",
-            "damage_mult": "Multiplier (default 1.0). Global damage.",
-            "crit_chance": "Additive (default 0.0). 0.0 to 1.0.",
-            "crit_damage": "Additive (default 1.5). Critical hit multiplier.",
-            "area_size": "Multiplier (default 1.0). Projectile size/Blast radius.",
-            "phys_boost": "Additive (default 0.0). Flat physical damage add. ",
-            "magic_boost": "Additive (default 0.0). Flat magical damage add.",
-            "armor_shred": "Additive (default 0.0). Armor penetration amount."
+        "blocks_guide": {
+            "description": "Defines terrain blocks for the GridMap.",
+            "texture_base": "The path to the 'main' texture. The importer checks for suffixes like _top, _side, _front, _bottom, _back automatically in the same folder.",
+            "dimensions": "Array [x, y, z] sizes in units. Default [1, 1, 1].",
+            "hardness": "Mining durability."
         }
     },
+    "blocks": [
+        { 
+            "id": "grass", 
+            "name": "Grass Block", 
+            "texture_base": "res://assets/blocks/grass_block.png", 
+            "dimensions": [1.0, 1.0, 1.0],
+            "hardness": 1.0 
+        },
+        { 
+            "id": "dirt", 
+            "name": "Dirt", 
+            "texture_base": "res://assets/blocks/dirt.png", 
+            "dimensions": [1.0, 1.0, 1.0],
+            "hardness": 0.5 
+        },
+        { 
+            "id": "stone", 
+            "name": "Stone", 
+            "texture_base": "res://assets/blocks/stone.png", 
+            "dimensions": [1.0, 1.0, 1.0],
+            "hardness": 2.0 
+        },
+        {
+            "id": "stone_bricks",
+            "name": "Stone Bricks",
+            "texture_base": "res://assets/blocks/stone_bricks.png",
+            "dimensions": [1.0, 1.0, 1.0],
+            "hardness": 1.5
+        },
+        {
+            "id": "iron_ore",
+            "name": "Iron Ore",
+            "texture_base": "res://assets/blocks/iron_ore.png",
+            "dimensions": [1.0, 1.0, 1.0],
+            "hardness": 1.5
+        },
+        {
+            "id": "coal_ore",
+            "name": "Coal Ore",
+            "texture_base": "res://assets/blocks/coal_ore.png",
+            "dimensions": [1.0, 1.0, 1.0],
+            "hardness": 1.2
+        },
+        {
+            "id": "gold_ore",
+            "name": "Gold Ore",
+            "texture_base": "res://assets/blocks/gold_ore.png",
+            "dimensions": [1.0, 1.0, 1.0],
+            "hardness": 2.0
+        },
+        {
+            "id": "copper_ore",
+            "name": "Copper Ore",
+            "texture_base": "res://assets/blocks/copper_ore.png",
+            "dimensions": [1.0, 1.0, 1.0],
+            "hardness": 1.5
+        },
+        {
+            "id": "lux_ore",
+            "name": "Lux Ore",
+            "texture_base": "res://assets/blocks/lux_ore.png",
+            "dimensions": [1.0, 1.0, 1.0],
+            "hardness": 3.0
+        },
+        {
+            "id": "petroleum",
+            "name": "Petroleum",
+            "texture_base": "res://assets/blocks/petroleum_ore.png",
+            "dimensions": [1.0, 1.0, 1.0],
+            "hardness": 4.0
+        }
+    ],
+    "debug": [
+        {
+            "id": "spawner",
+            "name": "Spawner",
+            "texture_base": "res://assets/blocks/stone.png",
+            "dimensions": [1.0, 1.0, 1.0],
+            "hardness": 999.0
+        }
+    ],
     "elements": [
         { "id": "fire", "name": "Fire", "color": "#FF5722", "reactions": { "wet": "steam", "chem": "explosion" } },
         { "id": "wet", "name": "Water", "color": "#2196F3", "reactions": { "fire": "steam", "shock": "electrocute" } },
@@ -80,7 +102,7 @@
         {
             "id": "iron", "name": "Iron Ore", "texture": "res://assets/ores/iron.png", 
             "item_data": { "damage": 2.0, "element": "metal", "stack": 50, "modifiers": { "armor": 1.0 } },
-            "ore_data": { "coords": [3, 0] }
+            "ore_generation": { "block": "Iron Ore", "min_depth": 5, "max_depth": 30, "rarity": 0.15 }
         },
         {
             "id": "stone", "name": "Stone", "texture": "res://assets/ores/stone.png", 
@@ -89,27 +111,27 @@
         {
             "id": "coal", "name": "Coal", "texture": "res://assets/ores/coal.png", 
             "item_data": { "damage": 3.0, "element": "fire", "stack": 50, "modifiers": { "damage_mult": 1.05 } },
-            "ore_data": { "coords": [0, 0] }
+            "ore_generation": { "block": "Coal Ore", "min_depth": 0, "max_depth": 10, "rarity": 0.05 }
         },
         {
             "id": "gold", "name": "Gold Ore", "texture": "res://assets/ores/gold.png", 
             "item_data": { "damage": 3.0, "element": "metal", "stack": 50, "modifiers": { "luck": 1.0 } },
-            "ore_data": { "coords": [2, 0] }
+            "ore_generation": { "block": "Gold Ore", "min_depth": 20, "max_depth": 30, "rarity": 0.05 }
         },
         {
             "id": "copper", "name": "Copper Ore", "texture": "res://assets/ores/copper.png", 
             "item_data": { "damage": 4.0, "element": "shock", "stack": 50, "modifiers": { "speed_mult": 1.05 } },
-            "ore_data": { "coords": [1, 0] }
+            "ore_generation": { "block": "Copper Ore", "min_depth": 2, "max_depth": 25, "rarity": 0.15 }
         },
         {
             "id": "lux", "name": "Lux Crystal", "texture": "res://assets/ores/lux.png", 
             "item_data": { "damage": 4.0, "element": "luxe", "stack": 20, "modifiers": { "crit_chance": 0.05, "magic_boost": 2.0 } },
-            "ore_data": { "coords": [4, 0] }
+            "ore_generation": { "block": "Lux Ore", "min_depth": 25, "max_depth": 30, "rarity": 0.05 }
         },
         {
             "id": "petroleum", "name": "Petroleum", "texture": "res://assets/ores/petroleum.png", 
             "item_data": { "damage": 5.0, "element": "chem", "stack": 50, "modifiers": { "cooldown": 0.95 } },
-            "ore_data": { "coords": [5, 0] }
+            "ore_generation": { "block": "Petroleum", "min_depth": 15, "max_depth": 30, "rarity": 0.1 }
         },
         {
             "id": "copper_alloy", "name": "Copper Alloy", "texture": "res://assets/items/copper_alloy.png", 
@@ -130,10 +152,6 @@
         {
             "id": "gear", "name": "Gear", "texture": "res://assets/items/gear.png", 
             "item_data": { "damage": 5.0, "element": "metal", "stack": 100, "modifiers": { "cooldown": 0.9, "speed_mult": 1.1 } }
-        },
-        {
-            "id": "cool_item", "name": "Coolio", "texture": "res://assets/items/lux.png", 
-            "item_data": { "damage": 5.0, "element": "metal", "stack": 100, "modifiers": { "cooldown": 0.9, "speed_mult": 1.1 } }
         }
     ],
     "buildings": [
@@ -142,32 +160,34 @@
             "name": "Conveyor",
             "template": "res://scenes/buildables/conveyor.tscn",
             "visuals": {
+                "type": "block",
+                "width": 32, "height": 18,
                 "texture": "res://assets/buildables/conveyor.png",
-                "width": 32, "height": 32,
-                "animations": {
-                    "idle_down": { "row": 0, "count": 1, "speed": 10 },
-                    "idle_up": { "row": 3, "count": 1, "speed": 10 },
-                    "idle_left": { "row": 2, "count": 1, "speed": 10 },
-                    "idle_right": { "row": 1, "count": 1, "speed": 10 }
-                }
+                "dimensions": [1.0, 0.5625, 1.0]
             },
             "logic": { "has_input": true, "has_output": true, "health": 50, "power_cost": 0.0 }
         },
         {
             "id": "turret",
-            "name": "Basic Turret",
+            "name": "Turret",
             "template": "res://scenes/entities/turret.tscn",
             "visuals": {
+                "type": "block",
+                "width": 32, "height": 64,
                 "texture": "res://assets/buildables/turret.png",
-                "width": 32, "height": 48,
-                "animations": {
-                    "idle_down": { "row": 0, "count": 1 },
-                    "idle_up": { "row": 1, "count": 1 },
-                    "idle_left": { "row": 2, "count": 1 },
-                    "idle_right": { "row": 3, "count": 1 }
-                }
+                "dimensions": [1.0, 2.0, 0.5]
             },
-            "logic": { "has_input": true, "has_output": false, "health": 150, "power_cost": 10.0 },
+            "logic": { 
+                "has_input": true, 
+                "has_output": false, 
+                "health": 150, 
+                "power_cost": 10.0,
+                "rotates": true,
+                "targeting": true,
+                "shooting": true,
+                "emit_projectile": true,
+                "inventory": { "capacity": 100, "slots": 1, "whitelist": ["rod"] }
+            },
             "params": {
                 "ShooterComponent:base_damage": 5.0,
                 "ShooterComponent:fire_rate": 1.0,
@@ -179,11 +199,8 @@
             "name": "Mining Drill",
             "template": "res://scenes/buildables/drill.tscn",
             "visuals": {
-                "texture": "res://assets/buildables/drill.png",
-                "width": 32, "height": 32,
-                "animations": {
-                    "idle_down": { "row": 0, "count": 1, "speed": 10 }
-                }
+                "type": "block",
+                "texture": "res://assets/buildables/drill.png"
             },
             "logic": { "has_input": false, "has_output": true, "health": 80, "power_cost": 5.0 }
         },
@@ -192,11 +209,10 @@
             "name": "Asourcer",
             "template": "res://scenes/buildables/asourcer.tscn",
             "visuals": {
+                "type": "block",
+                "width": 64, "height": 32,
                 "texture": "res://assets/buildables/asourcer.png",
-                "width": 32, "height": 64,
-                "animations": {
-                    "idle_down": { "row": 0, "count": 1 }
-                }
+                "dimensions": [2.0, 1.0, 1.0]
             },
             "grid": { "width": 1, "height": 2 },
             "logic": { "has_input": true, "has_output": true, "health": 100, "power_cost": 15.0 }
@@ -206,11 +222,8 @@
             "name": "Burnace",
             "template": "res://scenes/buildables/burnace.tscn",
             "visuals": {
-                "texture": "res://assets/buildables/burnace.png",
-                "width": 32, "height": 32,
-                "animations": {
-                    "idle_down": { "row": 0, "count": 4, "speed": 8 }
-                }
+                "type": "block",
+                "texture": "res://assets/buildables/burnace.png"
             },
             "logic": { "has_input": true, "has_output": true, "health": 120, "power_cost": 10.0 }
         }
@@ -221,8 +234,9 @@
             "name": "Wire",
             "template": "res://scenes/wiring/wire.tscn",
             "visuals": {
+                "type": "sprite",
                 "texture": "res://assets/ui/wires.png", 
-                "width": 32, "height": 16,
+                "width": 32, "height": 1,
                 "animations": {
                     "off_0": { "row": 0, "count": 1 },
                     "on_0": { "row": 1, "count": 1 }
@@ -248,5 +262,24 @@
             "id": "craft_gear", "name": "Craft Gear", "inputs": { "iron_alloy": 2 }, "output": "gear", "count": 1, "time": 0.5
         }
     ],
-    "enemies": []
+    "enemies": [
+        {
+            "id": "basic_robot",
+            "name": "Basic Robot",
+            "scene_path": "res://assets/enemies/clanker.glb",
+            "logic": { 
+                "health": 50, 
+                "speed": 40,
+                "defense": 2.0,
+                "resistances": { "metal": 0.5 }
+            },
+            "params": { 
+                "attack_damage": 5,
+                "attack_speed": 1.2
+            },
+            "drops": [
+                 { "item": "iron", "min": 1, "max": 2, "chance": 0.5 }
+            ]
+        }
+    ]
 }

@@ -21,9 +21,6 @@ func _init() -> void:
 func _ready() -> void:
 	if Engine.is_editor_hint(): return
 	
-	# BaseBuilding defaults center_offset to Vector2(0, 8), which correctly 
-	# counteracts the display_offset of Vector2(0, -8) set in the Resource.
-	
 	input_inventory.name = "InputInventory"
 	input_inventory.max_slots = 1
 	input_inventory.slot_capacity = 20
@@ -53,7 +50,7 @@ func _process(delta: float) -> void:
 	
 	_handle_smelting(delta)
 	
-	# Attempt to output finished items to neighbors (Conveyors, etc)
+	# Continuously try to output result
 	if output_inventory.has_item():
 		try_output_from_inventory(output_inventory)
 
@@ -69,10 +66,8 @@ func _try_start_smelting() -> void:
 	var input_item = input_inventory.get_first_item()
 	if not input_item: return
 
-	# Find a matching recipe
 	var potential_recipe = null
 	for r in recipes:
-		# Check for exact resource match OR matching name/path as fallback
 		if r.input_item == input_item:
 			potential_recipe = r
 			break
@@ -84,12 +79,9 @@ func _try_start_smelting() -> void:
 			break
 	
 	if potential_recipe:
-		# Check available count
 		var slot = input_inventory.slots[0]
 		if slot.count >= potential_recipe.input_count:
-			# Check output space
 			if output_inventory.has_space_for(potential_recipe.output_item):
-				# Consume input
 				if input_inventory.remove_item(input_item, potential_recipe.input_count):
 					active_recipe = potential_recipe
 					is_smelting = true
@@ -102,21 +94,29 @@ func _complete_smelt() -> void:
 		output_inventory.add_item(active_recipe.output_item, active_recipe.output_count)
 		active_recipe = null
 
-func receive_item(item: ItemResource, _from_node: Node2D = null) -> bool:
+func receive_item(item: Resource, _from_node: Node3D = null, _extra_data: Dictionary = {}) -> bool:
 	if not has_input: return false
+	var i = item as ItemResource
+	if not i: return false
 	
-	# Allow any item to enter. If it can't be smelted, it stays in inventory.
-	return input_inventory.add_item(item) == 0
+	# Validation: Ensure item works with at least one recipe
+	var is_valid = false
+	for r in recipes:
+		if r.input_item == i or r.input_item.item_name == i.item_name:
+			is_valid = true
+			break
+	
+	if is_valid:
+		return input_inventory.add_item(i) == 0
+		
+	return false
 
 func requires_recipe_selection() -> bool:
 	return false
 
-# --- Data Access for UI ---
-
 func get_processing_icon() -> Texture2D:
 	if active_recipe:
 		return active_recipe.output_item.icon
-	# If not currently smelting but has input, show potential output
 	var item = input_inventory.get_first_item()
 	if item:
 		for r in recipes:

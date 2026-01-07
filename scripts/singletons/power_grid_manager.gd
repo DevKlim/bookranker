@@ -27,16 +27,8 @@ func _ready() -> void:
 
 
 ## Recalculates the entire power grid's status.
-## This should be called whenever a provider or consumer is added, removed, or changed.
-func update_grid() -> void:
-	# Ensure we have a reference to the tilemap
-	if not is_instance_valid(build_manager.tile_map):
-		build_manager._initialize_tilemaps()
-		if not is_instance_valid(build_manager.tile_map):
-			# If still not valid, we can't calculate spatial eligibility yet.
-			# But we should still calculate generation.
-			pass
-
+## Accepts optional argument to satisfy signal connections that pass values (like property setters).
+func update_grid(_arg = null) -> void:
 	# 1. Calculate total generation from all providers (Core, etc.)
 	total_power_generation = 0.0
 	for provider in providers:
@@ -45,6 +37,7 @@ func update_grid() -> void:
 
 	# 2. Separate consumers into two groups based on eligibility
 	var eligible_consumers: Array[PowerConsumerComponent] = []
+	var grid_valid = is_instance_valid(build_manager.grid_map)
 	
 	for consumer in consumers:
 		if not is_instance_valid(consumer): continue
@@ -52,21 +45,20 @@ func update_grid() -> void:
 		var is_eligible = true
 		
 		if consumer.requires_wire_connection:
-			var parent_building = consumer.get_parent()
-			if parent_building and parent_building.is_inside_tree() and is_instance_valid(build_manager.tile_map):
-				# The buildings are visually offset (usually 0, -8). 
-				# We must find the tile center to check for wires.
-				var offset = Vector2(0, 8)
-				if "center_offset" in parent_building:
-					offset = parent_building.center_offset
-
-				var check_pos = parent_building.global_position + offset
-				var tile_coord = build_manager.tile_map.local_to_map(check_pos)
-				
-				if not wiring_manager.is_powered(tile_coord):
-					is_eligible = false
-			elif parent_building:
-				# If we can't verify connection, assume false to avoid exploits/bugs
+			if grid_valid:
+				var parent = consumer.get_parent()
+				if parent:
+					# Use GridMap to determine the cell
+					var local_pos = build_manager.grid_map.to_local(parent.global_position)
+					var cell = build_manager.grid_map.local_to_map(local_pos)
+					# Convert to logical grid (Vector2i) for WiringManager
+					var logic_coord = Vector2i(cell.x, cell.z)
+					
+					if not wiring_manager.is_powered(logic_coord):
+						is_eligible = false
+			else:
+				# If grid is not ready yet, we can't verify connection.
+				# Default to false to prevent free power before init.
 				is_eligible = false
 		
 		if is_eligible:
@@ -95,7 +87,10 @@ func update_grid() -> void:
 func register_provider(provider: PowerProviderComponent) -> void:
 	if not providers.has(provider):
 		providers.append(provider)
-		provider.power_output_changed.connect(update_grid)
+		# Ensure we don't double connect
+		if not provider.power_output_changed.is_connected(update_grid):
+			provider.power_output_changed.connect(update_grid)
+		
 		provider.tree_exiting.connect(func(): unregister_provider(provider))
 		update_grid()
 
@@ -113,7 +108,9 @@ func unregister_provider(provider: PowerProviderComponent) -> void:
 func register_consumer(consumer: PowerConsumerComponent) -> void:
 	if not consumers.has(consumer):
 		consumers.append(consumer)
-		consumer.power_demand_changed.connect(update_grid)
+		if not consumer.power_demand_changed.is_connected(update_grid):
+			consumer.power_demand_changed.connect(update_grid)
+			
 		consumer.tree_exiting.connect(func(): unregister_consumer(consumer))
 		update_grid()
 

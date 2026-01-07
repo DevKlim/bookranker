@@ -10,16 +10,20 @@ extends Node
 var tile_coord: Vector2i = Vector2i(-1, -1)
 
 func _ready() -> void:
+	# Don't register if parent is a preview ghost
+	if get_parent().has_meta("is_preview"): return
+	
 	# Deferred to ensure parent's transform is ready and LaneManager is initialized
 	call_deferred("_register")
 
 func _register() -> void:
 	var parent = get_parent()
-	if not parent or not parent is Node2D: 
-		printerr("GridComponent: Parent must be a Node2D.")
+	if not parent or not parent is Node3D: 
+		printerr("GridComponent: Parent must be a Node3D.")
 		return
 	
 	# 0. Get the specific layer offset from LaneManager (e.g., Wire Offset)
+	# This returns Vector3 in 3D
 	var offset_vector = LaneManager.get_layer_offset(layer)
 	
 	# 1. Determine tile based on global position CORRECTED by the offset.

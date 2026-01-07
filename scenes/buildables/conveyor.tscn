@@ -1,0 +1,106 @@
+[gd_scene load_steps=15 format=4 uid="uid://l0dt41vcpltn"]
+
+[ext_resource type="Script" uid="uid://b1x44g7ittwg7" path="res://scripts/entities/buildings/conveyor.gd" id="1_e2wp7"]
+[ext_resource type="Texture2D" uid="uid://b4ubuk7hj6jfc" path="res://assets/buildables/conveyor_top.png" id="2_rqr2k"]
+[ext_resource type="Texture2D" uid="uid://bo5am5ki1x834" path="res://assets/buildables/conveyor_bottom.png" id="3_ebamt"]
+[ext_resource type="Texture2D" uid="uid://cxv1tfxnnl02o" path="res://assets/buildables/conveyor_front.png" id="4_el5k1"]
+[ext_resource type="Texture2D" uid="uid://dfe1kwiytacju" path="res://assets/buildables/conveyor_back.png" id="5_kvfqv"]
+[ext_resource type="Texture2D" uid="uid://bm2ens7etdrfe" path="res://assets/buildables/conveyor_side.png" id="6_auw2n"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0u2yi"]
+albedo_texture = ExtResource("2_rqr2k")
+texture_filter = 0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0wfnp"]
+albedo_texture = ExtResource("3_ebamt")
+texture_filter = 0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lwpun"]
+albedo_texture = ExtResource("4_el5k1")
+texture_filter = 0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bbqbv"]
+albedo_texture = ExtResource("5_kvfqv")
+texture_filter = 0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_e3pr3"]
+albedo_texture = ExtResource("6_auw2n")
+texture_filter = 0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_epevq"]
+albedo_texture = ExtResource("6_auw2n")
+texture_filter = 0
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_46bqf"]
+_surfaces = [{
+"aabb": AABB(-0.5, 0.5625, -0.5, 1, 1e-05, 1),
+"attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
+"format": 34359738391,
+"material": SubResource("StandardMaterial3D_0u2yi"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 6,
+"vertex_data": PackedByteArray("AAAAvwAAED8AAAC/AAAAPwAAED8AAAC/AAAAPwAAED8AAAA/AAAAvwAAED8AAAC/AAAAPwAAED8AAAA/AAAAvwAAED8AAAA//3///wAA/z//f///AAD/P/9///8AAP8//3///wAA/z//f///AAD/P/9///8AAP8/")
+}, {
+"aabb": AABB(-0.5, 0, -0.5, 1, 1e-05, 1),
+"attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
+"format": 34359738391,
+"material": SubResource("StandardMaterial3D_0wfnp"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 6,
+"vertex_data": PackedByteArray("AAAAvwAAAAAAAAA/AAAAPwAAAAAAAAA/AAAAPwAAAAAAAAC/AAAAvwAAAAAAAAA/AAAAPwAAAAAAAAC/AAAAvwAAAAAAAAC//38AAAAA/z//fwAAAAD/P/9/AAAAAP8//38AAAAA/z//fwAAAAD/P/9/AAAAAP8/")
+}, {
+"aabb": AABB(-0.5, 0, 0.5, 1, 0.5625, 1e-05),
+"attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
+"format": 34359738391,
+"material": SubResource("StandardMaterial3D_lwpun"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 6,
+"vertex_data": PackedByteArray("AAAAvwAAED8AAAA/AAAAPwAAED8AAAA/AAAAPwAAAAAAAAA/AAAAvwAAED8AAAA/AAAAPwAAAAAAAAA/AAAAvwAAAAAAAAA//3//fwAA/z//f/9/AAD/P/9//38AAP8//3//fwAA/z//f/9/AAD/P/9//38AAP8/")
+}, {
+"aabb": AABB(-0.5, 0, -0.5, 1, 0.5625, 1e-05),
+"attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
+"format": 34359738391,
+"material": SubResource("StandardMaterial3D_bbqbv"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 6,
+"vertex_data": PackedByteArray("AAAAPwAAED8AAAC/AAAAvwAAED8AAAC/AAAAvwAAAAAAAAC/AAAAPwAAED8AAAC/AAAAvwAAAAAAAAC/AAAAPwAAAAAAAAC//////////z//////////P/////////8//////////z//////////P/////////8/")
+}, {
+"aabb": AABB(-0.5, 0, -0.5, 1e-05, 0.5625, 1),
+"attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
+"format": 34359738391,
+"material": SubResource("StandardMaterial3D_e3pr3"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 6,
+"vertex_data": PackedByteArray("AAAAvwAAED8AAAC/AAAAvwAAED8AAAA/AAAAvwAAAAAAAAA/AAAAvwAAED8AAAC/AAAAvwAAAAAAAAA/AAAAvwAAAAAAAAC/AAD/f///AAAAAP9///8AAAAA/3///wAAAAD/f///AAAAAP9///8AAAAA/3///wAA")
+}, {
+"aabb": AABB(0.5, 0, -0.5, 1e-05, 0.5625, 1),
+"attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
+"format": 34359738391,
+"material": SubResource("StandardMaterial3D_epevq"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 6,
+"vertex_data": PackedByteArray("AAAAPwAAED8AAAA/AAAAPwAAED8AAAC/AAAAPwAAAAAAAAC/AAAAPwAAED8AAAA/AAAAPwAAAAAAAAC/AAAAPwAAAAAAAAA/////f/9//z////9//3//P////3//f/8/////f/9//z////9//3//P////3//f/8/")
+}]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ggwcg"]
+
+[node name="Conveyor" type="StaticBody3D"]
+script = ExtResource("1_e2wp7")
+powered_color = null
+unpowered_color = Color(1, 1, 1, 1)
+output_direction = null
+input_direction = 0
+has_input = 2
+
+[node name="BlockVisual" type="MeshInstance3D" parent="."]
+mesh = SubResource("ArrayMesh_46bqf")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("BoxShape3D_ggwcg")

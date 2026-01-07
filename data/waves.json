@@ -1,0 +1,44 @@
+{
+	"waves": [
+		{
+			"id": 1,
+			"groups": [
+				{
+					"enemy_id": "basic_robot",
+					"count": 5,
+					"interval": 1.0
+				}
+			]
+		},
+		{
+			"id": 2,
+			"groups": [
+				{
+					"enemy_id": "basic_robot",
+					"count": 3,
+					"interval": 0.5
+				},
+				{
+					"enemy_id": "basic_robot",
+					"count": 5,
+					"interval": 0.2
+				}
+			]
+		},
+		{
+			"id": 3,
+			"groups": [
+				{
+					"enemy_id": "basic_robot",
+					"count": 10,
+					"interval": 0.5
+				},
+				{
+					"enemy_id": "fast_robot",
+					"count": 5,
+					"interval": 0.3
+				}
+			]
+		}
+	]
+}
