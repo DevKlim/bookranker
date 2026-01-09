@@ -5,6 +5,18 @@
             "texture_base": "The path to the 'main' texture. The importer checks for suffixes like _top, _side, _front, _bottom, _back automatically in the same folder.",
             "dimensions": "Array [x, y, z] sizes in units. Default [1, 1, 1].",
             "hardness": "Mining durability."
+        },
+        "structure_guide": {
+            "description": "For multi-tile buildings. Replaces 'dimensions' and 'visuals'.",
+            "structure": [
+                {
+                    "offset": [0, 0], 
+                    "texture": "path/to/texture.png",
+                    "rotation": 0,
+                    "is_center": true,
+                    "comment": "One block MUST be marked 'is_center': true. This becomes the (0,0) pivot."
+                }
+            ]
         }
     },
     "blocks": [
@@ -165,7 +177,10 @@
                 "texture": "res://assets/buildables/conveyor.png",
                 "dimensions": [1.0, 0.5625, 1.0]
             },
-            "logic": { "has_input": true, "has_output": true, "health": 50, "power_cost": 0.0 }
+            "logic": { 
+                "has_input": true, "has_output": true, "health": 50, "power_cost": 0.0,
+                "io_config": { "input": ["back"], "output": ["front"] }
+            }
         },
         {
             "id": "turret",
@@ -186,7 +201,8 @@
                 "targeting": true,
                 "shooting": true,
                 "emit_projectile": true,
-                "inventory": { "capacity": 100, "slots": 1, "whitelist": ["rod"] }
+                "inventory": { "capacity": 100, "slots": 1, "whitelist": ["rod"] },
+                "io_config": { "input": ["all"], "output": [] }
             },
             "params": {
                 "ShooterComponent:base_damage": 5.0,
@@ -202,20 +218,32 @@
                 "type": "block",
                 "texture": "res://assets/buildables/drill.png"
             },
-            "logic": { "has_input": false, "has_output": true, "health": 80, "power_cost": 5.0 }
+            "logic": { 
+                "has_input": false, "has_output": true, "health": 80, "power_cost": 5.0,
+                "io_config": { "input": [], "output": ["front"] }
+            }
         },
         {
             "id": "asourcer",
             "name": "Asourcer",
             "template": "res://scenes/buildables/asourcer.tscn",
-            "visuals": {
-                "type": "block",
-                "width": 64, "height": 32,
-                "texture": "res://assets/buildables/asourcer.png",
-                "dimensions": [2.0, 1.0, 1.0]
-            },
-            "grid": { "width": 1, "height": 2 },
-            "logic": { "has_input": true, "has_output": true, "health": 100, "power_cost": 15.0 }
+            "structure": [
+                { 
+                    "offset": [0, 0], 
+                    "texture": "res://assets/buildables/asourcer1.png",
+                    "io": "input",
+                    "is_center": true
+                },
+                {
+                    "offset": [1, 0],
+                    "texture": "res://assets/buildables/asourcer2.png",
+                    "io": "output"
+                }
+            ],
+            "logic": { 
+                "has_input": true, "has_output": true, "health": 100, "power_cost": 15.0,
+                "io_config": { "input": ["all"], "output": ["all"] }
+            }
         },
         {
             "id": "burnace",
@@ -225,7 +253,10 @@
                 "type": "block",
                 "texture": "res://assets/buildables/burnace.png"
             },
-            "logic": { "has_input": true, "has_output": true, "health": 120, "power_cost": 10.0 }
+            "logic": { 
+                "has_input": true, "has_output": true, "health": 120, "power_cost": 10.0,
+                "io_config": { "input": ["all"], "output": ["all"] }
+            }
         }
     ],
     "wires": [

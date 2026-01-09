@@ -22,9 +22,13 @@ enum BuildLayer {
 @export var has_input: bool = true
 @export var has_output: bool = true
 
+## Bitmasks for default allowed directions (relative to building facing).
+## 1=Down(Back), 2=Left, 4=Up(Front), 8=Right (Using Godot Direction Enum logic: 1<<Val)
+@export_flags("Down:1", "Left:2", "Up:4", "Right:8") var default_input_mask: int = 15 # Default All
+@export_flags("Down:1", "Left:2", "Up:4", "Right:8") var default_output_mask: int = 15 # Default All
+
 @export_group("Visual Settings")
 ## The visual offset from the tile center (snapped position) for this building.
-## Changed default to ZERO for 3D context. Old default (0, -8) was for 2D pixels.
 @export var display_offset: Vector2 = Vector2.ZERO
 
 ## For MECH layer items

@@ -152,17 +152,12 @@ func _get_extra_offset_by_dir(dir: Direction) -> Vector2i:
 		Direction.RIGHT: return Vector2i(-1, 0)
 	return Vector2i.ZERO
 
-func get_occupied_cells(rot_val: Variant) -> Array[Vector2i]:
-	var dir = Direction.DOWN
-	if typeof(rot_val) == TYPE_INT:
-		dir = rot_val as Direction
-	elif typeof(rot_val) == TYPE_STRING:
-		var s = String(rot_val)
-		if s.ends_with("down"): dir = Direction.DOWN
-		elif s.ends_with("up"): dir = Direction.UP
-		elif s.ends_with("left"): dir = Direction.LEFT
-		elif s.ends_with("right"): dir = Direction.RIGHT
-		
+func get_occupied_cells(rotation_index: int = -1) -> Array[Vector2i]:
+	var ri = rotation_index
+	if ri == -1:
+		ri = int(output_direction)
+	
+	var dir = ri as Direction
 	return [Vector2i.ZERO, _get_extra_offset_by_dir(dir)]
 
 func set_build_rotation(rotation_val: Variant) -> void:

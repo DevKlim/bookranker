@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3 uid="uid://6e4josh74xnb"]
+[gd_scene format=3 uid="uid://6e4josh74xnb"]
 
 [ext_resource type="Script" uid="uid://dtpxwh6l4a0ll" path="res://scripts/Main.gd" id="1_57xwr"]
 [ext_resource type="Script" uid="uid://cep2y827y6dan" path="res://scripts/entities/core.gd" id="2_vcsgt"]
@@ -27,68 +27,68 @@ ambient_light_source = 3
 [sub_resource type="BoxShape3D" id="BoxShape3D_c01mt"]
 size = Vector3(5, 5, 5)
 
-[node name="Main" type="Node3D"]
+[node name="Main" type="Node3D" unique_id=1011281730]
 script = ExtResource("1_57xwr")
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1573918408]
 environment = SubResource("Environment_1")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1268419985]
 transform = Transform3D(0.70710695, 0.5, -0.5, 0, 0.7071068, 0.7071068, 0.70710695, -0.5, 0.5, 0, 10, 0)
 shadow_enabled = true
 
-[node name="Camera3D" type="Camera3D" parent="."]
+[node name="Camera3D" type="Camera3D" parent="." unique_id=157158410]
 transform = Transform3D(0.70710677, 0.49999976, -0.49999976, 0, 0.7071065, 0.7071065, 0.70710677, -0.49999976, 0.49999976, 0, 10, 10)
 projection = 1
 size = 20.0
 
-[node name="Buildings" type="Node3D" parent="."]
+[node name="Buildings" type="Node3D" parent="." unique_id=192841188]
 
-[node name="Core" type="StaticBody3D" parent="."]
+[node name="Core" type="StaticBody3D" parent="." unique_id=1535676057]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5, 0.5, 2.5)
 physics_material_override = SubResource("PhysicsMaterial_vcsgt")
 script = ExtResource("2_vcsgt")
 
-[node name="Core" type="MeshInstance3D" parent="Core"]
+[node name="Core" type="MeshInstance3D" parent="Core" unique_id=476539278]
 transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 0, 0, 0)
 mesh = SubResource("SphereMesh_c01mt")
 skeleton = NodePath("../../Buildings")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Core"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Core" unique_id=1393048283]
 shape = SubResource("BoxShape3D_c01mt")
 
-[node name="HealthComponent" type="Node" parent="Core"]
+[node name="HealthComponent" type="Node" parent="Core" unique_id=345507073]
 script = ExtResource("3_nxtc6")
 max_health = 500.0
 metadata/_custom_type_script = "uid://duudv3f6u8n6m"
 
-[node name="PowerProviderComponent" type="Node" parent="Core"]
+[node name="PowerProviderComponent" type="Node" parent="Core" unique_id=642545018]
 script = ExtResource("4_jlsqs")
 power_generation = 100.0
 metadata/_custom_type_script = "uid://cgqs7pvpbdrdo"
 
-[node name="Wiring" type="Node3D" parent="."]
+[node name="Wiring" type="Node3D" parent="." unique_id=497331190]
 
-[node name="OreLayer" type="Node3D" parent="."]
+[node name="OreLayer" type="Node3D" parent="." unique_id=2101020586]
 
-[node name="Projectiles" type="Node3D" parent="."]
+[node name="Projectiles" type="Node3D" parent="." unique_id=1248454116]
 
-[node name="Enemies" type="Node3D" parent="."]
+[node name="Enemies" type="Node3D" parent="." unique_id=2080955793]
 
-[node name="BuildPreview" type="Node3D" parent="."]
+[node name="BuildPreview" type="Node3D" parent="." unique_id=1336234951]
 
-[node name="GameUI" parent="." instance=ExtResource("5_53nla")]
+[node name="GameUI" parent="." unique_id=1261807733 instance=ExtResource("5_53nla")]
 visible = true
 
-[node name="DataImporter" type="Node" parent="."]
+[node name="DataImporter" type="Node" parent="." unique_id=477849547]
 script = ExtResource("7_nxtc6")
 target_category = "Buildables"
 overwrite_existing = true
-target_item_id = "conveyor"
+target_item_id = "asourcer"
 
-[node name="GridMap" parent="." instance=ExtResource("5_tbgi4")]
+[node name="GridMap" parent="." unique_id=786906317 instance=ExtResource("5_tbgi4")]
 
-[node name="DevMap" type="GridMap" parent="."]
+[node name="DevMap" type="GridMap" parent="." unique_id=5562770]
 visible = false
 cell_size = Vector3(1, 1, 1)
 data = {

@@ -24,8 +24,7 @@ extends Node3D
 var build_preview_container: Node3D
 
 # Arrows
-var arrow_indicator: Node3D
-var input_arrow_indicator: Node3D
+var indicator_container: Node3D
 var selected_mech_coords: Vector2i = Vector2i(-1, -1)
 var _hovered_for_deletion: Node = null
 
@@ -54,9 +53,7 @@ func _ready() -> void:
 		var debug_lib_path = "res://resources/debug_mesh_library.tres"
 		if ResourceLoader.exists(debug_lib_path):
 			dev_map.mesh_library = load(debug_lib_path)
-			# Scan for spawners using the dedicated library
 			LaneManager.scan_for_spawners(dev_map)
-			# Disable collision on DevMap to prevent enemies colliding with spawners
 			dev_map.collision_layer = 0
 			dev_map.collision_mask = 0
 		else:
@@ -70,13 +67,9 @@ func _ready() -> void:
 	build_preview_container.visible = false
 	add_child(build_preview_container)
 	
-	arrow_indicator = _create_arrow_mesh(Color(0.2, 1.0, 0.2, 0.8)) # Green for Output
-	arrow_indicator.visible = false
-	add_child(arrow_indicator)
-	
-	input_arrow_indicator = _create_arrow_mesh(Color(1.0, 0.2, 0.2, 0.8)) # Red for Input
-	input_arrow_indicator.visible = false
-	add_child(input_arrow_indicator)
+	indicator_container = Node3D.new()
+	indicator_container.name = "IndicatorContainer"
+	add_child(indicator_container)
 	
 	cursor_highlight = MeshInstance3D.new()
 	var mesh = BoxMesh.new()
@@ -113,6 +106,23 @@ func _create_arrow_mesh(color: Color) -> Node3D:
 	container.add_child(mesh_inst)
 	return container
 
+func _create_line_mesh() -> Node3D:
+	var container = Node3D.new()
+	var mat = StandardMaterial3D.new()
+	mat.albedo_color = Color(0.8, 0.8, 1.0, 0.8) # Light Blue for bidirectional
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	
+	var box = BoxMesh.new()
+	box.size = Vector3(0.15, 0.15, 0.8) # Long thin box
+	
+	var mesh_inst = MeshInstance3D.new()
+	mesh_inst.mesh = box
+	mesh_inst.material_override = mat
+	# Default Z orientation matches typical arrow logic
+	
+	container.add_child(mesh_inst)
+	return container
+
 func _process(delta: float) -> void:
 	handle_camera_movement(delta)
 	handle_debug_display()
@@ -120,16 +130,12 @@ func _process(delta: float) -> void:
 	var ray = get_mouse_raycast()
 	var mouse_world_pos = Vector3.ZERO
 	
-	# Logic to handle Core transparency and building "through" it
 	var hovering_core = false
 	if ray and ray.get("collider") == core:
 		hovering_core = true
 		if is_instance_valid(core):
 			core.set_transparent(true)
-			
-		# If building, we want to look BEHIND the core
 		if BuildManager.is_building:
-			# Re-cast excluding the Core
 			var ray_ex = get_mouse_raycast([core])
 			if ray_ex:
 				if ray_ex.get("collider") is GridMap:
@@ -143,7 +149,6 @@ func _process(delta: float) -> void:
 	else:
 		if is_instance_valid(core):
 			core.set_transparent(false)
-			
 		if ray:
 			if BuildManager.is_building:
 				var collider = ray.get("collider")
@@ -171,25 +176,13 @@ func _process(delta: float) -> void:
 			if not _is_mouse_over_ui():
 				var cell = BuildManager.get_grid_cell(mouse_world_pos)
 				var tile_coord = Vector2i(cell.x, cell.z)
-				
 				var mech = BuildManager.get_mech_at(tile_coord)
-				
 				if mech:
 					selected_mech_coords = tile_coord
-					
-					# Attempt to find an inventory
 					var inventory = null
-					
-					# 1. Standard Component (New System)
-					if "inventory_component" in mech:
-						inventory = mech.inventory_component
-					
-					# 2. Legacy / Fallbacks
-					if not inventory:
-						inventory = mech.get("inventory")
-					if not inventory:
-						inventory = mech.get("input_inventory")
-						
+					if "inventory_component" in mech: inventory = mech.inventory_component
+					if not inventory: inventory = mech.get("inventory")
+					if not inventory: inventory = mech.get("input_inventory")
 					if inventory and inventory is InventoryComponent:
 						var title = mech.name.rstrip("0123456789")
 						game_ui.open_inventory(inventory, title, mech)
@@ -200,9 +193,8 @@ func _process(delta: float) -> void:
 					game_ui.close_inventory()
 	
 	if selected_mech_coords != Vector2i(-1, -1):
-		# Adjust indicator position using LaneManager logic
 		var world_pos = LaneManager.tile_to_world(selected_mech_coords) + LaneManager.get_layer_offset("building")
-		world_pos.y += 1.0 # Float UI above building
+		world_pos.y += 1.0 
 		var screen_pos = camera.unproject_position(world_pos)
 		game_ui.set_inventory_screen_position(screen_pos)
 
@@ -257,97 +249,104 @@ func update_cursor_highlight(world_pos: Vector3) -> void:
 	if not grid_map or _is_mouse_over_ui():
 		cursor_highlight.visible = false
 		return
-	
-	# Use LaneManager logic for floor alignment
 	var cell = BuildManager.get_grid_cell(world_pos)
 	var tile_pos = LaneManager.tile_to_world(Vector2i(cell.x, cell.z))
-	# Highlight sits 1 block higher (at Y=1.5 if block center is 0.5)
 	cursor_highlight.global_position = tile_pos + Vector3(0, 1.5, 0) 
 	cursor_highlight.visible = true
 
 func handle_debug_display() -> void:
 	var ray = get_mouse_raycast()
 	var world_pos = (ray.position - ray.normal * 0.1) if ray else get_plane_intersection()
-	
 	var cell = Vector3i.ZERO
 	var ore_info = "None"
 	var entity_info = ""
-	
 	if grid_map:
 		cell = grid_map.local_to_map(grid_map.to_local(world_pos))
-		
-		# Query LaneManager using the specific tile center to be precise
 		var tile_center = LaneManager.tile_to_world(Vector2i(cell.x, cell.z))
-		# Check slightly above floor (Y=0.5) to match Drill query logic
 		var check_pos = tile_center + Vector3(0, 0.5, 0)
-		
 		var ore = LaneManager.get_ore_at_world_pos(check_pos)
-		if ore:
-			ore_info = ore.item_name
+		if ore: ore_info = ore.item_name
 	
-	# Check for Entity
 	if ray and ray.get("collider"):
 		var col = ray.get("collider")
 		if col is BaseBuilding:
 			entity_info += "\n[Entity: %s]" % col.name
-			if col is Conveyor:
-				entity_info += "\nOut: %d | In: %d (Active: %d)" % [col.output_direction, col.input_direction, col.active_input_direction]
-			
+			if "input_mask" in col:
+				entity_info += "\nInMask: %d | OutMask: %d" % [col.input_mask, col.output_mask]
 	if game_ui:
 		game_ui.set_debug_text("Cell: %s\nOre: %s%s" % [str(cell), ore_info, entity_info])
 
 func update_arrow_indicator() -> void:
-	arrow_indicator.visible = false
-	input_arrow_indicator.visible = false
+	# Clear previous
+	for child in indicator_container.get_children():
+		child.queue_free()
 	
-	var out_dir = -1
-	var in_dir = -1
 	var base_pos = Vector3.ZERO
 	var show_arrows = false
-	var show_input = false
-	var show_output = false
+	var input_mask = 0
+	var output_mask = 0
+	var rot_idx = 0
 	
 	if BuildManager.is_building and build_preview_container.visible and BuildManager.selected_buildable:
 		if BuildManager.selected_buildable.layer == BuildableResource.BuildLayer.MECH:
 			base_pos = build_preview_container.global_position
 			show_arrows = true
-			show_input = BuildManager.selected_buildable.has_input
-			show_output = BuildManager.selected_buildable.has_output
+			var res = BuildManager.selected_buildable
+			rot_idx = BuildManager.current_rotation_index
 			
-			var rot = BuildManager.current_rotation_index
-			match rot:
-				0: # DOWN
-					out_dir = 0; in_dir = 2
-				1: # LEFT
-					out_dir = 1; in_dir = 3
-				2: # UP
-					out_dir = 2; in_dir = 0
-				3: # RIGHT
-					out_dir = 3; in_dir = 1
+			if res.has_input: input_mask = res.default_input_mask
+			if res.has_output: output_mask = res.default_output_mask
+			
+			# Rotate masks for preview
+			input_mask = _rotate_bitmask(input_mask, rot_idx)
+			output_mask = _rotate_bitmask(output_mask, rot_idx)
 
 	elif selected_mech_coords != Vector2i(-1, -1):
 		var mech = BuildManager.get_mech_at(selected_mech_coords)
 		if is_instance_valid(mech):
 			base_pos = LaneManager.tile_to_world(selected_mech_coords) + LaneManager.get_layer_offset("building")
 			show_arrows = true
-			if "has_input" in mech: show_input = mech.has_input
-			if "has_output" in mech: show_output = mech.has_output
-			if "output_direction" in mech: out_dir = mech.output_direction
-			if "input_direction" in mech: in_dir = mech.input_direction
+			if "input_mask" in mech: input_mask = mech.input_mask
+			if "output_mask" in mech: output_mask = mech.output_mask
 		else:
 			selected_mech_coords = Vector2i(-1, -1)
 
 	if show_arrows:
 		var height_offset = Vector3(0, 0.8, 0)
-		if show_output and out_dir != -1:
-			arrow_indicator.visible = true
-			_apply_arrow_transform(arrow_indicator, base_pos + height_offset, out_dir, false)
+		
+		# Iterate 4 directions (0:Down, 1:Left, 2:Up, 3:Right)
+		for i in range(4):
+			var is_in = (input_mask & (1 << i)) != 0
+			var is_out = (output_mask & (1 << i)) != 0
 			
-		if show_input and in_dir != -1:
-			input_arrow_indicator.visible = true
-			_apply_arrow_transform(input_arrow_indicator, base_pos + height_offset, in_dir, true)
+			if is_in or is_out:
+				var indicator = null
+				if is_in and is_out:
+					# Bi-directional (Line)
+					indicator = _create_line_mesh()
+					_apply_arrow_transform(indicator, base_pos + height_offset, i, false)
+					# Perpendicular rotation for line
+					indicator.rotation.y += deg_to_rad(90)
+				elif is_in:
+					# Red Arrow (Input points IN)
+					indicator = _create_arrow_mesh(Color(1.0, 0.2, 0.2, 0.8))
+					_apply_arrow_transform(indicator, base_pos + height_offset, i, true)
+				elif is_out:
+					# Green Arrow (Output points OUT)
+					indicator = _create_arrow_mesh(Color(0.2, 1.0, 0.2, 0.8))
+					_apply_arrow_transform(indicator, base_pos + height_offset, i, false)
+				
+				indicator_container.add_child(indicator)
 
-func _apply_arrow_transform(node: Node3D, center_pos: Vector3, dir_idx: int, is_input: bool) -> void:
+func _rotate_bitmask(mask: int, steps: int) -> int:
+	var result = 0
+	for i in range(4):
+		if (mask & (1 << i)) != 0:
+			var new_pos = (i + steps) % 4
+			result |= (1 << new_pos)
+	return result
+
+func _apply_arrow_transform(node: Node3D, center_pos: Vector3, dir_idx: int, point_in: bool) -> void:
 	var offset = Vector3.ZERO
 	var y_rot = 0.0
 	
@@ -371,7 +370,7 @@ func _apply_arrow_transform(node: Node3D, center_pos: Vector3, dir_idx: int, is_
 			offset = Vector3(0.5, 0, 0)
 			y_rot = deg_to_rad(-90)
 	
-	if is_input:
+	if point_in:
 		y_rot += deg_to_rad(180)
 		
 	node.global_position = center_pos + offset
@@ -408,17 +407,13 @@ func _apply_ghost_visuals(node: Node, color_tint: Color) -> void:
 	if not is_instance_valid(node): return
 	
 	if node is MeshInstance3D and node.mesh:
-		# Iterate surfaces to preserve texture while tinting
 		var surface_count = node.mesh.get_surface_count()
 		for i in range(surface_count):
 			var source_mat = node.get_active_material(i)
 			if not source_mat: 
 				source_mat = node.mesh.surface_get_material(i)
 			
-			# Ensure we are working with a unique material clone
 			var target_mat = null
-			
-			# Check if we already created an override for this surface
 			var existing_override = node.get_surface_override_material(i)
 			if existing_override and existing_override.has_meta("is_ghost"):
 				target_mat = existing_override
@@ -432,16 +427,10 @@ func _apply_ghost_visuals(node: Node, color_tint: Color) -> void:
 			if target_mat is StandardMaterial3D:
 				target_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 				target_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-				
-				# Mix texture color with Tint
-				# Since standard materials don't have a "mix", we rely on Albedo Color.
-				# If texture exists, Albedo Color tints it.
-				# We want it to be translucent and tinted Green/Red.
 				target_mat.albedo_color = color_tint
 			
 			node.set_surface_override_material(i, target_mat)
 	
-	# Recurse
 	for child in node.get_children():
 		_apply_ghost_visuals(child, color_tint)
 
@@ -472,30 +461,20 @@ func update_build_preview(world_pos: Vector3):
 	if not buildable: return
 	
 	build_preview_container.visible = true
-	
-	# 1. Snap Logic using LaneManager
 	var cell = BuildManager.get_grid_cell(world_pos)
 	var tile_pos = LaneManager.tile_to_world(Vector2i(cell.x, cell.z))
 	
-	# 2. Layer Offset (Building vs Wire vs Tool)
 	var layer_name = "building"
 	if buildable.layer == BuildableResource.BuildLayer.WIRING:
 		layer_name = "wire"
 	
 	var layer_offset = LaneManager.get_layer_offset(layer_name)
-	
-	# 3. Apply
 	var final_pos = tile_pos + layer_offset
-	
-	# 4. Apply Display Offset
 	var display_offset_3d = Vector3(buildable.display_offset.x, buildable.display_offset.y, 0)
 	
 	build_preview_container.global_position = final_pos + display_offset_3d
 
 	var can_build = BuildManager.can_build_at(world_pos)
-	
-	# Tint logic: Greenish if valid, Reddish if invalid. 
-	# Alpha 0.6 to stay see-through but visible.
 	var tint = Color(0.4, 1.0, 0.4, 0.6) if can_build else Color(1.0, 0.4, 0.4, 0.6)
 	
 	if buildable.layer == BuildableResource.BuildLayer.TOOL:
@@ -504,14 +483,9 @@ func update_build_preview(world_pos: Vector3):
 			if c is Sprite3D:
 				c.modulate = Color(1, 0.5, 0.5, 0.7) if has_target else Color(0.5, 0.5, 0.5, 0.5)
 	else:
-		# Apply ghost visuals to the scene instance
 		if build_preview_container.get_child_count() > 0:
 			var preview_node = build_preview_container.get_child(0)
-			
-			# Update Visual Tint
 			_apply_ghost_visuals(preview_node, tint)
-			
-			# Special Logic: Update Conveyor Preview to show curves
 			if preview_node.has_method("update_preview_visuals"):
 				preview_node.update_preview_visuals()
 
@@ -537,7 +511,6 @@ func _handle_delete_highlight(world_pos: Vector3) -> void:
 
 func _highlight_node_tree(node: Node, col: Color):
 	if not is_instance_valid(node): return
-	
 	if node is MeshInstance3D:
 		pass
 	if node is CanvasItem: 

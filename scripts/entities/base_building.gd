@@ -14,10 +14,27 @@ var grid_component: Node
 @export var unpowered_color: Color = Color(0.2, 0.2, 0.2, 1)
 
 @export_group("I/O Configuration")
-@export var output_direction: Direction = Direction.DOWN
-@export var input_direction: Direction = Direction.UP
+# Mask: 1=Down, 2=Left, 4=Up, 8=Right
+# These are the *current* global directions based on rotation
+@export_flags("Down:1", "Left:2", "Up:4", "Right:8") var input_mask: int = 15
+@export_flags("Down:1", "Left:2", "Up:4", "Right:8") var output_mask: int = 15
+
+# Default "Relative" Masks (Before rotation)
+# 1=Down(Back), 2=Left, 4=Up(Front), 8=Right
+@export var default_input_mask: int = 15
+@export var default_output_mask: int = 15
+
 @export var has_input: bool = true
 @export var has_output: bool = true
+
+# Legacy Single Direction Support (for logic that hasn't migrated to masks yet)
+var output_direction: Direction = Direction.DOWN
+var input_direction: Direction = Direction.UP
+
+@export_group("Layout")
+## Define the footprint of the building relative to the center [0,0].
+## Populated by the data importer or manually.
+@export var layout_config: Array[Vector2i] = [Vector2i.ZERO]
 
 var visual_offset: Vector3 = Vector3.ZERO
 var is_active: bool = false
@@ -35,6 +52,9 @@ func _ready() -> void:
 	_setup_power_component()
 	_setup_health_component()
 	_setup_inventory_component()
+	
+	# Initial rotation application to set masks
+	set_build_rotation(0)
 	
 	# Initialize as false, waiting for PowerGrid to update us
 	_on_power_status_changed(false)
@@ -83,10 +103,6 @@ func _setup_inventory_component() -> void:
 		inventory_component = get_node_or_null("InputInventory")
 
 func _on_power_status_changed(has_power: bool) -> void:
-	# Debug check to confirm buildings receive the signal
-	if is_active != has_power:
-		print("Building %s (%s) Power Changed: %s" % [name, str(self), has_power])
-		
 	is_active = has_power
 	var animated_sprite = _get_main_sprite()
 	if is_instance_valid(animated_sprite):
@@ -97,14 +113,15 @@ func set_build_rotation(rotation_val: Variant) -> void:
 	if typeof(rotation_val) == TYPE_INT:
 		dir_idx = rotation_val
 	elif typeof(rotation_val) == TYPE_STRING:
+		# Fallback parsing
 		var s = String(rotation_val)
-		if s.ends_with("down"): dir_idx = Direction.DOWN
-		elif s.ends_with("left"): dir_idx = Direction.LEFT
-		elif s.ends_with("up"): dir_idx = Direction.UP
-		elif s.ends_with("right"): dir_idx = Direction.RIGHT
+		if s.ends_with("down"): dir_idx = 0
+		elif s.ends_with("left"): dir_idx = 1
+		elif s.ends_with("up"): dir_idx = 2
+		elif s.ends_with("right"): dir_idx = 3
 
+	# Legacy single direction updates (assumes typical Conveyor logic: Output=Rot, Input=Opposite)
 	output_direction = dir_idx as Direction
-	
 	match output_direction:
 		Direction.DOWN: input_direction = Direction.UP
 		Direction.LEFT: input_direction = Direction.RIGHT
@@ -112,29 +129,86 @@ func set_build_rotation(rotation_val: Variant) -> void:
 		Direction.RIGHT:input_direction = Direction.LEFT
 		_: input_direction = Direction.UP
 
-	var rads = 0.0
-	match output_direction:
-		Direction.DOWN: rads = PI       
-		Direction.LEFT: rads = PI * 0.5 
-		Direction.UP:   rads = 0.0      
-		Direction.RIGHT:rads = -PI * 0.5
+	# --- Bitmask Rotation Logic ---
+	# Rotate the default mask bits left by 'dir_idx' positions (circular 4-bit shift)
+	# 1->2->4->8->1
+	input_mask = _rotate_bitmask(default_input_mask, dir_idx)
+	output_mask = _rotate_bitmask(default_output_mask, dir_idx)
 	
+	# Apply Visual Rotation
+	var rads = 0.0
+	match dir_idx:
+		0: rads = PI       
+		1: rads = PI * 0.5 
+		2: rads = 0.0      
+		3: rads = -PI * 0.5
 	rotation = Vector3(0, rads, 0)
 
-func get_occupied_cells(_anim: Variant) -> Array[Vector2i]: return [Vector2i.ZERO]
+func _rotate_bitmask(mask: int, steps: int) -> int:
+	# Mask is 4 bits: 0..3
+	var result = 0
+	for i in range(4):
+		if (mask & (1 << i)) != 0:
+			var new_pos = (i + steps) % 4
+			result |= (1 << new_pos)
+	return result
+
+## Returns the list of occupied grid offsets based on rotation
+func get_occupied_cells(rotation_index: int = -1) -> Array[Vector2i]:
+	if layout_config.is_empty():
+		return [Vector2i.ZERO]
+	
+	var ri = rotation_index
+	if ri == -1: ri = int(output_direction) # Use current if not specified
+	
+	var result: Array[Vector2i] = []
+	for point in layout_config:
+		var p = point
+		# 0 (Down/Back) -> 180 degrees
+		if ri == 0:
+			p = Vector2i(-point.x, -point.y)
+		# 1 (Left) -> 90 degrees
+		elif ri == 1:
+			p = Vector2i(point.y, -point.x)
+		# 2 (Up/Fwd) -> 0 degrees (Original)
+		elif ri == 2:
+			p = point
+		# 3 (Right) -> -90 degrees
+		elif ri == 3:
+			p = Vector2i(-point.y, point.x)
+			
+		result.append(p)
+		
+	return result
+
 func _on_died(_node): queue_free()
 
 ## Generic Receive Item.
-## Ignores lane data to treat all inputs equally (funnel behavior).
-func receive_item(item: Resource, _from_node: Node3D = null, _extra_data: Dictionary = {}) -> bool: 
+func receive_item(item: Resource, from_node: Node3D = null, _extra_data: Dictionary = {}) -> bool: 
 	if not has_input: return false
 	
+	# Validate direction mask if from_node is provided
+	if from_node:
+		var my_tile = LaneManager.world_to_tile(global_position)
+		var sender_tile = LaneManager.world_to_tile(from_node.global_position)
+		var diff = sender_tile - my_tile
+		
+		# Determine incoming direction relative to ME
+		var incoming_dir = -1
+		if diff == Vector2i(0, 1): incoming_dir = Direction.DOWN
+		elif diff == Vector2i(-1, 0): incoming_dir = Direction.LEFT
+		elif diff == Vector2i(0, -1): incoming_dir = Direction.UP
+		elif diff == Vector2i(1, 0): incoming_dir = Direction.RIGHT
+		
+		if incoming_dir != -1:
+			if not (input_mask & (1 << incoming_dir)):
+				return false # Blocked side
+
 	var i = item as ItemResource
 	if not i: return false
 	
 	if inventory_component:
 		if not inventory_component.can_receive: return false
-		# add_item returns remainder. 0 means success (all added).
 		var remainder = inventory_component.add_item(i, 1)
 		return remainder == 0
 		
@@ -155,14 +229,19 @@ func try_output_from_inventory(inv: InventoryComponent) -> bool:
 	if not has_output or not inv.has_item(): return false
 	if not inv.can_output: return false
 	
-	var n = get_neighbor(output_direction)
-	if is_instance_valid(n) and n.has_method("receive_item"):
-		if n.get("has_input") == false: return false
-		var it = inv.get_first_item()
-		if it:
-			if n.receive_item(it, self):
-				inv.remove_item(it, 1)
-				return true
+	# Check all allowed output directions
+	for i in range(4):
+		if (output_mask & (1 << i)):
+			var n = get_neighbor(i as Direction)
+			if is_instance_valid(n) and n.has_method("receive_item"):
+				# Check if neighbor accepts input
+				if n.get("has_input") == false: continue
+				
+				var it = inv.get_first_item()
+				if it:
+					if n.receive_item(it, self):
+						inv.remove_item(it, 1)
+						return true
 	return false
 
 func requires_recipe_selection() -> bool: return false

@@ -143,8 +143,8 @@ func _import_buildables(list, _category, target):
 		if not _should_process(str(entry.get("id")), path, target): continue
 		
 		var new_scene_path = ""
-		# Generate scene if template + visuals exist
-		if entry.has("template") and entry.has("visuals"):
+		# Generate scene if template + visuals/structure exist
+		if entry.has("template") and (entry.has("visuals") or entry.has("structure")):
 			new_scene_path = SCENE_BUILDABLES_PATH + str(entry.get("id")) + ".tscn"
 			print("Generating Buildable Scene: " + str(entry.get("id")))
 			_generate_building_scene(entry, new_scene_path)
@@ -154,7 +154,9 @@ func _import_buildables(list, _category, target):
 		res.description = str(entry.get("description", ""))
 		
 		var tex_path = ""
-		if entry.has("texture"): tex_path = entry["texture"]
+		if entry.has("structure") and not entry["structure"].is_empty():
+			tex_path = entry["structure"][0].get("texture", "")
+		elif entry.has("texture"): tex_path = entry["texture"]
 		elif entry.has("visuals") and entry["visuals"].has("texture"): tex_path = entry["visuals"]["texture"]
 		
 		if tex_path != "" and ResourceLoader.exists(tex_path):
@@ -170,6 +172,15 @@ func _import_buildables(list, _category, target):
 			res.width = entry["grid"].get("width", 1)
 			res.height = entry["grid"].get("height", 1)
 			res.layer = 0 if entry["grid"].get("layer") == "wire" else 1
+		elif entry.has("structure"):
+			# Auto-calculate bounding box from structure offsets
+			var min_x = 0; var max_x = 0; var min_z = 0; var max_z = 0
+			for part in entry["structure"]:
+				var off = part.get("offset", [0,0])
+				min_x = min(min_x, off[0]); max_x = max(max_x, off[0])
+				min_z = min(min_z, off[1]); max_z = max(max_z, off[1])
+			res.width = (max_x - min_x) + 1
+			res.height = (max_z - min_z) + 1
 		elif entry.has("visuals") and entry["visuals"].has("width") and entry["visuals"].has("height"):
 			var w_px = entry["visuals"].get("width", 32)
 			var h_px = entry["visuals"].get("height", 32)
@@ -179,6 +190,11 @@ func _import_buildables(list, _category, target):
 		if entry.has("logic") and entry["logic"] is Dictionary:
 			res.has_input = entry["logic"].get("has_input", false)
 			res.has_output = entry["logic"].get("has_output", false)
+			
+			# Parse IO Masks
+			var io_config = entry["logic"].get("io_config", {})
+			res.default_input_mask = _parse_io_mask(io_config.get("input", ["all"]))
+			res.default_output_mask = _parse_io_mask(io_config.get("output", ["all"]))
 		
 		res.display_offset = Vector2.ZERO 
 			
@@ -186,6 +202,22 @@ func _import_buildables(list, _category, target):
 			res.scene = ResourceLoader.load(new_scene_path, "", ResourceLoader.CACHE_MODE_REPLACE)
 			
 		ResourceSaver.save(res, path)
+
+func _parse_io_mask(directions_array: Array) -> int:
+	var mask = 0
+	# 0: Down (Back/+Z), 1: Left (-X), 2: Up (Front/-Z), 3: Right (+X)
+	# Bitmask: 1<<0, 1<<1, 1<<2, 1<<3
+	
+	if "all" in directions_array: return 15 # 1111
+	if "none" in directions_array: return 0
+	
+	for d in directions_array:
+		match d:
+			"back", "down": mask |= (1 << 0)
+			"left": mask |= (1 << 1)
+			"front", "up": mask |= (1 << 2)
+			"right": mask |= (1 << 3)
+	return mask
 
 func _import_enemies(list, target):
 	var script = load(ENEMY_SCRIPT)
@@ -362,7 +394,6 @@ func _generate_building_scene(data, save_path):
 		inst.set_script(temp_inst.get_script()) 
 		temp_inst.free()
 
-	# Hierarchy & Visuals
 	var visual_parent = inst
 	var logic = data.get("logic", {})
 	
@@ -372,28 +403,86 @@ func _generate_building_scene(data, save_path):
 		inst.add_child(rot)
 		visual_parent = rot
 
-	_add_visuals(visual_parent, data.get("visuals", {}))
+	# Handle Structure vs Single Block Visuals
+	var layout_config: Array[Vector2i] = []
 	
-	# Collision
-	var col = CollisionShape3D.new()
-	col.name = "CollisionShape3D"
-	var shape = BoxShape3D.new()
-	
-	var width = 1
-	var height = 1
-	if data.has("grid"):
-		width = data["grid"].get("width", 1)
-		height = data["grid"].get("height", 1)
-	elif data.has("dimensions"):
-		width = data["dimensions"][0]
-		height = data["dimensions"][2] 
-	
-	shape.size = Vector3(width, 1, height)
-	col.position = Vector3((width - 1) * 0.5, 0.5, (height - 1) * 0.5)
-	
-	col.shape = shape
-	inst.add_child(col)
-	
+	if data.has("structure"):
+		var structure_list = data["structure"]
+		var pivot_shift = Vector2i.ZERO
+		var found_center = false
+		
+		# Pass 1: Find Center
+		for part in structure_list:
+			if part.get("is_center", false):
+				var off = part.get("offset", [0, 0])
+				pivot_shift = Vector2i(off[0], off[1])
+				found_center = true
+				break
+		
+		if not found_center and not structure_list.is_empty():
+			print("Warning: No 'is_center' defined for %s. Defaulting to first block." % data.get("name"))
+			var off = structure_list[0].get("offset", [0, 0])
+			pivot_shift = Vector2i(off[0], off[1])
+
+		# Pass 2: Generate
+		var idx = 0
+		for part in structure_list:
+			var raw_offset = part.get("offset", [0, 0])
+			# Calculate final offset relative to the designated center
+			var final_offset = Vector2i(raw_offset[0], raw_offset[1]) - pivot_shift
+			
+			var tex = part.get("texture", "")
+			var part_rot = part.get("rotation", 0)
+			
+			layout_config.append(final_offset)
+			
+			# 3D Position: X=final_offset.x, Z=final_offset.y. Y=0 (floor)
+			var pos_offset = Vector3(final_offset.x, 0, final_offset.y)
+			
+			# Create Visual Mesh
+			var mi = MeshInstance3D.new()
+			mi.name = "Block_%d" % idx
+			mi.mesh = _create_advanced_block_mesh(tex, Vector3(1, 1, 1), false, true)
+			mi.position = pos_offset
+			mi.rotation_degrees.y = part_rot
+			visual_parent.add_child(mi)
+			
+			# Create Individual Collision Shape for this block
+			var col = CollisionShape3D.new()
+			col.name = "Collision_%d" % idx
+			var shape = BoxShape3D.new()
+			shape.size = Vector3(1, 1, 1)
+			col.position = pos_offset + Vector3(0, 0.5, 0)
+			col.shape = shape
+			inst.add_child(col)
+			
+			idx += 1
+	else:
+		# Single block legacy logic
+		_add_visuals(visual_parent, data.get("visuals", {}))
+		layout_config.append(Vector2i.ZERO)
+		
+		# Single Collision
+		var col = CollisionShape3D.new()
+		col.name = "CollisionShape3D"
+		var shape = BoxShape3D.new()
+		var width = 1
+		var height = 1
+		if data.has("grid"):
+			width = data["grid"].get("width", 1)
+			height = data["grid"].get("height", 1)
+		elif data.has("dimensions"):
+			width = data["dimensions"][0]
+			height = data["dimensions"][2] 
+		
+		shape.size = Vector3(width, 1, height)
+		col.position = Vector3((width - 1) * 0.5, 0.5, (height - 1) * 0.5)
+		col.shape = shape
+		inst.add_child(col)
+
+	# Set the layout config for the building script
+	_apply_param(inst, "layout_config", layout_config)
+
 	# Components
 	if logic.get("targeting", false):
 		var tac = _add_component(inst, COMP_TARGET, "TargetAcquirerComponent")
@@ -448,6 +537,14 @@ func _generate_building_scene(data, save_path):
 				inv.set("denied_items", denied)
 	
 	_apply_logic_params(inst, data)
+	# Apply defaults for IO if present in data, otherwise handled by script init using defaults
+	if logic.has("io_config"):
+		var io = logic["io_config"]
+		var i_mask = _parse_io_mask(io.get("input", ["all"]))
+		var o_mask = _parse_io_mask(io.get("output", ["all"]))
+		_apply_param(inst, "default_input_mask", i_mask)
+		_apply_param(inst, "default_output_mask", o_mask)
+
 	_save_scene(inst, save_path)
 
 func _generate_enemy_scene(data, save_path):
