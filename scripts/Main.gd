@@ -32,16 +32,8 @@ var _hovered_for_deletion: Node = null
 # Highlight Cursor for GridMap
 var cursor_highlight: MeshInstance3D
 
-# Ghost Material for Preview
-var ghost_material: StandardMaterial3D
-
 func _ready() -> void:
 	print("Main 3D scene initialized.")
-	
-	ghost_material = StandardMaterial3D.new()
-	ghost_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	ghost_material.albedo_color = Color(0.4, 0.8, 0.4, 0.5) 
-	ghost_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	
 	if camera:
 		camera.projection = Camera3D.PROJECTION_ORTHOGONAL
@@ -279,6 +271,7 @@ func handle_debug_display() -> void:
 	
 	var cell = Vector3i.ZERO
 	var ore_info = "None"
+	var entity_info = ""
 	
 	if grid_map:
 		cell = grid_map.local_to_map(grid_map.to_local(world_pos))
@@ -291,9 +284,17 @@ func handle_debug_display() -> void:
 		var ore = LaneManager.get_ore_at_world_pos(check_pos)
 		if ore:
 			ore_info = ore.item_name
+	
+	# Check for Entity
+	if ray and ray.get("collider"):
+		var col = ray.get("collider")
+		if col is BaseBuilding:
+			entity_info += "\n[Entity: %s]" % col.name
+			if col is Conveyor:
+				entity_info += "\nOut: %d | In: %d (Active: %d)" % [col.output_direction, col.input_direction, col.active_input_direction]
 			
 	if game_ui:
-		game_ui.set_debug_text("Cell: %s\nOre: %s" % [str(cell), ore_info])
+		game_ui.set_debug_text("Cell: %s\nOre: %s%s" % [str(cell), ore_info, entity_info])
 
 func update_arrow_indicator() -> void:
 	arrow_indicator.visible = false
@@ -391,7 +392,7 @@ func _on_build_state_changed(_arg = null) -> void:
 			temp.process_mode = Node.PROCESS_MODE_DISABLED
 			temp.set_meta("is_preview", true)
 			build_preview_container.add_child(temp)
-			_apply_ghost_material(temp)
+			
 			if temp.has_method("set_build_rotation"):
 				temp.set_build_rotation(BuildManager.current_rotation_index)
 
@@ -403,15 +404,46 @@ func _on_build_state_changed(_arg = null) -> void:
 			s.modulate = Color(1, 0.5, 0.5, 0.7)
 			build_preview_container.add_child(s)
 
-func _apply_ghost_material(node: Node) -> void:
+func _apply_ghost_visuals(node: Node, color_tint: Color) -> void:
 	if not is_instance_valid(node): return
 	
-	if node is MeshInstance3D:
-		node.material_override = ghost_material
-		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	if node is MeshInstance3D and node.mesh:
+		# Iterate surfaces to preserve texture while tinting
+		var surface_count = node.mesh.get_surface_count()
+		for i in range(surface_count):
+			var source_mat = node.get_active_material(i)
+			if not source_mat: 
+				source_mat = node.mesh.surface_get_material(i)
+			
+			# Ensure we are working with a unique material clone
+			var target_mat = null
+			
+			# Check if we already created an override for this surface
+			var existing_override = node.get_surface_override_material(i)
+			if existing_override and existing_override.has_meta("is_ghost"):
+				target_mat = existing_override
+			else:
+				if source_mat:
+					target_mat = source_mat.duplicate()
+				else:
+					target_mat = StandardMaterial3D.new()
+				target_mat.set_meta("is_ghost", true)
+			
+			if target_mat is StandardMaterial3D:
+				target_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+				target_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+				
+				# Mix texture color with Tint
+				# Since standard materials don't have a "mix", we rely on Albedo Color.
+				# If texture exists, Albedo Color tints it.
+				# We want it to be translucent and tinted Green/Red.
+				target_mat.albedo_color = color_tint
+			
+			node.set_surface_override_material(i, target_mat)
 	
+	# Recurse
 	for child in node.get_children():
-		_apply_ghost_material(child)
+		_apply_ghost_visuals(child, color_tint)
 
 func _clear_preview() -> void:
 	for child in build_preview_container.get_children():
@@ -455,21 +487,33 @@ func update_build_preview(world_pos: Vector3):
 	# 3. Apply
 	var final_pos = tile_pos + layer_offset
 	
-	# 4. Apply Display Offset from Resource (Vector2 to X/Y in 3D?)
-	# Actually display_offset.x -> x, display_offset.y -> y visually.
+	# 4. Apply Display Offset
 	var display_offset_3d = Vector3(buildable.display_offset.x, buildable.display_offset.y, 0)
 	
 	build_preview_container.global_position = final_pos + display_offset_3d
 
 	var can_build = BuildManager.can_build_at(world_pos)
-	var col = Color(0.4, 1.0, 0.4, 0.5) if can_build else Color(1.0, 0.4, 0.4, 0.5)
-	ghost_material.albedo_color = col
+	
+	# Tint logic: Greenish if valid, Reddish if invalid. 
+	# Alpha 0.6 to stay see-through but visible.
+	var tint = Color(0.4, 1.0, 0.4, 0.6) if can_build else Color(1.0, 0.4, 0.4, 0.6)
 	
 	if buildable.layer == BuildableResource.BuildLayer.TOOL:
 		var has_target = BuildManager.has_removable_at(world_pos)
 		for c in build_preview_container.get_children():
 			if c is Sprite3D:
 				c.modulate = Color(1, 0.5, 0.5, 0.7) if has_target else Color(0.5, 0.5, 0.5, 0.5)
+	else:
+		# Apply ghost visuals to the scene instance
+		if build_preview_container.get_child_count() > 0:
+			var preview_node = build_preview_container.get_child(0)
+			
+			# Update Visual Tint
+			_apply_ghost_visuals(preview_node, tint)
+			
+			# Special Logic: Update Conveyor Preview to show curves
+			if preview_node.has_method("update_preview_visuals"):
+				preview_node.update_preview_visuals()
 
 func _handle_delete_highlight(world_pos: Vector3) -> void:
 	if not BuildManager.is_building or \

@@ -65,37 +65,69 @@ func _ready() -> void:
 	call_deferred("_setup_scrolling_shader")
 	call_deferred("_update_visuals_active")
 
+func update_preview_visuals() -> void:
+	if not has_meta("is_preview"): return
+	var tile = LaneManager.world_to_tile(global_position)
+	_update_adjacency(tile)
+
 func _notify_neighbors() -> void:
-	# Tell surrounding conveyors to re-check their inputs
 	for dir in [Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT]:
 		var n = get_neighbor(dir)
 		if n and n is Conveyor:
 			n._update_adjacency()
 
-func _update_adjacency() -> void:
+func _update_adjacency(force_tile: Vector2i = Vector2i(-1, -1)) -> void:
 	var candidates = []
+	var is_preview_check = (force_tile != Vector2i(-1, -1))
+	var my_tile = force_tile if is_preview_check else LaneManager.world_to_tile(global_position)
 	
-	# Check all 4 neighbors to see if they output into this conveyor
 	for d in [Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT]:
-		var n = get_neighbor(d)
+		var n = null
+		if is_preview_check:
+			var offset = Vector2i.ZERO
+			match d:
+				Direction.DOWN: offset = Vector2i(0, 1)
+				Direction.UP:   offset = Vector2i(0, -1)
+				Direction.LEFT: offset = Vector2i(-1, 0)
+				Direction.RIGHT:offset = Vector2i(1, 0)
+			n = LaneManager.get_buildable_at(my_tile + offset)
+		else:
+			n = get_neighbor(d)
+			
 		if n and n.has_method("get_neighbor"):
 			if "output_direction" in n:
-				var n_target = n.get_neighbor(n.output_direction)
-				if n_target == self:
+				# Reverse check: where does the neighbor point?
+				var n_dir = n.output_direction
+				var n_target_offset = Vector2i.ZERO
+				match n_dir:
+					Direction.DOWN: n_target_offset = Vector2i(0, 1)
+					Direction.UP:   n_target_offset = Vector2i(0, -1)
+					Direction.LEFT: n_target_offset = Vector2i(-1, 0)
+					Direction.RIGHT:n_target_offset = Vector2i(1, 0)
+				
+				var n_tile = LaneManager.world_to_tile(n.global_position)
+				var n_target_tile = n_tile + n_target_offset
+				
+				if n_target_tile == my_tile:
 					candidates.append(d)
 
 	if candidates.is_empty():
 		active_input_direction = input_direction
 	else:
-		# Priority: Straight > Left > Right (Relative to output)
-		# For now, if the static input dir is in candidates, use it (Straight)
 		if input_direction in candidates:
 			active_input_direction = input_direction
 		else:
-			# Otherwise pick the first available input
 			active_input_direction = candidates[0]
 			
 	_setup_scrolling_shader()
+
+func _get_dir_angle(dir: int) -> float:
+	match dir:
+		Direction.DOWN: return PI
+		Direction.LEFT: return PI * 0.5
+		Direction.UP: return 0.0
+		Direction.RIGHT: return -PI * 0.5
+	return 0.0
 
 func _setup_scrolling_shader() -> void:
 	var mesh_inst = get_node_or_null("BlockVisual")
@@ -105,80 +137,155 @@ func _setup_scrolling_shader() -> void:
 	var scroll_tex = load("res://assets/buildables/conveyor_scroll.png")
 	var diag_tex = load("res://assets/buildables/conveyor_diag_top.png")
 	var straight_tex = load("res://assets/buildables/conveyor_top.png")
+	var side_tex = load("res://assets/buildables/conveyor_side.png")
+	var front_tex = load("res://assets/buildables/conveyor_front.png")
+	var back_tex = load("res://assets/buildables/conveyor_back.png")
 	
 	if not scroll_tex: return
 	
 	var is_turn = false
 	var turn_rotation = 0.0
+	var texture_to_use = straight_tex
 	
-	var in_dir = active_input_direction
-	var out_dir = output_direction
+	# Default flip is none (1, 1)
+	var uv_flip = Vector2(1.0, 1.0)
 	
-	# Direction Values (from BaseBuilding enum):
-	# DOWN=0, LEFT=1, UP=2, RIGHT=3
-	
-	if in_dir != out_dir and abs(int(out_dir) - int(in_dir)) != 2:
-		is_turn = true
-		
-		# Texture `conveyor_diag_top.png` connects UP (Top) and RIGHT.
-		# Mapping pairs to texture rotation:
-		
-		# 1. UP & RIGHT (2 & 3) -> 0 deg
-		if (in_dir == Direction.UP and out_dir == Direction.RIGHT) or (in_dir == Direction.RIGHT and out_dir == Direction.UP):
-			turn_rotation = 0.0
-		
-		# 2. RIGHT & DOWN (3 & 0) -> -90 deg
-		elif (in_dir == Direction.RIGHT and out_dir == Direction.DOWN) or (in_dir == Direction.DOWN and out_dir == Direction.RIGHT):
-			turn_rotation = deg_to_rad(-90)
+	# Fix 1: Apply -90 degree base offset to correct "Left" vs "Up" visual
+	var base_rotation = deg_to_rad(0)
+
+	if active_input_direction != output_direction:
+		# Check if it's strictly opposite (Straight) or angled (Turn)
+		# Godot Dirs: 0=Down, 1=Left, 2=Up, 3=Right
+		# Straight combinations (Out/In): 0/2, 2/0, 1/3, 3/1
+		var is_straight = false
+		if (output_direction == Direction.DOWN and active_input_direction == Direction.UP) or \
+		   (output_direction == Direction.UP and active_input_direction == Direction.DOWN) or \
+		   (output_direction == Direction.LEFT and active_input_direction == Direction.RIGHT) or \
+		   (output_direction == Direction.RIGHT and active_input_direction == Direction.LEFT):
+			is_straight = true
 			
-		# 3. DOWN & LEFT (0 & 1) -> 180 deg
-		elif (in_dir == Direction.DOWN and out_dir == Direction.LEFT) or (in_dir == Direction.LEFT and out_dir == Direction.DOWN):
-			turn_rotation = deg_to_rad(180)
+		if not is_straight:
+			is_turn = true
+			var in_angle = _get_dir_angle(active_input_direction)
+			var out_angle = _get_dir_angle(output_direction)
+			var diff = angle_difference(out_angle, in_angle)
 			
-		# 4. LEFT & UP (1 & 2) -> 90 deg
-		elif (in_dir == Direction.LEFT and out_dir == Direction.UP) or (in_dir == Direction.UP and out_dir == Direction.LEFT):
-			turn_rotation = deg_to_rad(90)
+			if diag_tex:
+				texture_to_use = diag_tex
+				if diff > 0.1: # Left Turn
+					uv_flip = Vector2(1.0, 1.0)
+					turn_rotation = deg_to_rad(0)
+				else: # Right Turn
+					uv_flip = Vector2(-1.0, 1.0)
+					turn_rotation = deg_to_rad(0)
 	
-	# Apply to mesh surfaces
-	# Top Face is typically Surface 0 in standard cube maps
 	var surface_count = mesh_inst.mesh.get_surface_count()
 	
-	for i in [0, 2, 3]: # Top(0), Front(2), Back(3) typically used for scrolling
+	# Logic to Open Sides based on Local Space
+	# Surface Indices from DataImporter: 2=Front, 3=Back, 4=Left, 5=Right
+	# BaseBuilding rotates the node so Output is always Local Front (Surface 2)
+	
+	var local_output_face = 2 # Front (-Z)
+	var local_input_face = -1
+	
+	# Determine Local Input Face relative to Output
+	# We compare logical directions to find the relative offset
+	# Dirs: 3=Down, 0=Left, 1=Up, 2=Right
+	
+	# Calculate relative 'slots' clockwise. 
+	# 0 (Left) -> 1 (Up) -> 2 (Right) -> 3 (Down)
+	var out_a = _get_dir_angle(output_direction)
+	var in_a = _get_dir_angle(active_input_direction)
+	var angle_diff = angle_difference(out_a, in_a) # Range -PI to PI
+	
+	# Map angle difference to Local Face
+	# 0 (Same) -> Impossible for valid flow
+	# PI (Opposite) -> Back (Surface 3)
+	# +PI/2 (Left relative to Out)
+	# -PI/2 (Right relative to Out)
+	
+	if abs(angle_diff) > 3.0: # Approx PI
+		local_input_face = 3 # Back
+	elif angle_diff > 0.1: # Positive diff ~ Left
+		local_input_face = 4 # Left
+	elif angle_diff < -0.1: # Negative diff ~ Right
+		local_input_face = 5 # Right
+
+	# Iterate relevant surfaces
+	for i in [0, 2, 3, 4, 5]: 
 		if i >= surface_count: continue
+		
 		var active_mat = mesh_inst.get_surface_override_material(i)
-		# Fallback to mesh material if no override
 		if not active_mat: active_mat = mesh_inst.mesh.surface_get_material(i)
 		if not active_mat: continue
 
-		var texture_to_use = null
-		
-		if active_mat is StandardMaterial3D:
-			texture_to_use = active_mat.albedo_texture
-		elif active_mat is ShaderMaterial:
-			texture_to_use = active_mat.get_shader_parameter("base_texture")
-		
-		var uv_rot = 0.0
-		
-		# Top Face Logic
-		if i == 0:
-			if is_turn and diag_tex:
-				texture_to_use = diag_tex
-				uv_rot = turn_rotation
-			elif straight_tex:
-				texture_to_use = straight_tex
+		var face_texture = null
+		var use_shader = false
+		var specific_flip = Vector2(1,1)
+		var specific_rot = 0.0
+		var specific_speed = 1.0
 
-		var shader_mat = ShaderMaterial.new()
-		shader_mat.shader = _get_conveyor_shader()
-		shader_mat.set_shader_parameter("base_texture", texture_to_use)
-		shader_mat.set_shader_parameter("scroll_texture", scroll_tex)
-		shader_mat.set_shader_parameter("speed", 1.0)
-		
-		var uv_scale = 1.0
-		if i == 2 or i == 3: uv_scale = 18.0 / 32.0
-		shader_mat.set_shader_parameter("uv_scale_y", uv_scale)
-		shader_mat.set_shader_parameter("uv_rotation", uv_rot)
+		if i == 0: # Top Face
+			face_texture = texture_to_use
+			use_shader = true
+			specific_flip = uv_flip
+			# Combine base rotation (fix orientation) + turn rotation
+			specific_rot = base_rotation + turn_rotation
+			specific_speed = 1.0
+		else:
+			# Side Faces Logic
+			var is_open = (i == local_output_face or i == local_input_face)
 			
-		mesh_inst.set_surface_override_material(i, shader_mat)
+			if is_open:
+				face_texture = straight_tex
+				use_shader = true
+				if i == local_output_face:
+					specific_speed = 1.0 
+				else:
+					specific_speed = -1.0
+			else:
+				# Closed Wall
+				use_shader = false
+				match i:
+					2: face_texture = front_tex
+					3: face_texture = back_tex
+					_: face_texture = side_tex
+
+		var final_mat = null
+		
+		if use_shader:
+			if active_mat is ShaderMaterial:
+				final_mat = active_mat
+			else:
+				final_mat = ShaderMaterial.new()
+				final_mat.shader = _get_conveyor_shader()
+				if active_mat.has_meta("is_ghost") and active_mat is StandardMaterial3D:
+					final_mat.set_meta("is_ghost", true)
+					final_mat.set_shader_parameter("tint_color", active_mat.albedo_color)
+			
+			final_mat.set_shader_parameter("base_texture", face_texture)
+			final_mat.set_shader_parameter("scroll_texture", scroll_tex)
+			final_mat.set_shader_parameter("speed", specific_speed)
+			final_mat.set_shader_parameter("uv_scale_y", 1.0)
+			final_mat.set_shader_parameter("uv_rotation", specific_rot)
+			final_mat.set_shader_parameter("uv_flip", specific_flip)
+		else:
+			# Revert to standard material
+			if active_mat is ShaderMaterial:
+				final_mat = StandardMaterial3D.new()
+				final_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+				if active_mat.has_meta("is_ghost"):
+					final_mat.set_meta("is_ghost", true)
+					final_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+					final_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+					var tint = active_mat.get_shader_parameter("tint_color")
+					if tint: final_mat.albedo_color = tint
+			else:
+				final_mat = active_mat
+				
+			final_mat.albedo_texture = face_texture
+
+		mesh_inst.set_surface_override_material(i, final_mat)
 
 func _get_conveyor_shader() -> Shader:
 	var s = Shader.new()
@@ -191,6 +298,8 @@ func _get_conveyor_shader() -> Shader:
 	uniform float speed = 1.0;
 	uniform float uv_scale_y = 1.0;
 	uniform float uv_rotation = 0.0;
+	uniform vec4 tint_color : source_color = vec4(1.0, 1.0, 1.0, 1.0);
+	uniform vec2 uv_flip = vec2(1.0, 1.0);
 	
 	vec2 rotateUV(vec2 uv, float rotation) {
 		float mid = 0.5;
@@ -201,26 +310,24 @@ func _get_conveyor_shader() -> Shader:
 	}
 	
 	void fragment() {
-		vec2 base_uv = rotateUV(UV, uv_rotation);
+		// Apply flip first, then rotation
+		vec2 flipped_uv = (UV - 0.5) * uv_flip + 0.5;
+		vec2 base_uv = rotateUV(flipped_uv, uv_rotation);
 		vec4 base = texture(base_texture, base_uv);
 		
-		// Scroll logic
-		// We scroll Y. For rotation to work, we must rotate the scroll UVs too.
-		// Base scroll UV before rotation
-		vec2 scroll_uv_raw = vec2(UV.x, mod((UV.y * uv_scale_y * 0.5) + (TIME * speed), 0.5));
-		
-		// Rotate scroll UVs to match curve
+		// Scroll logic (apply flip to geometry so mask aligns)
+		vec2 scroll_uv_raw = vec2(flipped_uv.x, mod((flipped_uv.y * uv_scale_y * 0.5) + (TIME * speed), 0.5));
 		vec2 scroll_uv = rotateUV(scroll_uv_raw, uv_rotation);
-		
 		vec4 scroll = texture(scroll_texture, scroll_uv);
 		
-		// Mask logic (Green/Blue/Red ch < 0.05 and Alpha > 0.9 = Mask Area)
+		vec3 final_col = base.rgb;
+		// Simple Mask Check
 		if (base.r < 0.05 && base.g < 0.05 && base.b < 0.05 && base.a > 0.9) { 
-			ALBEDO = scroll.rgb; 
-		} else { 
-			ALBEDO = base.rgb; 
+			final_col = scroll.rgb; 
 		}
-		ALPHA = 1.0;
+		
+		ALBEDO = final_col * tint_color.rgb;
+		ALPHA = base.a * tint_color.a;
 	}
 	"""
 	return s
@@ -236,9 +343,13 @@ func _update_visuals_active() -> void:
 		for i in range(mesh_inst.get_surface_override_material_count()):
 			var mat = mesh_inst.get_surface_override_material(i)
 			if mat and mat is ShaderMaterial:
-				# Reverse speed for back face (3) to look correct
-				var final_spd = -spd if i == 3 else spd
-				mat.set_shader_parameter("speed", final_spd)
+				# Use parameter stored speed sign if possible, but shader param is just 'speed'.
+				# We need to preserve direction.
+				# A cheat: read current speed, normalize it, apply boolean state
+				var current = mat.get_shader_parameter("speed")
+				var sign_val = 1.0
+				if current < 0: sign_val = -1.0
+				mat.set_shader_parameter("speed", spd * sign_val)
 
 func _process(delta: float) -> void:
 	if Engine.is_editor_hint() or not is_active: return
