@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=4 uid="uid://l0dt41vcpltn"]
+[gd_scene format=4 uid="uid://l0dt41vcpltn"]
 
 [ext_resource type="Script" uid="uid://b1x44g7ittwg7" path="res://scripts/entities/buildings/conveyor.gd" id="1_e2wp7"]
 [ext_resource type="Texture2D" uid="uid://b4ubuk7hj6jfc" path="res://assets/buildables/conveyor_top.png" id="2_rqr2k"]
@@ -7,36 +7,36 @@
 [ext_resource type="Texture2D" uid="uid://dfe1kwiytacju" path="res://assets/buildables/conveyor_back.png" id="5_kvfqv"]
 [ext_resource type="Texture2D" uid="uid://bm2ens7etdrfe" path="res://assets/buildables/conveyor_side.png" id="6_auw2n"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0u2yi"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rqr2k"]
 albedo_texture = ExtResource("2_rqr2k")
 texture_filter = 0
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0wfnp"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ebamt"]
 albedo_texture = ExtResource("3_ebamt")
 texture_filter = 0
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lwpun"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_el5k1"]
 albedo_texture = ExtResource("4_el5k1")
 texture_filter = 0
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bbqbv"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kvfqv"]
 albedo_texture = ExtResource("5_kvfqv")
 texture_filter = 0
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_e3pr3"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_auw2n"]
 albedo_texture = ExtResource("6_auw2n")
 texture_filter = 0
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_epevq"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0u2yi"]
 albedo_texture = ExtResource("6_auw2n")
 texture_filter = 0
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_46bqf"]
+[sub_resource type="ArrayMesh" id="ArrayMesh_0wfnp"]
 _surfaces = [{
 "aabb": AABB(-0.5, 0.5625, -0.5, 1, 1e-05, 1),
 "attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
 "format": 34359738391,
-"material": SubResource("StandardMaterial3D_0u2yi"),
+"material": SubResource("StandardMaterial3D_rqr2k"),
 "primitive": 3,
 "uv_scale": Vector4(0, 0, 0, 0),
 "vertex_count": 6,
@@ -45,7 +45,7 @@ _surfaces = [{
 "aabb": AABB(-0.5, 0, -0.5, 1, 1e-05, 1),
 "attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
 "format": 34359738391,
-"material": SubResource("StandardMaterial3D_0wfnp"),
+"material": SubResource("StandardMaterial3D_ebamt"),
 "primitive": 3,
 "uv_scale": Vector4(0, 0, 0, 0),
 "vertex_count": 6,
@@ -54,7 +54,7 @@ _surfaces = [{
 "aabb": AABB(-0.5, 0, 0.5, 1, 0.5625, 1e-05),
 "attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
 "format": 34359738391,
-"material": SubResource("StandardMaterial3D_lwpun"),
+"material": SubResource("StandardMaterial3D_el5k1"),
 "primitive": 3,
 "uv_scale": Vector4(0, 0, 0, 0),
 "vertex_count": 6,
@@ -63,7 +63,7 @@ _surfaces = [{
 "aabb": AABB(-0.5, 0, -0.5, 1, 0.5625, 1e-05),
 "attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
 "format": 34359738391,
-"material": SubResource("StandardMaterial3D_bbqbv"),
+"material": SubResource("StandardMaterial3D_kvfqv"),
 "primitive": 3,
 "uv_scale": Vector4(0, 0, 0, 0),
 "vertex_count": 6,
@@ -72,7 +72,7 @@ _surfaces = [{
 "aabb": AABB(-0.5, 0, -0.5, 1e-05, 0.5625, 1),
 "attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
 "format": 34359738391,
-"material": SubResource("StandardMaterial3D_e3pr3"),
+"material": SubResource("StandardMaterial3D_auw2n"),
 "primitive": 3,
 "uv_scale": Vector4(0, 0, 0, 0),
 "vertex_count": 6,
@@ -81,26 +81,26 @@ _surfaces = [{
 "aabb": AABB(0.5, 0, -0.5, 1e-05, 0.5625, 1),
 "attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
 "format": 34359738391,
-"material": SubResource("StandardMaterial3D_epevq"),
+"material": SubResource("StandardMaterial3D_0u2yi"),
 "primitive": 3,
 "uv_scale": Vector4(0, 0, 0, 0),
 "vertex_count": 6,
 "vertex_data": PackedByteArray("AAAAPwAAED8AAAA/AAAAPwAAED8AAAC/AAAAPwAAAAAAAAC/AAAAPwAAED8AAAA/AAAAPwAAAAAAAAC/AAAAPwAAAAAAAAA/////f/9//z////9//3//P////3//f/8/////f/9//z////9//3//P////3//f/8/")
 }]
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_ggwcg"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_lwpun"]
 
-[node name="Conveyor" type="StaticBody3D"]
+[node name="Conveyor" type="StaticBody3D" unique_id=105857116]
 script = ExtResource("1_e2wp7")
-powered_color = null
-unpowered_color = Color(1, 1, 1, 1)
-output_direction = null
-input_direction = 0
-has_input = 2
+max_health = 50.0
+power_consumption = 0.0
+default_input_mask = 1
+default_output_mask = 4
+layout_config = Array[Vector2i]([Vector2i(0, 0)])
 
-[node name="BlockVisual" type="MeshInstance3D" parent="."]
-mesh = SubResource("ArrayMesh_46bqf")
+[node name="BlockVisual" type="MeshInstance3D" parent="." unique_id=1004949084]
+mesh = SubResource("ArrayMesh_0wfnp")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1117063438]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
-shape = SubResource("BoxShape3D_ggwcg")
+shape = SubResource("BoxShape3D_lwpun")

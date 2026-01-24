@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="BuildableResource" load_steps=4 format=3 uid="uid://dr3dix5bbggvi"]
+[gd_resource type="Resource" script_class="BuildableResource" format=3 uid="uid://dr3dix5bbggvi"]
 
 [ext_resource type="Texture2D" uid="uid://c3hgpubm2kqe3" path="res://assets/buildables/drill.png" id="1_iwtn5"]
 [ext_resource type="PackedScene" uid="uid://dkrn6jnj3i7cg" path="res://scenes/buildables/drill.tscn" id="2_iwtn5"]
@@ -9,4 +9,6 @@ script = ExtResource("3_xgtfc")
 buildable_name = "Mining Drill"
 icon = ExtResource("1_iwtn5")
 has_input = false
+default_input_mask = 0
+default_output_mask = 4
 scene = ExtResource("2_iwtn5")

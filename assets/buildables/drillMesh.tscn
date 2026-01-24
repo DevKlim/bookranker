@@ -1,0 +1,5 @@
+[gd_scene format=3 uid="uid://b05jm6qt7y8mr"]
+
+[ext_resource type="PackedScene" uid="uid://b3adldfgqbyhs" path="res://scenes/buildables/drill.glb" id="1_g2e1k"]
+
+[node name="drill" unique_id=1753221105 instance=ExtResource("1_g2e1k")]

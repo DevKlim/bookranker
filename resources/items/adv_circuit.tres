@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://8h8cauywwjmq"]
+
+[ext_resource type="Resource" uid="uid://d1jprly6kp5qt" path="res://resources/elements/lux.tres" id="1_hpeo1"]
+[ext_resource type="Texture2D" uid="uid://wapr75swn8re" path="res://assets/items/advanced_integrated_circuit.png" id="2_lg0nj"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="3_xyd5n"]
+
+[resource]
+script = ExtResource("3_xyd5n")
+item_name = "Adv. Circuit"
+icon = ExtResource("2_lg0nj")
+damage = 5.0
+element = ExtResource("1_hpeo1")
+element_units = 3

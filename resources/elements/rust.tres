@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://bpj03psqoy5pp"]
+
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_u7ivg"]
+
+[resource]
+script = ExtResource("1_u7ivg")
+element_name = "Rust"
+color = Color(0.8039216, 0.52156866, 0.24705882, 1)
+duration = 10.0
+application_cooldown = 1.0
+stat_modifiers = {
+"defense_flat": -5.0
+}

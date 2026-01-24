@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="ItemResource" load_steps=4 format=3 uid="uid://dqallo6lw4ihw"]
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://biw6jmu3536df"]
 
 [ext_resource type="Texture2D" uid="uid://dicpuhqgnebuw" path="res://assets/ores/lux.png" id="1_mpuw1"]
-[ext_resource type="Resource" uid="uid://egxg6ooqp1dl" path="res://resources/elements/luxe.tres" id="1_rciyt"]
+[ext_resource type="Resource" uid="uid://d1jprly6kp5qt" path="res://resources/elements/lux.tres" id="1_rciyt"]
 [ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="1_script"]
 
 [resource]
@@ -9,13 +9,10 @@ script = ExtResource("1_script")
 item_name = "Lux Crystal"
 icon = ExtResource("1_mpuw1")
 stack_size = 20.0
-damage = 4.0
+damage = 5.0
 element = ExtResource("1_rciyt")
-modifiers = {
-"crit_chance": 0.05,
-"magic_boost": 2.0
-}
+element_units = 2
 is_ore = true
 ore_block_name = "Lux Ore"
-min_depth = 25
-rarity = 0.05
+min_depth = 15
+rarity = 0.02

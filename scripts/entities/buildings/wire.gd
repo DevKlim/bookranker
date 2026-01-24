@@ -28,6 +28,19 @@ func _ready() -> void:
 	# Force an initial update
 	is_powered = false 
 	update_visuals()
+	
+	if not Engine.is_editor_hint():
+		# Register to WiringManager if not already done by BuildManager (e.g. initial scene load)
+		call_deferred("_register_to_wiring_manager")
+
+func _register_to_wiring_manager() -> void:
+	if grid_component and is_instance_valid(WiringManager):
+		# GridComponent calculates tile_coord in its _register, which is also deferred.
+		# Waiting one frame (call_deferred) generally matches up, but we check validity.
+		var tile = grid_component.tile_coord
+		if tile != Vector2i(-1, -1):
+			# WiringManager.add_wire is safe to call even if already registered
+			WiringManager.add_wire(tile, self)
 
 func _setup_meshes() -> void:
 	# 1. Dot (Center Hub)
@@ -136,3 +149,4 @@ func update_visuals() -> void:
 			m.visible = (dir in connections)
 			if m.material_override:
 				m.material_override.albedo_color = col
+

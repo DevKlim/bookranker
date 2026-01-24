@@ -1,18 +1,14 @@
-[gd_resource type="Resource" script_class="ItemResource" load_steps=4 format=3 uid="uid://ci6qhchtaulll"]
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://ci6qhchtaulll"]
 
-[ext_resource type="Resource" uid="uid://cb23tvipt2els" path="res://resources/elements/metal.tres" id="1_8nieu"]
+[ext_resource type="Resource" uid="uid://cj5yq1wbhxj3n" path="res://resources/elements/magne.tres" id="1_8nieu"]
 [ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="2_icon"]
+[ext_resource type="Texture2D" uid="uid://c1jt74tbp2pq3" path="res://assets/items/rod.png" id="2_8nieu"]
 
 [resource]
 script = ExtResource("1_script")
 item_name = "Iron Rod"
-icon = ExtResource("2_icon")
+icon = ExtResource("2_8nieu")
 color = Color(0.6, 0.6, 0.7, 1)
 stack_size = 100.0
-damage = 5.0
+damage = 4.0
 element = ExtResource("1_8nieu")
-modifiers = {
-"armor_shred": 1.0,
-"phys_boost": 3.0
-}

@@ -1,10 +1,12 @@
 [gd_resource type="Resource" script_class="BuildableResource" format=3 uid="uid://bi7wovhm4224g"]
 
+[ext_resource type="Texture2D" uid="uid://b7f7l0qxlhg8e" path="res://assets/buildables/asourcer.png" id="1_5e1yt"]
 [ext_resource type="PackedScene" uid="uid://cubesy3iln26a" path="res://scenes/buildables/asourcer.tscn" id="2_5e1yt"]
 [ext_resource type="Script" uid="uid://qpm1dylmnjld" path="res://scripts/resources/buildable_resource.gd" id="3_jnyxn"]
 
 [resource]
 script = ExtResource("3_jnyxn")
 buildable_name = "Asourcer"
+icon = ExtResource("1_5e1yt")
 width = 2.0
 scene = ExtResource("2_5e1yt")

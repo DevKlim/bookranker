@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://7j4j8iomabs5"]
+
+[ext_resource type="Texture2D" uid="uid://qoa26dvac0wk" path="res://assets/icons/tera.png" id="1_oqpgn"]
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_qmhem"]
+
+[resource]
+script = ExtResource("1_qmhem")
+element_name = "Tera"
+icon = ExtResource("1_oqpgn")
+color = Color(0.54509807, 0.27058825, 0.07450981, 1)
+application_cooldown = 0.2
+reaction_rules = {
+"aero": "tailwind",
+"aqua": "mortar",
+"chem": "pollute",
+"igni": "scorch",
+"lux": "crystal",
+"magne": "graviton",
+"tera": "structure",
+"volt": "ground"
+}
+stat_modifiers = {
+"max_health_mult": 0.2,
+"weight": 50.0
+}

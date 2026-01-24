@@ -2,16 +2,16 @@ class_name AttackerComponent
 extends Node
 
 ## A component that handles attacking a target.
+## Emits 'attacked' when damage is dealt to allow visuals (like recoil).
 
-# Removed @onready to allow dynamic creation
+signal attacked(target, damage)
+
 var attack_timer: Timer 
-
 var attack_damage: float = 10.0
 var attack_element: ElementResource = null
 var current_target: Node3D = null
 
 func _ready() -> void:
-	# Robust Timer Initialization
 	attack_timer = get_node_or_null("AttackTimer")
 	if not attack_timer:
 		attack_timer = Timer.new()
@@ -25,7 +25,6 @@ func initialize(damage: float, p_attack_speed: float, element: ElementResource) 
 	attack_damage = damage
 	attack_element = element
 	
-	# Ensure timer exists if called before _ready (unlikely but safe)
 	if not attack_timer:
 		attack_timer = get_node_or_null("AttackTimer")
 		if not attack_timer: return 
@@ -33,17 +32,18 @@ func initialize(damage: float, p_attack_speed: float, element: ElementResource) 
 	if p_attack_speed > 0:
 		attack_timer.wait_time = 1.0 / p_attack_speed
 	else:
-		attack_timer.wait_time = 9999 # effectively disable attacking
+		attack_timer.wait_time = 9999 
 
 func start_attacking(target: Node3D) -> void:
-	if not is_instance_valid(target) or not target.has_node("HealthComponent"):
-		printerr("AttackerComponent: Target is invalid or has no HealthComponent.")
+	if not is_instance_valid(target):
+		return
+	
+	if current_target == target and not attack_timer.is_stopped():
 		return
 		
 	current_target = target
 	attack_timer.start()
-	# Attack immediately on acquiring target
-	_on_attack_timer_timeout()
+	_perform_attack()
 
 func stop_attacking() -> void:
 	current_target = null
@@ -51,14 +51,20 @@ func stop_attacking() -> void:
 		attack_timer.stop()
 
 func _on_attack_timer_timeout() -> void:
+	_perform_attack()
+
+func _perform_attack() -> void:
 	if not is_instance_valid(current_target):
 		stop_attacking()
 		return
 	
-	if current_target.has_method("take_damage"):
-		current_target.take_damage(attack_damage)
-	elif current_target.has_node("HealthComponent"):
-		current_target.get_node("HealthComponent").take_damage(attack_damage)
-	
 	if attack_element:
-		ElementManager.apply_element(current_target, attack_element)
+		ElementManager.apply_element(current_target, attack_element, get_parent())
+
+	# Update to match the standard 3-argument signature (amount, element, source)
+	if current_target.has_method("take_damage"):
+		current_target.take_damage(attack_damage, attack_element, get_parent())
+	elif current_target.has_node("HealthComponent"):
+		current_target.get_node("HealthComponent").take_damage(attack_damage, attack_element, get_parent())
+	
+	emit_signal("attacked", current_target, attack_damage)

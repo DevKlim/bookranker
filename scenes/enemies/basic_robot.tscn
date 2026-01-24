@@ -1,26 +1,42 @@
-[gd_scene load_steps=6 format=3 uid="uid://dwbnm2v53m7gc"]
+[gd_scene format=3 uid="uid://c6mrsaoxo0fw8"]
 
-[ext_resource type="Script" uid="uid://87pk5o5eu28v" path="res://scripts/entities/enemy.gd" id="1_u6ygx"]
-[ext_resource type="PackedScene" uid="uid://c4nhtc2o1tmdj" path="res://assets/enemies/clanker.glb" id="2_cddyg"]
-[ext_resource type="Script" uid="uid://duudv3f6u8n6m" path="res://scripts/components/health_component.gd" id="2_y4p3g"]
-[ext_resource type="Script" uid="uid://bw7f6w3g67r4d" path="res://scripts/components/attacker_component.gd" id="3_cddyg"]
+[ext_resource type="Script" uid="uid://87pk5o5eu28v" path="res://scripts/entities/enemy.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://bykln6bau3775" path="res://scripts/resources/enemy_resource.gd" id="2_cddyg"]
+[ext_resource type="Script" uid="uid://duudv3f6u8n6m" path="res://scripts/components/health_component.gd" id="3_health"]
+[ext_resource type="Script" uid="uid://bw7f6w3g67r4d" path="res://scripts/components/attacker_component.gd" id="4_attack"]
+[ext_resource type="Script" uid="uid://dg4gfri6lu5o2" path="res://scripts/components/elemental_component.gd" id="7_tjaql"]
 
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_slcig"]
+[sub_resource type="Resource" id="Resource_cddyg"]
+script = ExtResource("2_cddyg")
+health = 150.0
+speed = 100.0
+elemental_cd = 2.0
+attack_speed = 2.0
+metadata/_custom_type_script = "uid://bykln6bau3775"
 
-[node name="Basic Robot" type="CharacterBody3D"]
-script = ExtResource("1_u6ygx")
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_y4p3g"]
 
-[node name="clanker" parent="." instance=ExtResource("2_cddyg")]
-transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, -1, 0)
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_cddyg"]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
-shape = SubResource("CapsuleShape3D_slcig")
+[node name="Basic Robot" type="CharacterBody3D" unique_id=958199813]
+script = ExtResource("1_script")
+enemy_resource = SubResource("Resource_cddyg")
 
-[node name="HealthComponent" type="Node" parent="."]
-script = ExtResource("2_y4p3g")
-max_health = 50.0
+[node name="ModelFallback" type="MeshInstance3D" parent="." unique_id=200460958]
+mesh = SubResource("CapsuleMesh_y4p3g")
 
-[node name="AttackerComponent" type="Node" parent="."]
-script = ExtResource("3_cddyg")
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1198200236]
+shape = SubResource("CapsuleShape3D_cddyg")
 
-[node name="AttackTimer" type="Timer" parent="AttackerComponent"]
+[node name="HealthComponent" type="Node" parent="." unique_id=1633487455]
+script = ExtResource("3_health")
+max_health = 500.0
+
+[node name="AttackerComponent" type="Node" parent="." unique_id=223847319]
+script = ExtResource("4_attack")
+
+[node name="AttackTimer" type="Timer" parent="AttackerComponent" unique_id=822496762]
+
+[node name="ElementalComponent" type="Node" parent="." unique_id=469024664]
+script = ExtResource("7_tjaql")
+elemental_cd = 2.0

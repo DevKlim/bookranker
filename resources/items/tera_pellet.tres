@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://df85u6srsawyq"]
+
+[ext_resource type="Resource" uid="uid://7j4j8iomabs5" path="res://resources/elements/tera.tres" id="1_e5xjf"]
+[ext_resource type="Texture2D" uid="uid://c34vohg0vu7gj" path="res://assets/items/tera_pellet.png" id="2_0k0n6"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="3_1oqf5"]
+
+[resource]
+script = ExtResource("3_1oqf5")
+item_name = "Tera Pellet"
+icon = ExtResource("2_0k0n6")
+damage = 2.0
+element = ExtResource("1_e5xjf")

@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://6e4josh74xnb"]
+[gd_scene format=3 uid="uid://bxgncjmltgmq3"]
 
 [ext_resource type="Script" uid="uid://dtpxwh6l4a0ll" path="res://scripts/Main.gd" id="1_57xwr"]
 [ext_resource type="Script" uid="uid://cep2y827y6dan" path="res://scripts/entities/core.gd" id="2_vcsgt"]
@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://c6o6gqf57o2b3" path="res://scenes/ui/game_ui.tscn" id="5_53nla"]
 [ext_resource type="PackedScene" uid="uid://cfiefqw38fixn" path="res://scenes/tilemaps/map.tscn" id="5_tbgi4"]
 [ext_resource type="Script" uid="uid://svbkned7l4nd" path="res://scripts/tools/data_importer.gd" id="7_nxtc6"]
+[ext_resource type="MeshLibrary" uid="uid://buahgkoobw40c" path="res://resources/debug_mesh_library.tres" id="8_tipki"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1"]
 sky_top_color = Color(0.384314, 0.454902, 0.54902, 1)
@@ -82,14 +83,15 @@ visible = true
 
 [node name="DataImporter" type="Node" parent="." unique_id=477849547]
 script = ExtResource("7_nxtc6")
-target_category = "Buildables"
+target_category = "Recipes"
 overwrite_existing = true
-target_item_id = "asourcer"
+target_item_id = "draft_wire"
 
 [node name="GridMap" parent="." unique_id=786906317 instance=ExtResource("5_tbgi4")]
 
 [node name="DevMap" type="GridMap" parent="." unique_id=5562770]
 visible = false
+mesh_library = ExtResource("8_tipki")
 cell_size = Vector3(1, 1, 1)
 data = {
 "cells": PackedInt32Array(65560, 0, 0, 65560, 1, 0, 65560, 2, 0, 65560, 3, 0, 65560, 4, 0)

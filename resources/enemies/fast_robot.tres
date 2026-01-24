@@ -1,13 +1,13 @@
-[gd_resource type="Resource" script_class="EnemyResource" load_steps=3 format=3 uid="uid://dh5006w676uyl"]
+[gd_resource type="Resource" script_class="EnemyResource" format=3 uid="uid://bpnhvuthhtpc4"]
 
-[ext_resource type="Script" uid="uid://bykln6bau3775" path="res://scripts/resources/enemy_resource.gd" id="1_s5w57"]
-[ext_resource type="PackedScene" uid="uid://dlp6n5d8b2d7s" path="res://scenes/enemies/fast_enemy.tscn" id="2_a82q0"]
+[ext_resource type="PackedScene" uid="uid://y3ynvhelay5a" path="res://scenes/enemies/fast_robot.tscn" id="1_btgkg"]
+[ext_resource type="Script" uid="uid://bykln6bau3775" path="res://scripts/resources/enemy_resource.gd" id="1_enemy_res"]
 
 [resource]
-script = ExtResource("1_s5w57")
+script = ExtResource("1_enemy_res")
 enemy_name = "Fast Robot"
-scene = ExtResource("2_a82q0")
+scene = ExtResource("1_btgkg")
 health = 30.0
-speed = 120.0
-attack_damage = 5.0
+speed = 70.0
+attack_damage = 3.0
 attack_speed = 2.0

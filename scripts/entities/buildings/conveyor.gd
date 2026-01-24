@@ -7,7 +7,7 @@ const CAPACITY_PER_LANE = 4
 const ITEM_SPACING = 1.0 / float(CAPACITY_PER_LANE)
 const TRANSPORT_SPEED = 1.0 
 
-@export var item_scale: Vector3 = Vector3(1, 1, 1)
+@export var item_scale: Vector3 = Vector3(0.5, 1, 0.5)
 @export var item_visual_offset: Vector3 = Vector3(0.0, 0.625, 0.0) 
 
 # Lanes: Array of Arrays. Index 0 = Left, Index 1 = Right

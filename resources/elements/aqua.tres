@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://um15w27vhhhx"]
+
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_lqy7v"]
+[ext_resource type="Texture2D" uid="uid://budni1yifi317" path="res://assets/icons/aqua.png" id="1_p45mx"]
+
+[resource]
+script = ExtResource("1_lqy7v")
+element_name = "Aqua"
+icon = ExtResource("1_p45mx")
+application_cooldown = 0.5
+reaction_rules = {
+"aero": "tailwind",
+"chem": "pollute",
+"igni": "extinguish",
+"lux": "prism",
+"magne": "rust",
+"tera": "mortar",
+"volt": "ripple"
+}
+stat_modifiers = {
+"attack_speed_mult": -0.02
+}

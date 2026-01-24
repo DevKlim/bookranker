@@ -1,17 +1,21 @@
-[gd_scene load_steps=4 format=3 uid="uid://dkrn6jnj3i7cg"]
+[gd_scene format=3 uid="uid://dkrn6jnj3i7cg"]
 
 [ext_resource type="Script" uid="uid://dj4thqutyqmh2" path="res://scripts/entities/buildings/drill.gd" id="1_58pji"]
 [ext_resource type="PackedScene" uid="uid://b3adldfgqbyhs" path="res://scenes/buildables/drill.glb" id="2_58pji"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_nrls0"]
 
-[node name="Mining Drill" type="StaticBody3D"]
+[node name="Mining Drill" type="StaticBody3D" unique_id=1376463037]
 script = ExtResource("1_58pji")
+max_health = 80.0
+default_input_mask = 0
+default_output_mask = 4
 has_input = false
+layout_config = [Vector2i(0, 0)]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=727625310]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
 shape = SubResource("BoxShape3D_nrls0")
 
-[node name="drill" parent="." instance=ExtResource("2_58pji")]
-transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, -0.5, -0.2)
+[node name="drill" parent="." unique_id=1753221105 instance=ExtResource("2_58pji")]
+transform = Transform3D(0.15, 0, 0, 0, 0.15, 0, 0, 0, 0.15, 0, -0.1, -0.25)

@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://cnvuuolndb7g5"]
+
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_4qerl"]
+
+[resource]
+script = ExtResource("1_4qerl")
+element_name = "Ground"
+color = Color(0.33333334, 0.41960785, 0.18431373, 1)
+duration = 0.1

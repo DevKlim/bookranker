@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://gg6odjwqvm3d"]
+
+[ext_resource type="Texture2D" uid="uid://evnld52aj301" path="res://assets/icons/conduct.png" id="1_5w7ky"]
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_in62m"]
+
+[resource]
+script = ExtResource("1_in62m")
+element_name = "Conduct"
+icon = ExtResource("1_5w7ky")
+duration = 4.0
+application_cooldown = 1.0
+stat_modifiers = {
+"power_consumption_mult": 0.1,
+"processing_speed_mult": 0.05
+}

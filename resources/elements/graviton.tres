@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://bnobh0u8dnliu"]
+
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_g458a"]
+
+[resource]
+script = ExtResource("1_g458a")
+element_name = "Graviton"
+color = Color(0.28235295, 0.23921569, 0.54509807, 1)
+application_cooldown = 0.5
+stat_modifiers = {
+"speed_mult": -0.4,
+"weight": 100.0
+}

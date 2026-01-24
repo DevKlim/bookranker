@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://sgn0bjq25os2"]
+
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_31qhn"]
+
+[resource]
+script = ExtResource("1_31qhn")
+element_name = "Tailwind"
+color = Color(0.9411765, 1, 1, 1)
+duration = 0.1

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://dnklx1pbej0ab"]
+
+[ext_resource type="Texture2D" uid="uid://kxq3pijfs816" path="res://assets/icons/ripple.png" id="1_8wjx5"]
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_f8dly"]
+
+[resource]
+script = ExtResource("1_f8dly")
+element_name = "Ripple"
+icon = ExtResource("1_8wjx5")
+duration = 4.0
+application_cooldown = 0.5

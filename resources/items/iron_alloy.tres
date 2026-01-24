@@ -1,17 +1,14 @@
-[gd_resource type="Resource" script_class="ItemResource" load_steps=4 format=3 uid="uid://ccxtemo42mkml"]
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://ccxtemo42mkml"]
 
-[ext_resource type="Resource" uid="uid://cb23tvipt2els" path="res://resources/elements/metal.tres" id="1_mxgtq"]
+[ext_resource type="Resource" uid="uid://cj5yq1wbhxj3n" path="res://resources/elements/magne.tres" id="1_mxgtq"]
 [ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="2_icon"]
+[ext_resource type="Texture2D" uid="uid://cdowq1l6mjwgn" path="res://assets/items/iron_alloy.png" id="2_mxgtq"]
 
 [resource]
 script = ExtResource("1_script")
 item_name = "Iron Alloy"
-icon = ExtResource("2_icon")
+icon = ExtResource("2_mxgtq")
 color = Color(0.7, 0.7, 0.8, 1)
 damage = 5.0
 element = ExtResource("1_mxgtq")
-modifiers = {
-"armor": 3.0,
-"phys_boost": 2.0
-}
+element_units = 2

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://cux6vhpbky4er"]
+
+[ext_resource type="Resource" uid="uid://cj5yq1wbhxj3n" path="res://resources/elements/magne.tres" id="1_c51e7"]
+[ext_resource type="Texture2D" uid="uid://c67ckaas7ji5n" path="res://assets/items/brass_ingot.png" id="2_pa3n4"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="2_pxq57"]
+
+[resource]
+script = ExtResource("2_pxq57")
+item_name = "Brass Alloy"
+icon = ExtResource("2_pa3n4")
+damage = 6.0
+element = ExtResource("1_c51e7")
+element_units = 3

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://bwjfrccqej23w"]
+
+[ext_resource type="Texture2D" uid="uid://6vb54hvnkaip" path="res://assets/icons/fuse.png" id="1_2e0oe"]
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_jn7rn"]
+
+[resource]
+script = ExtResource("1_jn7rn")
+element_name = "Fuse"
+icon = ExtResource("1_2e0oe")
+duration = 0.1

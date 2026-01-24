@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://cj5yq1wbhxj3n"]
+
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_gp644"]
+[ext_resource type="Texture2D" uid="uid://brpfyuggx7btp" path="res://assets/icons/magne.png" id="1_xdrny"]
+
+[resource]
+script = ExtResource("1_gp644")
+element_name = "Magne"
+icon = ExtResource("1_xdrny")
+color = Color(0.6627451, 0.6627451, 0.6627451, 1)
+application_cooldown = 0.2
+reaction_rules = {
+"aero": "tailwind",
+"aqua": "rust",
+"chem": "pollute",
+"igni": "fuse",
+"tera": "graviton",
+"volt": "conduct"
+}
+stat_modifiers = {
+"defense_flat": 10.0
+}

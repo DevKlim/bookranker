@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://bocnm61fjtt88"]
+
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_4q35u"]
+[ext_resource type="Texture2D" uid="uid://eej7hitpvtvf" path="res://assets/icons/aero.png" id="1_fwlj4"]
+
+[resource]
+script = ExtResource("1_4q35u")
+element_name = "Aero"
+icon = ExtResource("1_fwlj4")
+duration = 1.0
+application_cooldown = 0.5
+stat_modifiers = {
+"crafting_speed_mult": 0.2,
+"speed_mult": 0.2
+}

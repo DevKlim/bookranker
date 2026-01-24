@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://e51t0jbp85jf"]
+
+[ext_resource type="Resource" uid="uid://vri77kv5coty" path="res://resources/elements/volt.tres" id="1_kbj2v"]
+[ext_resource type="Texture2D" uid="uid://gnrkccfjpcd8" path="res://assets/items/volt_pellet.png" id="2_eb5n8"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="3_3huue"]
+
+[resource]
+script = ExtResource("3_3huue")
+item_name = "Volt Pellet"
+icon = ExtResource("2_eb5n8")
+damage = 2.0
+element = ExtResource("1_kbj2v")

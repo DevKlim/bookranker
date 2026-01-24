@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://d1jprly6kp5qt"]
+
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_cm838"]
+[ext_resource type="Texture2D" uid="uid://dicpuhqgnebuw" path="res://assets/ores/lux.png" id="1_it45x"]
+
+[resource]
+script = ExtResource("1_cm838")
+element_name = "Lux"
+icon = ExtResource("1_it45x")
+application_cooldown = 0.5
+reaction_rules = {
+"aqua": "prism",
+"igni": "plasma",
+"magne": "plasma",
+"tera": "crystal",
+"volt": "ray"
+}
+stat_modifiers = {
+"lux_stat": 10.0
+}

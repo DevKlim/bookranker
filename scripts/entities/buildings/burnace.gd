@@ -2,29 +2,47 @@
 class_name Burnace
 extends BaseBuilding
 
-## The Burnace (Furnace) automatically smelts valid ores into alloys.
-## It auto-detects the recipe based on the input item.
-
 @export var recipes: Array[RecipeResource] = []
 
-@onready var input_inventory: InventoryComponent = InventoryComponent.new()
-@onready var output_inventory: InventoryComponent = InventoryComponent.new()
+var input_inventory: InventoryComponent
+var output_inventory: InventoryComponent
+var fuel_inventory: InventoryComponent
+var crafter # Dynamic type
 
-var craft_timer: float = 0.0
-var is_smelting: bool = false
 var active_recipe: RecipeResource = null
+var burn_time_remaining: float = 0.0
+var max_burn_time: float = 0.0
 
 func _init() -> void:
 	has_input = true
 	has_output = true
+	input_inventory = InventoryComponent.new()
+	output_inventory = InventoryComponent.new()
+	fuel_inventory = InventoryComponent.new()
 
 func _ready() -> void:
 	if Engine.is_editor_hint(): return
+	
+	# Try to find existing component first
+	crafter = get_node_or_null("CrafterComponent")
+	if not crafter:
+		var script = load("res://scripts/components/crafter_component.gd")
+		if script:
+			crafter = script.new()
+			crafter.name = "CrafterComponent"
+			add_child(crafter)
 	
 	input_inventory.name = "InputInventory"
 	input_inventory.max_slots = 1
 	input_inventory.slot_capacity = 20
 	add_child(input_inventory)
+	
+	fuel_inventory.name = "FuelInventory"
+	fuel_inventory.max_slots = 1
+	fuel_inventory.slot_capacity = 20
+	var coal_res = load("res://resources/items/coal.tres")
+	if coal_res: fuel_inventory.allowed_items = [coal_res]
+	add_child(fuel_inventory)
 	
 	output_inventory.name = "OutputInventory"
 	output_inventory.max_slots = 1
@@ -33,80 +51,85 @@ func _ready() -> void:
 	
 	super._ready()
 	
-	if recipes.is_empty():
-		_load_default_recipes()
-
-func _load_default_recipes() -> void:
-	var defaults = [
-		"res://resources/recipes/smelt_iron.tres",
-		"res://resources/recipes/smelt_copper.tres"
-	]
-	for path in defaults:
-		if ResourceLoader.exists(path):
-			recipes.append(load(path))
+	if recipes.is_empty() and GameManager.has_method("get_available_recipes"):
+		var all = GameManager.get_available_recipes()
+		for r in all:
+			if r.category == "smelting":
+				recipes.append(r)
 
 func _process(delta: float) -> void:
-	if Engine.is_editor_hint() or not is_active: return
+	if Engine.is_editor_hint() or not is_active or not crafter: return
 	
-	_handle_smelting(delta)
+	_handle_fuel(delta)
 	
-	# Continuously try to output result
+	if burn_time_remaining > 0:
+		if active_recipe and not crafter.is_busy():
+			_try_start_smelting()
+			
+		if crafter.update_process(delta):
+			_complete_smelt()
+	
+	if not active_recipe and not crafter.is_busy():
+		_detect_recipe()
+
 	if output_inventory.has_item():
 		try_output_from_inventory(output_inventory)
 
-func _handle_smelting(delta: float) -> void:
-	if is_smelting and active_recipe:
-		craft_timer += delta
-		if craft_timer >= active_recipe.craft_time:
-			_complete_smelt()
-	else:
-		_try_start_smelting()
+func _handle_fuel(delta: float) -> void:
+	if burn_time_remaining > 0:
+		burn_time_remaining -= delta
+	
+	if burn_time_remaining <= 0 and fuel_inventory.has_item():
+		if input_inventory.has_item():
+			var fuel_item = fuel_inventory.get_first_item()
+			if fuel_inventory.remove_item(fuel_item, 1):
+				burn_time_remaining = 10.0 
+				max_burn_time = 10.0
 
-func _try_start_smelting() -> void:
+func _detect_recipe() -> void:
 	var input_item = input_inventory.get_first_item()
 	if not input_item: return
 
-	var potential_recipe = null
 	for r in recipes:
-		if r.input_item == input_item:
-			potential_recipe = r
+		if r.input_item == input_item or r.input_item.resource_path == input_item.resource_path:
+			active_recipe = r
 			break
-		elif r.input_item.resource_path == input_item.resource_path:
-			potential_recipe = r
-			break
-		elif r.input_item.item_name == input_item.item_name:
-			potential_recipe = r
-			break
+
+func _try_start_smelting() -> void:
+	if not active_recipe: return
 	
-	if potential_recipe:
-		var slot = input_inventory.slots[0]
-		if slot.count >= potential_recipe.input_count:
-			if output_inventory.has_space_for(potential_recipe.output_item):
-				if input_inventory.remove_item(input_item, potential_recipe.input_count):
-					active_recipe = potential_recipe
-					is_smelting = true
-					craft_timer = 0.0
+	var input_item = input_inventory.get_first_item()
+	if not input_item or input_item.resource_path != active_recipe.input_item.resource_path:
+		active_recipe = null
+		return
+
+	if input_inventory.slots[0].count >= active_recipe.input_count:
+		if output_inventory.has_space_for(active_recipe.output_item):
+			if input_inventory.remove_item(input_item, active_recipe.input_count):
+				crafter.start_craft(active_recipe)
 
 func _complete_smelt() -> void:
-	is_smelting = false
-	craft_timer = 0.0
 	if active_recipe:
 		output_inventory.add_item(active_recipe.output_item, active_recipe.output_count)
-		active_recipe = null
-
+		crafter.stop_craft()
+		
 func receive_item(item: Resource, _from_node: Node3D = null, _extra_data: Dictionary = {}) -> bool:
 	if not has_input: return false
 	var i = item as ItemResource
 	if not i: return false
 	
-	# Validation: Ensure item works with at least one recipe
-	var is_valid = false
+	# Priority to Fuel
+	if i.item_name == "Coal":
+		if fuel_inventory.add_item(i) == 0:
+			return true
+	
+	var is_valid_ore = false
 	for r in recipes:
-		if r.input_item == i or r.input_item.item_name == i.item_name:
-			is_valid = true
+		if r.input_item.resource_path == i.resource_path:
+			is_valid_ore = true
 			break
 	
-	if is_valid:
+	if is_valid_ore:
 		return input_inventory.add_item(i) == 0
 		
 	return false
@@ -117,17 +140,4 @@ func requires_recipe_selection() -> bool:
 func get_processing_icon() -> Texture2D:
 	if active_recipe:
 		return active_recipe.output_item.icon
-	var item = input_inventory.get_first_item()
-	if item:
-		for r in recipes:
-			if r.input_item == item or r.input_item.item_name == item.item_name:
-				return r.output_item.icon
 	return null
-
-func get_input_count() -> int:
-	var slot = input_inventory.slots[0]
-	return slot.count if slot else 0
-
-func get_output_count() -> int:
-	var slot = output_inventory.slots[0]
-	return slot.count if slot else 0

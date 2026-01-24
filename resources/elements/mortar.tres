@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://da2k1qkjpbjg2"]
+
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_73tfu"]
+
+[resource]
+script = ExtResource("1_73tfu")
+element_name = "Mortar"
+color = Color(0.4117647, 0.4117647, 0.4117647, 1)
+application_cooldown = 0.5
+reaction_rules = {
+"igni": "hardened_clay"
+}
+stat_modifiers = {
+"speed_mult": -0.5
+}

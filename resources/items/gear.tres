@@ -1,18 +1,14 @@
-[gd_resource type="Resource" script_class="ItemResource" load_steps=4 format=3 uid="uid://6eqk5mgdwpgy"]
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://6eqk5mgdwpgy"]
 
-[ext_resource type="Resource" uid="uid://cb23tvipt2els" path="res://resources/elements/metal.tres" id="1_7dt3j"]
+[ext_resource type="Resource" uid="uid://cj5yq1wbhxj3n" path="res://resources/elements/magne.tres" id="1_7dt3j"]
 [ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="2_icon"]
+[ext_resource type="Texture2D" uid="uid://diilgi85qwd0l" path="res://assets/items/gear.png" id="2_7dt3j"]
 
 [resource]
 script = ExtResource("1_script")
 item_name = "Gear"
-icon = ExtResource("2_icon")
+icon = ExtResource("2_7dt3j")
 color = Color(0.5, 0.5, 0.5, 1)
 stack_size = 100.0
-damage = 5.0
+damage = 4.0
 element = ExtResource("1_7dt3j")
-modifiers = {
-"cooldown": 0.9,
-"speed_mult": 1.1
-}

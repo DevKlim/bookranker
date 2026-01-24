@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://c8cg6qqdoi5he"]
+
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_e41o2"]
+
+[resource]
+script = ExtResource("1_e41o2")
+element_name = "Prism"
+color = Color(0.9019608, 0.9019608, 0.98039216, 1)
+application_cooldown = 0.5

@@ -2,203 +2,144 @@
 class_name Asourcer
 extends BaseBuilding
 
-## The Asourcer (Assembler) takes inputs, processes them based on a recipe, and outputs a result.
-## Occupies 2 tiles dynamically based on rotation.
+signal recipe_changed
 
-@export var recipes: Array[RecipeResource] = []
-var current_recipe: RecipeResource
+var current_recipe: RecipeResource = null
 
-@onready var input_inventory: InventoryComponent = InventoryComponent.new()
-@onready var output_inventory: InventoryComponent = InventoryComponent.new()
-
-# The secondary sprite to cover the 2nd tile
-var secondary_sprite: AnimatedSprite3D
-
-var craft_timer: float = 0.0
-var is_crafting: bool = false
+# Components
+var input_inventory: InventoryComponent
+var output_inventory: InventoryComponent
+var crafter 
 
 func _init() -> void:
 	has_input = true
 	has_output = true
+	input_inventory = InventoryComponent.new()
+	output_inventory = InventoryComponent.new()
 
 func _ready() -> void:
 	if not Engine.is_editor_hint():
-		# Runtime Initialization
+		crafter = get_node_or_null("CrafterComponent")
+		if not crafter:
+			var script = load("res://scripts/components/crafter_component.gd")
+			if script:
+				crafter = script.new()
+				crafter.name = "CrafterComponent"
+				add_child(crafter)
+		
 		input_inventory.name = "InputInventory"
-		input_inventory.max_slots = 5 
+		input_inventory.max_slots = 0 
 		input_inventory.slot_capacity = 20
+		input_inventory.can_receive = true
 		add_child(input_inventory)
 		
 		output_inventory.name = "OutputInventory"
 		output_inventory.max_slots = 1
-		output_inventory.slot_capacity = 20
+		output_inventory.slot_capacity = 50
+		output_inventory.can_output = true
 		add_child(output_inventory)
 	
-	# Visual Setup (Run in both Editor and Game)
-	_setup_secondary_sprite()
-	
 	super._ready()
-	
-	if not Engine.is_editor_hint():
-		# Load default recipes if none assigned
-		if recipes.is_empty():
-			_load_default_recipes()
-
-		# Default to first recipe if available
-		if not recipes.is_empty():
-			set_recipe(recipes[0])
-		
-func _setup_secondary_sprite() -> void:
-	# Ensure we have a secondary sprite for the 2x1 visual
-	if has_node("SecondarySprite"):
-		secondary_sprite = get_node("SecondarySprite")
-	else:
-		var main_sprite = _get_main_sprite()
-		if main_sprite:
-			secondary_sprite = main_sprite.duplicate()
-			secondary_sprite.name = "SecondarySprite"
-			add_child(secondary_sprite)
-	
-	# Force an update of position based on current output direction
-	_update_secondary_visuals()
-
-func _load_default_recipes() -> void:
-	var defaults = [
-		"res://resources/recipes/craft_cable.tres",
-		"res://resources/recipes/craft_gear.tres",
-		"res://resources/recipes/craft_rod.tres"
-	]
-	for path in defaults:
-		if ResourceLoader.exists(path):
-			recipes.append(load(path))
 
 func _process(delta: float) -> void:
-	if Engine.is_editor_hint(): 
-		return
+	if Engine.is_editor_hint() or not is_active or not crafter: return
 	
-	if not is_active: return
+	if current_recipe and not crafter.is_busy():
+		_try_start_craft()
 	
-	_handle_crafting(delta)
+	if crafter.update_process(delta):
+		_complete_craft()
 	
 	if output_inventory.has_item():
 		try_output_from_inventory(output_inventory)
 
-func _handle_crafting(delta: float) -> void:
-	if not current_recipe: return
-	
-	if is_crafting:
-		craft_timer += delta
-		if craft_timer >= current_recipe.craft_time:
-			complete_craft()
-	else:
-		_try_start_craft()
-
 func _try_start_craft() -> void:
 	if not current_recipe: return
-	
-	# 1. Check Output Space
-	if not output_inventory.has_space_for(current_recipe.output_item):
-		return
+	if not output_inventory.has_space_for(current_recipe.output_item): return
 		
-	# 2. Check Input Requirements
-	var available_count = 0
-	for slot in input_inventory.slots:
-		if slot != null and slot.item == current_recipe.input_item:
-			available_count += slot.count
+	var has_ingredients = false
+	var slot = input_inventory.slots[0] if input_inventory.slots.size() > 0 else null
 	
-	if available_count >= current_recipe.input_count:
-		input_inventory.remove_item(current_recipe.input_item, current_recipe.input_count)
-		is_crafting = true
-		craft_timer = 0.0
+	if slot != null and slot.item == current_recipe.input_item:
+		if slot.count >= current_recipe.input_count:
+			has_ingredients = true
+	
+	if has_ingredients:
+		if input_inventory.remove_item(current_recipe.input_item, current_recipe.input_count):
+			crafter.start_craft(current_recipe)
 
-func complete_craft() -> void:
-	is_crafting = false
-	craft_timer = 0.0
+func _complete_craft() -> void:
 	if current_recipe:
 		output_inventory.add_item(current_recipe.output_item, current_recipe.output_count)
+		crafter.stop_craft()
 
 func set_recipe(recipe: RecipeResource) -> void:
-	if current_recipe != recipe:
-		current_recipe = recipe
-		is_crafting = false
-		craft_timer = 0.0
+	if current_recipe == recipe: return
+	
+	if input_inventory.has_item():
+		print("Asourcer: Clearing inventory for new recipe.")
+		input_inventory.slots.fill(null)
+		input_inventory.emit_signal("inventory_changed")
+	
+	current_recipe = recipe
+	if crafter: crafter.stop_craft()
+	
+	if current_recipe:
+		print("Asourcer: Recipe set to %s" % current_recipe.recipe_name)
+		var item_stack_size = 50
+		if current_recipe.input_item:
+			item_stack_size = current_recipe.input_item.stack_size
+		
+		var slots_needed = 1
+		if item_stack_size > 0:
+			slots_needed = ceil(float(current_recipe.input_count) / float(item_stack_size))
+		
+		input_inventory.max_slots = int(max(1, slots_needed))
+		input_inventory.slots.resize(input_inventory.max_slots)
+		for i in range(input_inventory.max_slots):
+			input_inventory.slots[i] = null
+		input_inventory.allowed_items = [current_recipe.input_item]
+	
+	emit_signal("recipe_changed")
+
+func clear_recipe() -> void:
+	current_recipe = null
+	if crafter: crafter.stop_craft()
+	input_inventory.max_slots = 0
+	input_inventory.allowed_items = []
+	input_inventory.slots.resize(0)
+	print("Asourcer: Recipe cleared.")
+	emit_signal("recipe_changed")
 
 func receive_item(item: Resource, _from_node: Node3D = null, _extra_data: Dictionary = {}) -> bool:
-	if not has_input: return false
-	if not item is ItemResource: return false
-	
-	# Relaxed Logic: Accept item if it belongs to ANY recipe, not just the active one.
-	var is_valid_ingredient = false
-	for r in recipes:
-		if r.input_item == item or r.input_item.item_name == item.item_name:
-			is_valid_ingredient = true
-			break
-	
-	if is_valid_ingredient:
-		return input_inventory.add_item(item) == 0
-		
+	if not has_input or not current_recipe: return false
+	if item != current_recipe.input_item:
+		if item.resource_path != current_recipe.input_item.resource_path:
+			return false
+	if input_inventory.add_item(item) == 0:
+		return true
 	return false
 
 func requires_recipe_selection() -> bool:
 	return true
 
-# --- Visual Logic ---
-
-func _get_extra_offset_by_dir(dir: Direction) -> Vector2i:
-	match dir:
-		Direction.DOWN:  return Vector2i(0, -1)
-		Direction.UP:    return Vector2i(0, 1)
-		Direction.LEFT:  return Vector2i(1, 0)
-		Direction.RIGHT: return Vector2i(-1, 0)
-	return Vector2i.ZERO
-
-func get_occupied_cells(rotation_index: int = -1) -> Array[Vector2i]:
-	var ri = rotation_index
-	if ri == -1:
-		ri = int(output_direction)
-	
-	var dir = ri as Direction
-	return [Vector2i.ZERO, _get_extra_offset_by_dir(dir)]
-
-func set_build_rotation(rotation_val: Variant) -> void:
-	super.set_build_rotation(rotation_val)
-	_update_secondary_visuals()
-
-func _update_secondary_visuals() -> void:
-	if not is_instance_valid(secondary_sprite): return
-	
-	var pixel_offset = Vector3(0, 0, 1.0)
-	
-	if not Engine.is_editor_hint():
-		var my_tile = LaneManager.world_to_tile(global_position - LaneManager.get_layer_offset("building"))
-		var my_log = LaneManager.get_logical_from_tile(my_tile)
-		
-		if my_log != Vector2i(-1, -1):
-			var target_log = my_log
-			match input_direction:
-				Direction.UP:    target_log.y += 1 
-				Direction.DOWN:  target_log.y -= 1
-				Direction.LEFT:  target_log.x += 1 
-				Direction.RIGHT: target_log.x -= 1
-			
-			var target_phys = LaneManager.get_tile_from_logical(target_log.x, target_log.y)
-			if target_phys != Vector2i(-1, -1):
-				var p0 = LaneManager.tile_to_world(my_tile)
-				var p1 = LaneManager.tile_to_world(target_phys)
-				var global_vec = p1 - p0
-				pixel_offset = global_transform.basis.inverse() * global_vec
-	
-	secondary_sprite.position = pixel_offset
-	if secondary_sprite.sprite_frames.has_animation("idle_down"):
-		if secondary_sprite.animation != "idle_down":
-			secondary_sprite.play("idle_down")
-
-func _on_power_status_changed(has_power: bool) -> void:
-	super._on_power_status_changed(has_power)
-	if is_instance_valid(secondary_sprite):
-		secondary_sprite.modulate = powered_color if has_power else unpowered_color
-
 func get_processing_icon() -> Texture2D:
-	if current_recipe:
+	if current_recipe and current_recipe.output_item:
 		return current_recipe.output_item.icon
 	return null
+
+func get_recipes() -> Array[RecipeResource]:
+	var all_recipes = []
+	if GameManager.has_method("get_available_recipes"):
+		all_recipes = GameManager.get_available_recipes()
+	else:
+		printerr("Asourcer: GameManager not found.")
+		return []
+	
+	var filtered: Array[RecipeResource] = []
+	for r in all_recipes:
+		if r.category == "assembly":
+			filtered.append(r)
+	
+	print("Asourcer: Found %d valid recipes (assembly) out of %d total." % [filtered.size(), all_recipes.size()])
+	return filtered

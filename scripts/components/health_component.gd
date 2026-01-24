@@ -1,61 +1,96 @@
 class_name HealthComponent
 extends Node
 
-## A component for managing health, armor, and regen.
+## Handles Health and Energy. Energy depletion causes Stagger.
+## Delegates reaction side-effects (Conduct, Ripple) to ElementManager.
 
-signal health_changed(current_health, max_health)
 signal died(node)
+signal health_changed(new_amount, max_amount)
+signal energy_changed(new_amount, max_amount)
+signal staggered(duration)
+signal recovered
 
 @export var max_health: float = 100.0
+@export var max_energy: float = 50.0 
 
-# Stats modified by external systems
-var armor: float = 0.0
-var thorns: float = 0.0
-var regen_rate: float = 0.0
+var current_health: float
+var current_energy: float
+var defense: float = 0.0
+## Magical Defense acts as a multiplier for Elemental Application Cooldowns.
+var magical_defense: float = 0.0
+var purity: float = 0.0
 
-# Elemental resistances (0.0 = 0%, 1.0 = 100% reduction)
-var resistances: Dictionary = {}
-
-var _current_health: float
-
-var current_health: float:
-	get: return _current_health
-	set(value):
-		var new_health = clamp(value, 0, max_health)
-		if _current_health == new_health: return
-		_current_health = new_health
-		emit_signal("health_changed", _current_health, max_health)
-		if _current_health == 0: emit_signal("died", get_parent())
+var _stagger_timer: Timer
+# Optimization: Cache the sibling component to avoid get_node calls on every hit
+var _elemental_component: ElementalComponent
 
 func _ready() -> void:
-	self.current_health = max_health
+	current_health = max_health
+	current_energy = max_energy
+	
+	# Attempt to cache sibling immediately
+	_elemental_component = get_parent().get_node_or_null("ElementalComponent")
+	
+	_stagger_timer = Timer.new()
+	_stagger_timer.one_shot = true
+	_stagger_timer.name = "StaggerTimer"
+	_stagger_timer.timeout.connect(_on_stagger_end)
+	add_child(_stagger_timer)
 
-func _process(delta: float) -> void:
-	if regen_rate > 0 and _current_health < max_health and _current_health > 0:
-		heal(regen_rate * delta)
+## Standard Damage: Triggers reactions/Conduct checks
+func take_damage(amount: float, _element: Resource = null, source: Node = null) -> float:
+	var damage_taken = _calculate_mitigation(amount)
+	_apply_damage(damage_taken)
+	
+	# Trigger generic on-damage logic (Conduct, Ripple, etc.)
+	if damage_taken > 0:
+		ElementManager.on_damage_dealt(get_parent(), damage_taken, source)
+		
+	return damage_taken
 
-func take_damage(amount: float, element: ElementResource = null) -> void:
-	var multiplier = 1.0
-	
-	# Check elemental resistance
-	if element and resistances.has(element.element_name.to_lower()):
-		multiplier -= resistances[element.element_name.to_lower()]
-	
-	# Clamp multiplier (allow negative for healing elements? No, standard 0 min)
-	multiplier = max(0.0, multiplier)
-	
-	# Calculate damage after defense (Armor acts as flat reduction here)
-	# effective = (Base * Multiplier) - Armor
-	var damage_after_res = amount * multiplier
-	var effective_damage = max(1.0, damage_after_res - armor)
-	
-	self.current_health -= effective_damage
-	
-	# Thorns logic would go here if we tracked attacker reference
+## Special Damage: Used by Conduct/Reaction effects to prevent infinite loops.
+func take_damage_no_conduct(amount: float, _source: Node = null) -> float:
+	var damage_taken = _calculate_mitigation(amount)
+	_apply_damage(damage_taken)
+	return damage_taken
 
-func heal(amount: float) -> void:
-	self.current_health += amount
+func _calculate_mitigation(amount: float) -> float:
+	# Optimization: No rounding, precise float math. 
+	# Min damage 0.0 instead of 1.0 to allow full immunity if stats allow.
+	var damage_taken = max(0.0, amount - defense)
+	
+	if _elemental_component:
+		var mult = _elemental_component.get_stat_modifier("incoming_damage_mult")
+		damage_taken *= (1.0 + mult)
+		
+		var defense_taken_mult = _elemental_component.get_stat_modifier("damage_taken_mult")
+		damage_taken *= (1.0 + defense_taken_mult)
+		
+	return damage_taken
 
-func set_max_health(new_max: float) -> void:
-	max_health = new_max
-	self.current_health = max_health
+func _apply_damage(val: float) -> void:
+	current_health -= val
+	emit_signal("health_changed", current_health, max_health)
+	
+	if current_health <= 0:
+		emit_signal("died", get_parent())
+
+func take_energy_damage(amount: float) -> void:
+	current_energy -= amount
+	emit_signal("energy_changed", current_energy, max_energy)
+	
+	if current_energy <= 0 and _stagger_timer.is_stopped():
+		current_energy = 0
+		stagger(3.0)
+
+func stagger(base_duration: float) -> void:
+	var effective_duration = base_duration * (1.0 - purity)
+	if effective_duration < 0.1: effective_duration = 0.1
+	
+	emit_signal("staggered", effective_duration)
+	_stagger_timer.start(effective_duration)
+
+func _on_stagger_end() -> void:
+	current_energy = max_energy
+	emit_signal("energy_changed", current_energy, max_energy)
+	emit_signal("recovered")

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://cbic7wnfxx31r"]
+
+[ext_resource type="Resource" uid="uid://biw6jmu3536df" path="res://resources/items/lux.tres" id="1_0yqrr"]
+[ext_resource type="Resource" uid="uid://d3ahm3olcu8po" path="res://resources/buildables/wire.tres" id="2_530x3"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="3_ir773"]
+
+[resource]
+script = ExtResource("3_ir773")
+category = "basic"
+recipe_name = "Wire"
+craft_time = 0.5
+inputs = [{
+"count": 1,
+"resource": ExtResource("1_0yqrr")
+}]
+outputs = [{
+"count": 1,
+"resource": ExtResource("2_530x3")
+}]

@@ -1,11 +1,14 @@
-[gd_resource type="Resource" script_class="ElementResource" load_steps=2 format=3 uid="uid://fs0iyq886ahb"]
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://dxgrgiah56yli"]
 
+[ext_resource type="Texture2D" uid="uid://c820vt8okbjri" path="res://assets/icons/chem.png" id="1_7rvot"]
 [ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_28ewv"]
 
 [resource]
 script = ExtResource("1_28ewv")
-element_name = "Chemical"
-color = Color(0.29803923, 0.6862745, 0.3137255, 1)
-reaction_rules = {
-"fire": "explosion"
+element_name = "Chem"
+icon = ExtResource("1_7rvot")
+duration = 8.0
+application_cooldown = 0.5
+stat_modifiers = {
+"output_chance": 1.0
 }

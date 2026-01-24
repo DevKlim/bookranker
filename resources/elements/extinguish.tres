@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://dr0gre1tk4drb"]
+
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_oorfh"]
+
+[resource]
+script = ExtResource("1_oorfh")
+element_name = "Extinguish"
+color = Color(0.4392157, 0.5019608, 0.5647059, 1)
+duration = 0.1

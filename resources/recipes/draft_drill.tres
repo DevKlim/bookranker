@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://cpisqoxi7inr8"]
+
+[ext_resource type="Resource" uid="uid://6eqk5mgdwpgy" path="res://resources/items/gear.tres" id="1_obi60"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="2_w2658"]
+[ext_resource type="Resource" uid="uid://ccxtemo42mkml" path="res://resources/items/iron_alloy.tres" id="2_xpl46"]
+[ext_resource type="Resource" uid="uid://fibg44odnwpl" path="res://resources/buildables/burnace.tres" id="3_an31a"]
+[ext_resource type="Resource" uid="uid://dr3dix5bbggvi" path="res://resources/buildables/drill.tres" id="4_8op4q"]
+
+[resource]
+script = ExtResource("2_w2658")
+category = "basic"
+recipe_name = "Drill"
+inputs = [{
+"count": 5,
+"resource": ExtResource("1_obi60")
+}, {
+"count": 5,
+"resource": ExtResource("2_xpl46")
+}, {
+"count": 5,
+"resource": ExtResource("3_an31a")
+}]
+outputs = [{
+"count": 1,
+"resource": ExtResource("4_8op4q")
+}]

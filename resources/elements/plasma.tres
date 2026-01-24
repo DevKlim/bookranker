@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://wnkcxntp714g"]
+
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_8eih5"]
+[ext_resource type="Texture2D" uid="uid://bqtdcdadrfbfd" path="res://assets/icons/plasma.png" id="1_dej7p"]
+
+[resource]
+script = ExtResource("1_8eih5")
+element_name = "Plasma"
+icon = ExtResource("1_dej7p")
+application_cooldown = 0.5
+stat_modifiers = {
+"incoming_damage_mult": 0.25
+}

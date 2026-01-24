@@ -1,4 +1,4 @@
-[gd_resource type="MeshLibrary" load_steps=9 format=4 uid="uid://buahgkoobw40c"]
+[gd_resource type="MeshLibrary" format=4 uid="uid://buahgkoobw40c"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4no63"]
 texture_filter = 0

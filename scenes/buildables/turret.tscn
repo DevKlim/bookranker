@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=4 uid="uid://b0hs05nc4gpx6"]
+[gd_scene format=4 uid="uid://b0hs05nc4gpx6"]
 
 [ext_resource type="Texture2D" uid="uid://bmku38ij0732l" path="res://assets/buildables/turret_top.png" id="1_f6grb"]
 [ext_resource type="Script" uid="uid://ctw2ritm8shpv" path="res://scripts/entities/turret.gd" id="1_ptgrk"]
@@ -9,7 +9,8 @@
 [ext_resource type="Script" uid="uid://cnm8y28bmosfv" path="res://scripts/components/target_acquirer_component.gd" id="6_nilrr"]
 [ext_resource type="Script" uid="uid://vk0magbyev86" path="res://scripts/components/shooter_component.gd" id="7_lbhbp"]
 [ext_resource type="Script" uid="uid://dad3f8h2j4k5l" path="res://scripts/components/inventory_component.gd" id="8_ax5ag"]
-[ext_resource type="Resource" uid="uid://ci6qhchtaulll" path="res://resources/items/rod.tres" id="9_w66yh"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_hn88v"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cxrml"]
 albedo_texture = ExtResource("1_f6grb")
@@ -92,47 +93,32 @@ _surfaces = [{
 "vertex_data": PackedByteArray("AAAAPwAAAEAAAIA+AAAAPwAAAEAAAIC+AAAAPwAAAAAAAIC+AAAAPwAAAEAAAIA+AAAAPwAAAAAAAIC+AAAAPwAAAAAAAIA+////f/9//z////9//3//P////3//f/8/////f/9//z////9//3//P////3//f/8/")
 }]
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_hn88v"]
-
-[sub_resource type="SphereShape3D" id="SphereShape3D_nin61"]
-radius = 5.0
-
-[node name="Turret" type="StaticBody3D"]
+[node name="Turret" type="StaticBody3D" unique_id=1633956409]
 script = ExtResource("1_ptgrk")
-powered_color = null
 unpowered_color = Color(1, 1, 1, 1)
-output_direction = null
-input_direction = 0
 has_output = false
 
-[node name="Rotatable" type="Node3D" parent="."]
-
-[node name="BlockVisual" type="MeshInstance3D" parent="Rotatable"]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0.25)
-mesh = SubResource("ArrayMesh_hsy45")
-
-[node name="ProjectileOrigin" type="Marker3D" parent="Rotatable"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0.6)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=322679842]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
 shape = SubResource("BoxShape3D_hn88v")
 
-[node name="TargetAcquirerComponent" type="Node" parent="."]
+[node name="TargetAcquirerComponent" type="Node" parent="." unique_id=589262587]
 script = ExtResource("6_nilrr")
-target_layers = 1
 
-[node name="DetectionArea" type="Area3D" parent="TargetAcquirerComponent"]
-
-[node name="Shape" type="CollisionShape3D" parent="TargetAcquirerComponent/DetectionArea"]
-shape = SubResource("SphereShape3D_nin61")
-
-[node name="ShooterComponent" type="Node" parent="."]
+[node name="ShooterComponent" type="Node" parent="." unique_id=424103093]
 script = ExtResource("7_lbhbp")
-base_damage = 5.0
-fire_point_path = NodePath("../Rotatable/ProjectileOrigin")
+base_damage = 2.0
+fire_rate = 2.0
+fire_point_path = NodePath("../ProjectileOrigin")
 
-[node name="InventoryComponent" type="Node" parent="."]
+[node name="InventoryComponent" type="Node" parent="." unique_id=446958848]
 script = ExtResource("8_ax5ag")
 slot_capacity = 100
-allowed_items = Array[Resource]([ExtResource("9_w66yh")])
+
+[node name="BlockVisual" type="MeshInstance3D" parent="." unique_id=1410013253]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0.25)
+mesh = SubResource("ArrayMesh_hsy45")
+skeleton = NodePath("")
+
+[node name="ProjectileOrigin" type="Marker3D" parent="." unique_id=217975200]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)

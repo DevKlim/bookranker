@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://b5dk8rcggvvps"]
+
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_vetu0"]
+
+[resource]
+script = ExtResource("1_vetu0")
+element_name = "Ray"
+color = Color(1, 1, 0.8784314, 1)
+application_cooldown = 0.5

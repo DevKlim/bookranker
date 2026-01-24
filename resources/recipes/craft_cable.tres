@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="RecipeResource" load_steps=4 format=3 uid="uid://6qfaffsys6k7"]
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://6qfaffsys6k7"]
 
 [ext_resource type="Resource" uid="uid://cw1gqh7dw6wm7" path="res://resources/items/copper_alloy.tres" id="1_6owia"]
 [ext_resource type="Resource" uid="uid://b7kha05iq4lkw" path="res://resources/items/cable.tres" id="2_xaelf"]
@@ -6,8 +6,13 @@
 
 [resource]
 script = ExtResource("3_k31aw")
-recipe_name = "Craft Cable"
-input_item = ExtResource("1_6owia")
-input_count = 2
-output_item = ExtResource("2_xaelf")
+recipe_name = "Copper Cable"
 craft_time = 0.5
+inputs = [{
+"count": 1,
+"resource": ExtResource("1_6owia")
+}]
+outputs = [{
+"count": 2,
+"resource": ExtResource("2_xaelf")
+}]

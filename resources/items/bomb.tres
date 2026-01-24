@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://d3h23mn6blddr"]
+
+[ext_resource type="Resource" uid="uid://bwjfrccqej23w" path="res://resources/elements/fuse.tres" id="1_ym33y"]
+[ext_resource type="Texture2D" uid="uid://u7cfoeo705e2" path="res://assets/items/bomb.png" id="2_ey158"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="3_nm6kh"]
+
+[resource]
+script = ExtResource("3_nm6kh")
+item_name = "Bomb"
+icon = ExtResource("2_ey158")
+damage = 20.0
+element = ExtResource("1_ym33y")

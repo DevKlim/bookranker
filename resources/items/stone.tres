@@ -1,17 +1,17 @@
-[gd_resource type="Resource" script_class="ItemResource" load_steps=4 format=3 uid="uid://f2yu5yfckp4d"]
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://f2yu5yfckp4d"]
 
-[ext_resource type="Resource" uid="uid://b3a1yqxn3g2u5" path="res://resources/elements/normal.tres" id="1_eq1bm"]
-[ext_resource type="Texture2D" uid="uid://clpbo5uqegsea" path="res://assets/ores/iron.png" id="1_q1oyt"]
+[ext_resource type="Resource" uid="uid://7j4j8iomabs5" path="res://resources/elements/tera.tres" id="1_eq1bm"]
 [ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://wwutbpccuywd" path="res://assets/items/stone.png" id="2_eq1bm"]
 
 [resource]
 script = ExtResource("1_script")
 item_name = "Stone"
-icon = ExtResource("1_q1oyt")
+icon = ExtResource("2_eq1bm")
 color = Color(0.5, 0.5, 0.5, 1)
 stack_size = 100.0
-damage = 2.0
+damage = 1.0
 element = ExtResource("1_eq1bm")
-modifiers = {
-"max_health_mult": 1.05
-}
+is_ore = true
+ore_block_name = "Stone"
+rarity = 0.8

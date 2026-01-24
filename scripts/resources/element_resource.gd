@@ -2,12 +2,14 @@ class_name ElementResource
 extends Resource
 
 @export var element_name: String = "None"
+@export var icon: Texture2D
 @export var color: Color = Color.WHITE
+@export var duration: float = 5.0
 
-## Dictionary defining what happens when this element touches another status.
-## Format: { "existing_status_id": "reaction_name" }
+## Time in seconds before this specific element can be applied to the same target again.
+## e.g. Super Plasma might have 0.5s to prevent instant re-proc.
+@export var application_cooldown: float = 0.0
+
 @export var reaction_rules: Dictionary = {}
-
-## Dictionary defining the status effect properties.
-## E.g. { "damage_per_second": 5.0, "duration": 3.0, "stun": false }
-@export var effect_data: Dictionary = {}
+@export var stat_modifiers: Dictionary = {}
+@export var effect_script: Script

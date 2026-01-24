@@ -15,8 +15,8 @@
 			"groups": [
 				{
 					"enemy_id": "basic_robot",
-					"count": 3,
-					"interval": 0.5
+					"count": 999,
+					"interval": 0.2
 				},
 				{
 					"enemy_id": "basic_robot",

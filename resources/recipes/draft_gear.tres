@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://b27vra0iw478e"]
+
+[ext_resource type="Resource" uid="uid://ccxtemo42mkml" path="res://resources/items/iron_alloy.tres" id="1_f0bls"]
+[ext_resource type="Resource" uid="uid://6eqk5mgdwpgy" path="res://resources/items/gear.tres" id="2_o6dxa"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="3_63w6i"]
+
+[resource]
+script = ExtResource("3_63w6i")
+category = "basic"
+recipe_name = "Iron Gear"
+craft_time = 1.0
+inputs = [{
+"count": 2,
+"resource": ExtResource("1_f0bls")
+}]
+outputs = [{
+"count": 1,
+"resource": ExtResource("2_o6dxa")
+}]

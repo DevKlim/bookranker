@@ -1,21 +1,10 @@
-[gd_resource type="Resource" script_class="EnemyResource" load_steps=3 format=3 uid="uid://dpsaweo0nyswo"]
+[gd_resource type="Resource" script_class="EnemyResource" format=3 uid="uid://c0pwkh4e0270w"]
 
-[ext_resource type="PackedScene" uid="uid://dwbnm2v53m7gc" path="res://scenes/enemies/basic_robot.tscn" id="1_0cejv"]
-[ext_resource type="Script" uid="uid://bykln6bau3775" path="res://scripts/resources/enemy_resource.gd" id="1_4n7g6"]
+[ext_resource type="PackedScene" uid="uid://c6mrsaoxo0fw8" path="res://scenes/enemies/basic_robot.tscn" id="1_0cejv"]
+[ext_resource type="Script" uid="uid://bykln6bau3775" path="res://scripts/resources/enemy_resource.gd" id="1_enemy_res"]
 
 [resource]
-script = ExtResource("1_4n7g6")
+script = ExtResource("1_enemy_res")
 enemy_name = "Basic Robot"
 scene = ExtResource("1_0cejv")
-defense = 2.0
-elemental_resistances = {
-"metal": 0.5
-}
 attack_damage = 5.0
-attack_speed = 1.2
-drops = [{
-"chance": 0.5,
-"item": "iron",
-"max": 2.0,
-"min": 1.0
-}]

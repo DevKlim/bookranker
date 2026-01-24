@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="RecipeResource" load_steps=4 format=3 uid="uid://22hl8hk6o3ic"]
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://22hl8hk6o3ic"]
 
 [ext_resource type="Resource" uid="uid://ccxtemo42mkml" path="res://resources/items/iron_alloy.tres" id="1_gkw81"]
 [ext_resource type="Resource" uid="uid://ci6qhchtaulll" path="res://resources/items/rod.tres" id="2_a6l0y"]
@@ -6,8 +6,13 @@
 
 [resource]
 script = ExtResource("3_8o85s")
-recipe_name = "Craft Rod"
-input_item = ExtResource("1_gkw81")
-output_item = ExtResource("2_a6l0y")
-output_count = 2
+recipe_name = "Iron Rod"
 craft_time = 0.5
+inputs = [{
+"count": 1,
+"resource": ExtResource("1_gkw81")
+}]
+outputs = [{
+"count": 2,
+"resource": ExtResource("2_a6l0y")
+}]

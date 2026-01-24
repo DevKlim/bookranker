@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="ItemResource" load_steps=4 format=3 uid="uid://diwea136j53ia"]
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://vovm0a2nyepm"]
 
-[ext_resource type="Resource" uid="uid://lrm1spfp7wm8" path="res://resources/elements/shock.tres" id="1_g5gwp"]
+[ext_resource type="Resource" uid="uid://vri77kv5coty" path="res://resources/elements/volt.tres" id="1_g5gwp"]
 [ext_resource type="Texture2D" uid="uid://cak3ffedbk0k6" path="res://assets/ores/copper.png" id="1_nay73"]
 [ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="1_script"]
 
@@ -8,13 +8,8 @@
 script = ExtResource("1_script")
 item_name = "Copper Ore"
 icon = ExtResource("1_nay73")
-damage = 4.0
+damage = 3.0
 element = ExtResource("1_g5gwp")
-modifiers = {
-"speed_mult": 1.05
-}
 is_ore = true
 ore_block_name = "Copper Ore"
-min_depth = 2
-max_depth = 25
-rarity = 0.15
+rarity = 0.1

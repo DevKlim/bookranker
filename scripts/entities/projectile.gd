@@ -1,12 +1,15 @@
 class_name Projectile
 extends Area3D
 
-@export var default_scale: Vector3 = Vector3(1.0, 1.0, 1.0)
-@export var visual_offset: Vector3 = Vector3.ZERO
+@export var default_scale: Vector3 = Vector3(0.5, 1.0, 0.5)
+@export var visual_offset: Vector3 = Vector3(0, 0.0, 0) # Raise default Y
 
 var _velocity: Vector3 = Vector3.ZERO
 var _damage: float = 0.0
 var _element: Resource = null
+var _source_attacker: Node = null
+var _element_units: int = 1
+var _ignore_element_cd: bool = false
 var lane_id: int = -1
 var speed: float = 0.0
 var lifetime: float = 5.0
@@ -36,7 +39,10 @@ void fragment() {
 
 func _ready() -> void:
 	collision_mask = 2 # Enemies
-	collision_layer = 0
+	collision_layer = 4 # Projectiles
+	
+	monitoring = true
+	monitorable = true
 	
 	if sprite:
 		sprite.scale = default_scale
@@ -49,7 +55,6 @@ func _physics_process(delta: float) -> void:
 		return
 
 	position += _velocity * delta
-	
 	lifetime -= delta
 	if lifetime <= 0:
 		queue_free()
@@ -57,24 +62,29 @@ func _physics_process(delta: float) -> void:
 func initialize(start_pos: Vector3, dir: Vector3, p_speed: float, dmg: float, p_lane: int, p_elem: Resource = null, tex: Texture2D = null, col: Color = Color.WHITE, _use_path: bool = false, extra_params: Dictionary = {}) -> void:
 	global_position = start_pos
 	
-	# Scale speed. ~600px/s -> 12m/s
 	speed = p_speed * 0.02
 	if speed < 2.0: speed = 10.0
 	
 	_velocity = dir.normalized() * speed
-	
-	print("Projectile Init: Pos %s | Vel %s | Dmg %s | Lane %d" % [str(start_pos), str(_velocity), str(dmg), p_lane])
-	
-	if dir != Vector3.ZERO:
-		look_at(global_position + dir, Vector3.UP)
-		
 	_damage = dmg
 	lane_id = p_lane
 	_element = p_elem
+	_source_attacker = extra_params.get("source", null)
 	
+	# Parse explicit unit/CD data
+	_element_units = extra_params.get("element_units", 1)
+	_ignore_element_cd = extra_params.get("ignore_element_cd", false)
+	
+	if dir != Vector3.ZERO:
+		look_at(global_position + dir, Vector3.UP)
+
 	if sprite:
 		sprite.position = visual_offset
-		if tex: sprite.texture = tex
+		if tex: 
+			sprite.texture = tex
+			sprite.pixel_size = 0.04 # Make slightly bigger
+			sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+			sprite.axis = Vector3.AXIS_Y
 		
 		if _element and "color" in _element:
 			sprite.modulate = _element.color
@@ -97,26 +107,30 @@ func initialize(start_pos: Vector3, dir: Vector3, p_speed: float, dmg: float, p_
 		body_entered.connect(_on_body_entered)
 
 func _on_body_entered(body: Node3D) -> void:
-	# Debug print for any collision attempt
-	print("Projectile Collision with: %s at %s" % [body.name, body.global_position])
+	# Validate Target
+	var valid_target = false
+	if body is Enemy: valid_target = true
+	if body.has_method("take_damage"): valid_target = true
+	if body.has_node("HealthComponent"): valid_target = true
 	
-	if not (body is CharacterBody3D): return
+	if not valid_target: return
 
 	var e_lane = -1
 	if body.has_method("get_lane_id"):
 		e_lane = body.get_lane_id()
 	
 	if self.lane_id == -1 or e_lane == self.lane_id or e_lane == -1:
-		print(">> VALID HIT on %s! Applying %s damage." % [body.name, _damage])
-		var hc = body.get_node_or_null("HealthComponent")
-		if hc: 
-			hc.take_damage(_damage, _element)
-		elif body.has_method("take_damage"):
-			body.take_damage(_damage)
 		
-		if _element: 
-			ElementManager.apply_element(body, _element)
+		if _element:
+			# Pass new unit and cooldown parameters to ElementManager
+			ElementManager.apply_element(body, _element, _source_attacker, _damage, _element_units, _ignore_element_cd)
+		
+		if body.has_method("take_damage"):
+			body.take_damage(_damage, _element, _source_attacker)
+		elif body.has_node("HealthComponent"):
+			body.get_node("HealthComponent").take_damage(_damage, _element, _source_attacker)
 			
+		# Hook for ElementManager Reactions (e.g. Ripple / Conduct)
+		ElementManager.on_damage_dealt(body, _damage, _source_attacker)
+		
 		queue_free()
-	else:
-		print(">> Lane Mismatch! Proj Lane: %d, Enemy Lane: %d" % [self.lane_id, e_lane])

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://icsad5kknxlr"]
+
+[ext_resource type="Resource" uid="uid://um15w27vhhhx" path="res://resources/elements/aqua.tres" id="1_0lu77"]
+[ext_resource type="Texture2D" uid="uid://cbstiy3ries7w" path="res://assets/items/aqua_pelet.png" id="2_0lu77"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="3_65732"]
+
+[resource]
+script = ExtResource("3_65732")
+item_name = "Aqua Pellet"
+icon = ExtResource("2_0lu77")
+damage = 2.0
+element = ExtResource("1_0lu77")

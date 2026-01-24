@@ -19,10 +19,9 @@ extends Node
 	set(value):
 		if target_category != value:
 			target_category = value
-			target_item_id = "All" # Reset selection when category changes
+			target_item_id = "All"
 			notify_property_list_changed()
 
-## Selected specific ID to import. Populated dynamically based on category.
 var target_item_id: String = "All"
 
 @export var overwrite_existing: bool = false
@@ -32,10 +31,9 @@ const DEBUG_MESH_LIBRARY_PATH = "res://resources/debug_mesh_library.tres"
 const JSON_PATH = "res://data/content_manifest.json"
 const RESOURCE_BASE_PATH = "res://resources/"
 
-# Target folders for generated scenes
 const SCENE_BUILDABLES_PATH = "res://scenes/buildables/"
 const SCENE_ENEMIES_PATH = "res://scenes/enemies/"
-const SCENE_GEN_BASE = "res://scenes/generated/" # Fallback
+const SCENE_GEN_BASE = "res://scenes/generated/"
 
 const ELEMENT_SCRIPT = "res://scripts/resources/element_resource.gd"
 const ITEM_SCRIPT = "res://scripts/resources/item_resource.gd"
@@ -50,6 +48,9 @@ const COMP_HEALTH = "res://scripts/components/health_component.gd"
 const COMP_ATTACKER = "res://scripts/components/attacker_component.gd"
 const COMP_MOVE = "res://scripts/components/move_component.gd"
 const COMP_INVENTORY = "res://scripts/components/inventory_component.gd"
+const COMP_CRAFTER = "res://scripts/components/crafter_component.gd"
+const COMP_ELEMENTAL = "res://scripts/components/elemental_component.gd"
+
 const ENTITY_ENEMY_SCRIPT = "res://scripts/entities/enemy.gd"
 
 func _get_property_list() -> Array:
@@ -102,7 +103,10 @@ func _run_import() -> void:
 		return
 	var data: Dictionary = raw_data
 	
-	# Create necessary directories
+	DirAccess.make_dir_recursive_absolute("res://assets/items/")
+	DirAccess.make_dir_recursive_absolute("res://assets/ores/")
+	DirAccess.make_dir_recursive_absolute("res://assets/buildables/")
+	
 	for d in ["elements/", "items/", "buildables/", "recipes/", "enemies/"]:
 		DirAccess.make_dir_recursive_absolute(RESOURCE_BASE_PATH + d)
 	
@@ -121,6 +125,7 @@ func _run_import() -> void:
 	if (target_category == "All" or target_category == "Buildables"):
 		if data.has("buildings"): _import_buildables(data["buildings"], "building", target_category)
 		if data.has("wires"): _import_buildables(data["wires"], "wire", target_category)
+	# Import recipes AFTER items/buildables so references exist
 	if (target_category == "All" or target_category == "Recipes") and data.has("recipes"):
 		_import_recipes(data["recipes"], target_category)
 	if (target_category == "All" or target_category == "Enemies") and data.has("enemies"):
@@ -131,196 +136,99 @@ func _run_import() -> void:
 		EditorInterface.get_resource_filesystem().scan()
 
 func _run_cleanup() -> void:
-	print("--- Cleanup Logic Skipped for Brevity ---")
+	print("--- Starting Orphan Cleanup ---")
+	var data = _load_json_safe()
+	if not (data is Dictionary): return
+	
+	var get_valid = func(key: String) -> Array:
+		var ids = []
+		if data.has(key):
+			for item in data[key]: ids.append(str(item["id"]))
+		return ids
+	
+	var clean_folder = func(path: String, valid: Array):
+		var dir = DirAccess.open(path)
+		if not dir: return
+		dir.list_dir_begin()
+		var file = dir.get_next()
+		while file != "":
+			if not dir.current_is_dir() and file.ends_with(".tres"):
+				var id = file.get_basename()
+				if not id in valid:
+					print("Cleanup: Deleting %s (Not in manifest)" % file)
+					dir.remove(file)
+			file = dir.get_next()
+	
+	if target_category == "All" or target_category == "Recipes":
+		clean_folder.call(RESOURCE_BASE_PATH + "recipes/", get_valid.call("recipes"))
+	if target_category == "All" or target_category == "Items":
+		clean_folder.call(RESOURCE_BASE_PATH + "items/", get_valid.call("items"))
+	if target_category == "All" or target_category == "Elements":
+		clean_folder.call(RESOURCE_BASE_PATH + "elements/", get_valid.call("elements"))
+		
+	print("--- Cleanup Complete ---")
+	if Engine.is_editor_hint():
+		EditorInterface.get_resource_filesystem().scan()
 
-# --- Import Handlers ---
+func _get_or_create_resource(path, script_class):
+	if ResourceLoader.exists(path):
+		var res = load(path)
+		if res: return res
+		else: print("DataImporter: Found corrupted resource at %s, recreating..." % path)
+	return script_class.new()
 
-func _import_buildables(list, _category, target):
-	var script = load(BUILDABLE_SCRIPT)
+# Helper to find a resource whether it's an Item OR a Buildable
+func _resolve_resource_id(id_str: String) -> Resource:
+	# Check Item
+	var item_path = RESOURCE_BASE_PATH + "items/" + id_str + ".tres"
+	if ResourceLoader.exists(item_path): return load(item_path)
+	
+	# Check Buildable
+	var build_path = RESOURCE_BASE_PATH + "buildables/" + id_str + ".tres"
+	if ResourceLoader.exists(build_path): return load(build_path)
+	
+	return null
+
+func _import_recipes(list, target):
+	var script = load(RECIPE_SCRIPT)
 	for entry in list:
 		if not entry is Dictionary: continue
-		var path = RESOURCE_BASE_PATH + "buildables/" + str(entry.get("id", "unknown")) + ".tres"
-		if not _should_process(str(entry.get("id")), path, target): continue
-		
-		var new_scene_path = ""
-		# Generate scene if template + visuals/structure exist
-		if entry.has("template") and (entry.has("visuals") or entry.has("structure")):
-			new_scene_path = SCENE_BUILDABLES_PATH + str(entry.get("id")) + ".tscn"
-			print("Generating Buildable Scene: " + str(entry.get("id")))
-			_generate_building_scene(entry, new_scene_path)
-			
-		var res = _get_or_create_resource(path, script)
-		res.buildable_name = str(entry.get("name", "Unnamed"))
-		res.description = str(entry.get("description", ""))
-		
-		var tex_path = ""
-		if entry.has("structure") and not entry["structure"].is_empty():
-			tex_path = entry["structure"][0].get("texture", "")
-		elif entry.has("texture"): tex_path = entry["texture"]
-		elif entry.has("visuals") and entry["visuals"].has("texture"): tex_path = entry["visuals"]["texture"]
-		
-		if tex_path != "" and ResourceLoader.exists(tex_path):
-			res.icon = load(tex_path)
-		else:
-			res.icon = null
-		
-		# Dimension Parsing
-		res.width = 1
-		res.height = 1
-		
-		if entry.has("grid") and entry["grid"] is Dictionary:
-			res.width = entry["grid"].get("width", 1)
-			res.height = entry["grid"].get("height", 1)
-			res.layer = 0 if entry["grid"].get("layer") == "wire" else 1
-		elif entry.has("structure"):
-			# Auto-calculate bounding box from structure offsets
-			var min_x = 0; var max_x = 0; var min_z = 0; var max_z = 0
-			for part in entry["structure"]:
-				var off = part.get("offset", [0,0])
-				min_x = min(min_x, off[0]); max_x = max(max_x, off[0])
-				min_z = min(min_z, off[1]); max_z = max(max_z, off[1])
-			res.width = (max_x - min_x) + 1
-			res.height = (max_z - min_z) + 1
-		elif entry.has("visuals") and entry["visuals"].has("width") and entry["visuals"].has("height"):
-			var w_px = entry["visuals"].get("width", 32)
-			var h_px = entry["visuals"].get("height", 32)
-			res.width = max(1, int(w_px / 32))
-			res.height = max(1, int(h_px / 32))
-			
-		if entry.has("logic") and entry["logic"] is Dictionary:
-			res.has_input = entry["logic"].get("has_input", false)
-			res.has_output = entry["logic"].get("has_output", false)
-			
-			# Parse IO Masks
-			var io_config = entry["logic"].get("io_config", {})
-			res.default_input_mask = _parse_io_mask(io_config.get("input", ["all"]))
-			res.default_output_mask = _parse_io_mask(io_config.get("output", ["all"]))
-		
-		res.display_offset = Vector2.ZERO 
-			
-		if new_scene_path != "":
-			res.scene = ResourceLoader.load(new_scene_path, "", ResourceLoader.CACHE_MODE_REPLACE)
-			
-		ResourceSaver.save(res, path)
-
-func _parse_io_mask(directions_array: Array) -> int:
-	var mask = 0
-	# 0: Down (Back/+Z), 1: Left (-X), 2: Up (Front/-Z), 3: Right (+X)
-	# Bitmask: 1<<0, 1<<1, 1<<2, 1<<3
-	
-	if "all" in directions_array: return 15 # 1111
-	if "none" in directions_array: return 0
-	
-	for d in directions_array:
-		match d:
-			"back", "down": mask |= (1 << 0)
-			"left": mask |= (1 << 1)
-			"front", "up": mask |= (1 << 2)
-			"right": mask |= (1 << 3)
-	return mask
-
-func _import_enemies(list, target):
-	var script = load(ENEMY_SCRIPT)
-	for entry in list:
-		if not entry is Dictionary: continue
-		var path = RESOURCE_BASE_PATH + "enemies/" + str(entry.get("id", "unknown")) + ".tres"
-		if not _should_process(str(entry.get("id")), path, target): continue
-		
-		var new_scene_path = ""
-		if entry.has("scene_path"):
-			new_scene_path = SCENE_ENEMIES_PATH + str(entry.get("id")) + ".tscn"
-			print("Generating Enemy Scene Wrapper: " + str(entry.get("id")))
-			_generate_enemy_scene(entry, new_scene_path)
-		
-		var res = _get_or_create_resource(path, script)
-		res.enemy_name = str(entry.get("name", "Enemy"))
-		
-		if new_scene_path != "":
-			res.scene = ResourceLoader.load(new_scene_path, "", ResourceLoader.CACHE_MODE_REPLACE)
-		elif entry.has("template") and ResourceLoader.exists(entry["template"]):
-			res.scene = load(entry["template"])
-			
-		if entry.has("logic") and entry["logic"] is Dictionary:
-			res.health = entry["logic"].get("health", 50.0)
-			res.speed = entry["logic"].get("speed", 50.0)
-			res.defense = entry["logic"].get("defense", 0.0)
-			res.elemental_resistances = entry["logic"].get("resistances", {})
-			
-		if entry.has("params") and entry["params"] is Dictionary:
-			res.attack_damage = entry["params"].get("attack_damage", 10.0)
-			res.attack_speed = entry["params"].get("attack_speed", 1.0)
-			
-		if entry.has("drops") and entry["drops"] is Array:
-			res.drops = entry["drops"]
-
-		ResourceSaver.save(res, path)
-
-func _import_blocks(list, _target):
-	var lib: MeshLibrary
-	if ResourceLoader.exists(mesh_library_path):
-		lib = load(mesh_library_path)
-	else:
-		lib = MeshLibrary.new()
-	
-	_populate_library_from_list(lib, list, _target)
-	
-	ResourceSaver.save(lib, mesh_library_path)
-	print("Updated MeshLibrary at: " + mesh_library_path)
-
-func _import_debug_blocks(list, _target):
-	var lib: MeshLibrary
-	if ResourceLoader.exists(DEBUG_MESH_LIBRARY_PATH):
-		lib = load(DEBUG_MESH_LIBRARY_PATH)
-	else:
-		lib = MeshLibrary.new()
-	
-	_populate_library_from_list(lib, list, _target)
-	
-	ResourceSaver.save(lib, DEBUG_MESH_LIBRARY_PATH)
-	print("Updated Debug MeshLibrary at: " + DEBUG_MESH_LIBRARY_PATH)
-
-func _populate_library_from_list(lib: MeshLibrary, list: Array, _target: String) -> void:
-	var existing_ids = lib.get_item_list()
-	var next_id = 0
-	for id in existing_ids:
-		if id >= next_id: next_id = id + 1
-	
-	for entry in list:
-		if not entry is Dictionary: continue
-		var block_id = str(entry.get("id", "unknown"))
-		if not _should_process(block_id, "", _target): continue
-
-		var block_name = str(entry.get("name", "Unnamed Block"))
-		var base_texture_path = str(entry.get("texture_base", ""))
-		
-		print("Processing Block: %s" % block_name)
-		
-		var size = Vector3(1, 1, 1)
-		if entry.has("dimensions") and entry["dimensions"] is Array:
-			var d = entry["dimensions"]
-			if d.size() >= 3:
-				size = Vector3(d[0], d[1], d[2])
-		
-		_create_mesh_item_in_library(lib, next_id, block_name, base_texture_path, size, false)
-		next_id += 1
-		
-		if _check_texture_exists(base_texture_path, "on"):
-			var on_name = block_name + " (ON)"
-			_create_mesh_item_in_library(lib, next_id, on_name, base_texture_path, size, true)
-			next_id += 1
-
-func _import_elements(list, target):
-	var script = load(ELEMENT_SCRIPT)
-	for entry in list:
-		if not entry is Dictionary: continue
-		var path = RESOURCE_BASE_PATH + "elements/" + str(entry.get("id", "unknown")) + ".tres"
+		var path = RESOURCE_BASE_PATH + "recipes/" + str(entry.get("id", "unknown")) + ".tres"
 		if not _should_process(str(entry.get("id")), path, target): continue
 		
 		var res = _get_or_create_resource(path, script)
-		res.element_name = str(entry.get("name", "Unnamed"))
-		if entry.has("color"): res.color = Color(entry["color"])
-		if entry.has("reactions") and entry["reactions"] is Dictionary: res.reaction_rules = entry["reactions"]
-		if entry.has("effects") and entry["effects"] is Dictionary: res.effect_data = entry["effects"]
+		res.recipe_name = str(entry.get("name", "Recipe"))
+		res.category = str(entry.get("category", "assembly"))
+		res.craft_time = entry.get("time", 1.0)
+		res.tier = int(entry.get("tier", 1))
+		
+		# --- Process Inputs ---
+		var inputs_array = []
+		if entry.has("inputs") and entry["inputs"] is Dictionary:
+			for k in entry["inputs"]:
+				var r = _resolve_resource_id(str(k))
+				if r:
+					inputs_array.append({ "resource": r, "count": int(entry["inputs"][k]) })
+		res.inputs = inputs_array
+
+		# --- Process Outputs ---
+		var outputs_array = []
+		# Support legacy single output fields for convenience
+		if entry.has("output"):
+			var r = _resolve_resource_id(str(entry["output"]))
+			if r:
+				var count = int(entry.get("count", 1))
+				outputs_array.append({ "resource": r, "count": count })
+		# Support explicit outputs map (overrides single if present)
+		if entry.has("outputs") and entry["outputs"] is Dictionary:
+			outputs_array.clear()
+			for k in entry["outputs"]:
+				var r = _resolve_resource_id(str(k))
+				if r:
+					outputs_array.append({ "resource": r, "count": int(entry["outputs"][k]) })
+		
+		res.outputs = outputs_array
+
 		ResourceSaver.save(res, path)
 
 func _import_items(list, target):
@@ -329,21 +237,36 @@ func _import_items(list, target):
 		if not entry is Dictionary: continue
 		var path = RESOURCE_BASE_PATH + "items/" + str(entry.get("id", "unknown")) + ".tres"
 		if not _should_process(str(entry.get("id")), path, target): continue
-		
 		var res = _get_or_create_resource(path, script)
 		res.item_name = str(entry.get("name", "Unnamed"))
 		if entry.has("texture") and ResourceLoader.exists(entry["texture"]):
 			res.icon = load(entry["texture"])
-		
 		if entry.has("item_data") and entry["item_data"] is Dictionary:
 			var d = entry["item_data"]
 			res.damage = d.get("damage", 0.0)
 			res.stack_size = d.get("stack", 50)
 			res.modifiers = d.get("modifiers", {})
+			res.element_units = int(d.get("element_units", 1))
+			res.ignore_element_cooldown = bool(d.get("ignore_element_cd", false))
 			if d.has("element"):
 				var ep = RESOURCE_BASE_PATH + "elements/" + str(d["element"]) + ".tres"
 				if ResourceLoader.exists(ep): res.element = load(ep)
-
+				else: res.element = null
+		
+		# Tool Data
+		if entry.has("tool_data") and entry["tool_data"] is Dictionary:
+			var td = entry["tool_data"]
+			res.is_tool = true
+			res.tool_type = td.get("type", "none")
+			res.action_time = float(td.get("time", 1.0))
+			var off = td.get("offset", [0, 0, 0])
+			if off.size() >= 3:
+				res.highlight_offset = Vector3(off[0], off[1], off[2])
+			else:
+				res.highlight_offset = Vector3.ZERO
+		else:
+			res.is_tool = false
+		
 		if entry.has("ore_generation") and entry["ore_generation"] is Dictionary:
 			var gen = entry["ore_generation"]
 			res.is_ore = true
@@ -353,101 +276,47 @@ func _import_items(list, target):
 			res.rarity = float(gen.get("rarity", 0.0))
 		else:
 			res.is_ore = false
-
 		ResourceSaver.save(res, path)
-
-func _import_recipes(list, target):
-	var script = load(RECIPE_SCRIPT)
-	for entry in list:
-		if not entry is Dictionary: continue
-		var path = RESOURCE_BASE_PATH + "recipes/" + str(entry.get("id", "unknown")) + ".tres"
-		if not _should_process(str(entry.get("id")), path, target): continue
-		
-		var res = script.new()
-		res.recipe_name = str(entry.get("name", "Recipe"))
-		res.craft_time = entry.get("time", 1.0)
-		
-		var op = RESOURCE_BASE_PATH + "items/" + str(entry.get("output", "")) + ".tres"
-		if ResourceLoader.exists(op): 
-			res.output_item = load(op)
-			res.output_count = entry.get("count", 1)
-			
-		if entry.has("inputs") and entry["inputs"] is Dictionary and not entry["inputs"].is_empty():
-			var k = entry["inputs"].keys()[0]
-			var ip = RESOURCE_BASE_PATH + "items/" + str(k) + ".tres"
-			if ResourceLoader.exists(ip):
-				res.input_item = load(ip)
-				res.input_count = entry["inputs"][k]
-		ResourceSaver.save(res, path)
-
-# --- Scene Generators ---
 
 func _generate_building_scene(data, save_path):
 	var inst = StaticBody3D.new()
 	inst.name = str(data.get("name", "GeneratedBuilding"))
-	
-	# Add Script
 	var template_path = data.get("template")
 	if template_path and ResourceLoader.exists(template_path):
 		var temp_res = load(template_path)
 		var temp_inst = temp_res.instantiate()
 		inst.set_script(temp_inst.get_script()) 
 		temp_inst.free()
-
+	
 	var visual_parent = inst
 	var logic = data.get("logic", {})
-	
 	if logic.get("rotates", false):
 		var rot = Node3D.new()
 		rot.name = "Rotatable"
 		inst.add_child(rot)
 		visual_parent = rot
-
-	# Handle Structure vs Single Block Visuals
-	var layout_config: Array[Vector2i] = []
 	
+	var layout_config: Array[Vector2i] = []
 	if data.has("structure"):
 		var structure_list = data["structure"]
 		var pivot_shift = Vector2i.ZERO
-		var found_center = false
-		
-		# Pass 1: Find Center
 		for part in structure_list:
 			if part.get("is_center", false):
 				var off = part.get("offset", [0, 0])
 				pivot_shift = Vector2i(off[0], off[1])
-				found_center = true
 				break
-		
-		if not found_center and not structure_list.is_empty():
-			print("Warning: No 'is_center' defined for %s. Defaulting to first block." % data.get("name"))
-			var off = structure_list[0].get("offset", [0, 0])
-			pivot_shift = Vector2i(off[0], off[1])
-
-		# Pass 2: Generate
 		var idx = 0
 		for part in structure_list:
 			var raw_offset = part.get("offset", [0, 0])
-			# Calculate final offset relative to the designated center
 			var final_offset = Vector2i(raw_offset[0], raw_offset[1]) - pivot_shift
-			
-			var tex = part.get("texture", "")
-			var part_rot = part.get("rotation", 0)
-			
 			layout_config.append(final_offset)
-			
-			# 3D Position: X=final_offset.x, Z=final_offset.y. Y=0 (floor)
 			var pos_offset = Vector3(final_offset.x, 0, final_offset.y)
-			
-			# Create Visual Mesh
 			var mi = MeshInstance3D.new()
 			mi.name = "Block_%d" % idx
-			mi.mesh = _create_advanced_block_mesh(tex, Vector3(1, 1, 1), false, true)
+			mi.mesh = _create_advanced_block_mesh(part.get("texture", ""), Vector3(1, 1, 1), false, true)
 			mi.position = pos_offset
-			mi.rotation_degrees.y = part_rot
+			mi.rotation_degrees.y = part.get("rotation", 0)
 			visual_parent.add_child(mi)
-			
-			# Create Individual Collision Shape for this block
 			var col = CollisionShape3D.new()
 			col.name = "Collision_%d" % idx
 			var shape = BoxShape3D.new()
@@ -455,14 +324,10 @@ func _generate_building_scene(data, save_path):
 			col.position = pos_offset + Vector3(0, 0.5, 0)
 			col.shape = shape
 			inst.add_child(col)
-			
 			idx += 1
 	else:
-		# Single block legacy logic
 		_add_visuals(visual_parent, data.get("visuals", {}))
 		layout_config.append(Vector2i.ZERO)
-		
-		# Single Collision
 		var col = CollisionShape3D.new()
 		col.name = "CollisionShape3D"
 		var shape = BoxShape3D.new()
@@ -474,16 +339,12 @@ func _generate_building_scene(data, save_path):
 		elif data.has("dimensions"):
 			width = data["dimensions"][0]
 			height = data["dimensions"][2] 
-		
 		shape.size = Vector3(width, 1, height)
 		col.position = Vector3((width - 1) * 0.5, 0.5, (height - 1) * 0.5)
 		col.shape = shape
 		inst.add_child(col)
 
-	# Set the layout config for the building script
 	_apply_param(inst, "layout_config", layout_config)
-
-	# Components
 	if logic.get("targeting", false):
 		var tac = _add_component(inst, COMP_TARGET, "TargetAcquirerComponent")
 		tac.target_layers = 1
@@ -496,18 +357,18 @@ func _generate_building_scene(data, save_path):
 		c.shape = s
 		area.add_child(c)
 		tac.add_child(area)
+	
+	if logic.get("processing", false):
+		_add_component(inst, COMP_CRAFTER, "CrafterComponent")
 
 	if logic.get("emit_projectile", false) or logic.get("shooting", false):
 		_add_component(inst, COMP_SHOOTER, "ShooterComponent")
 		var shoot = inst.get_node("ShooterComponent")
 		shoot.fire_point_path = NodePath("../Rotatable/ProjectileOrigin") 
-		
 		var marker = Marker3D.new()
 		marker.name = "ProjectileOrigin"
 		marker.position = Vector3(0, 0.5, 0.6)
 		visual_parent.add_child(marker)
-	
-	# Inventory Component
 	if logic.has("inventory") and logic["inventory"] is Dictionary:
 		var inv_data = logic["inventory"]
 		var inv = _add_component(inst, COMP_INVENTORY, "InventoryComponent")
@@ -516,44 +377,38 @@ func _generate_building_scene(data, save_path):
 		inv.can_receive = inv_data.get("can_receive", true)
 		inv.can_output = inv_data.get("can_output", true)
 		inv.omni_directional = inv_data.get("omni", false)
-		
-		# Fix for Array assignment error using generic Array intermediate
 		if inv_data.has("whitelist") and inv_data["whitelist"] is Array:
 			var allowed: Array[Resource] = []
 			for item_id in inv_data["whitelist"]:
 				var p = RESOURCE_BASE_PATH + "items/" + str(item_id) + ".tres"
-				if ResourceLoader.exists(p):
-					allowed.append(load(p))
-			if not allowed.is_empty():
-				inv.set("allowed_items", allowed)
-		
+				if ResourceLoader.exists(p): allowed.append(load(p))
+			if not allowed.is_empty(): inv.set("allowed_items", allowed)
 		if inv_data.has("blacklist") and inv_data["blacklist"] is Array:
 			var denied: Array[Resource] = []
 			for item_id in inv_data["blacklist"]:
 				var p = RESOURCE_BASE_PATH + "items/" + str(item_id) + ".tres"
-				if ResourceLoader.exists(p):
-					denied.append(load(p))
-			if not denied.is_empty():
-				inv.set("denied_items", denied)
+				if ResourceLoader.exists(p): denied.append(load(p))
+			if not denied.is_empty(): inv.set("denied_items", denied)
+	
+	_add_component(inst, COMP_ELEMENTAL, "ElementalComponent")
 	
 	_apply_logic_params(inst, data)
-	# Apply defaults for IO if present in data, otherwise handled by script init using defaults
 	if logic.has("io_config"):
 		var io = logic["io_config"]
 		var i_mask = _parse_io_mask(io.get("input", ["all"]))
 		var o_mask = _parse_io_mask(io.get("output", ["all"]))
 		_apply_param(inst, "default_input_mask", i_mask)
 		_apply_param(inst, "default_output_mask", o_mask)
-
 	_save_scene(inst, save_path)
 
 func _generate_enemy_scene(data, save_path):
 	var inst = CharacterBody3D.new()
 	inst.name = str(data.get("name", "GeneratedEnemy"))
 	inst.set_script(load(ENTITY_ENEMY_SCRIPT))
-	
 	var asset_path = data.get("scene_path", "")
-	if asset_path != "" and ResourceLoader.exists(asset_path):
+	# Avoid trying to load itself if we are regenerating the very scene path we are saving to
+	# We rely on new generation here, so we skip loading asset_path if it equals save_path
+	if asset_path != "" and asset_path != save_path and ResourceLoader.exists(asset_path):
 		var asset_scene = load(asset_path)
 		var asset_inst = asset_scene.instantiate()
 		asset_inst.name = "ModelContainer"
@@ -563,28 +418,24 @@ func _generate_enemy_scene(data, save_path):
 		mi.name = "ModelFallback"
 		mi.mesh = CapsuleMesh.new()
 		inst.add_child(mi)
-
 	var col = CollisionShape3D.new()
 	col.name = "CollisionShape3D"
 	col.shape = CapsuleShape3D.new()
 	col.position = Vector3(0, 1.0, 0)
 	inst.add_child(col)
-	
 	_add_component(inst, COMP_HEALTH, "HealthComponent")
 	var att = _add_component(inst, COMP_ATTACKER, "AttackerComponent")
-	
 	var t = Timer.new()
 	t.name = "AttackTimer"
 	att.add_child(t)
 	
+	_add_component(inst, COMP_ELEMENTAL, "ElementalComponent")
+	
 	_apply_logic_params(inst, data)
 	_save_scene(inst, save_path)
 
-# --- Helper Methods ---
-
 func _add_visuals(parent, vdata):
 	var visual_type = vdata.get("type", "sprite")
-	
 	if visual_type == "block":
 		var mi = MeshInstance3D.new()
 		mi.name = "BlockVisual"
@@ -592,7 +443,6 @@ func _add_visuals(parent, vdata):
 		if vdata.has("dimensions"):
 			var d = vdata["dimensions"]
 			dims = Vector3(d[0], d[1], d[2])
-		
 		mi.mesh = _create_advanced_block_mesh(vdata.get("texture", ""), dims, false, true)
 		mi.position = Vector3.ZERO
 		parent.add_child(mi)
@@ -606,18 +456,30 @@ func _add_visuals(parent, vdata):
 		_process_3d_sprite_frames(spr, vdata)
 
 func _add_component(parent, script_path, _name):
-	var node = load(script_path).new()
+	var script = load(script_path)
+	if not script:
+		return null
+	if not script.has_method("new"):
+		return null
+	var node = script.new()
 	node.name = _name
 	parent.add_child(node)
 	return node
 
 func _apply_logic_params(inst, data):
 	var logic = data.get("logic", {})
-	if logic.has("health") and inst.has_node("HealthComponent"): 
-		_apply_param(inst, "HealthComponent:max_health", logic["health"])
-	if logic.has("power_cost") and inst.has_node("PowerConsumerComponent"): 
-		_apply_param(inst, "PowerConsumerComponent:power_consumption", logic["power_cost"])
-	
+	if logic.has("health"):
+		if "max_health" in inst: _apply_param(inst, "max_health", logic["health"])
+		elif inst.has_node("HealthComponent"): _apply_param(inst, "HealthComponent:max_health", logic["health"])
+	if logic.has("defense"):
+		if inst.has_node("HealthComponent"): _apply_param(inst, "HealthComponent:defense", logic["defense"])
+	if logic.has("magical_defense"):
+		if inst.has_node("HealthComponent"): _apply_param(inst, "HealthComponent:magical_defense", logic["magical_defense"])
+	if logic.has("elemental_cd"):
+		if inst.has_node("ElementalComponent"): _apply_param(inst, "ElementalComponent:elemental_cd", logic["elemental_cd"])
+	if logic.has("power_cost"):
+		if "power_consumption" in inst: _apply_param(inst, "power_consumption", logic["power_cost"])
+		elif inst.has_node("PowerConsumerComponent"): _apply_param(inst, "PowerConsumerComponent:power_consumption", logic["power_cost"])
 	if data.has("params"):
 		for k in data["params"]: _apply_param(inst, k, data["params"][k])
 
@@ -642,22 +504,16 @@ func _apply_param(node, key, val):
 
 func _create_mesh_item_in_library(lib: MeshLibrary, id: int, block_name: String, base_path: String, size: Vector3, is_on: bool):
 	var mesh = _create_advanced_block_mesh(base_path, size, is_on, false)
-	
 	var target_id = id
 	var exists = false
-	
 	for ex_id in lib.get_item_list():
 		if lib.get_item_name(ex_id) == block_name:
 			target_id = ex_id
 			exists = true
 			break
-			
-	if not exists:
-		lib.create_item(target_id)
-		
+	if not exists: lib.create_item(target_id)
 	lib.set_item_name(target_id, block_name)
 	lib.set_item_mesh(target_id, mesh)
-	
 	var shape = BoxShape3D.new()
 	shape.size = size
 	lib.set_item_shapes(target_id, [shape, Transform3D.IDENTITY])
@@ -665,10 +521,8 @@ func _create_mesh_item_in_library(lib: MeshLibrary, id: int, block_name: String,
 func _create_advanced_block_mesh(base_path: String, size: Vector3, is_on_state: bool, align_bottom: bool) -> ArrayMesh:
 	var st = SurfaceTool.new()
 	var mesh = ArrayMesh.new()
-	
 	var ext = base_path.get_extension()
 	var base_no_ext = base_path.get_basename()
-	
 	var get_tex = func(face_suffix: String) -> String:
 		var candidates = []
 		if is_on_state: candidates.append(base_no_ext + "_" + face_suffix + "_on." + ext)
@@ -678,7 +532,6 @@ func _create_advanced_block_mesh(base_path: String, size: Vector3, is_on_state: 
 		for p in candidates:
 			if ResourceLoader.exists(p): return p
 		return base_path 
-	
 	var faces = [
 		{ "name": "Top", "normal": Vector3.UP, "suffix": "top" },
 		{ "name": "Bottom", "normal": Vector3.DOWN, "suffix": "bottom" },
@@ -687,10 +540,8 @@ func _create_advanced_block_mesh(base_path: String, size: Vector3, is_on_state: 
 		{ "name": "Left", "normal": Vector3.LEFT, "suffix": "side" },
 		{ "name": "Right", "normal": Vector3.RIGHT, "suffix": "side" }
 	]
-	
 	var h = size * 0.5
 	var vert_offset = Vector3(0, h.y, 0) if align_bottom else Vector3.ZERO
-	
 	for i in range(faces.size()):
 		var face_info = faces[i]
 		var tex_path = get_tex.call(face_info.suffix)
@@ -699,7 +550,6 @@ func _create_advanced_block_mesh(base_path: String, size: Vector3, is_on_state: 
 		if ResourceLoader.exists(tex_path):
 			mat.albedo_texture = load(tex_path)
 			mat.uv1_triplanar = false 
-		
 		st.begin(Mesh.PRIMITIVE_TRIANGLES)
 		st.set_material(mat)
 		_add_face_geometry(st, face_info.normal, h, vert_offset)
@@ -755,6 +605,172 @@ func _should_process(id: String, file_path: String, _target_filter: String) -> b
 	if not ResourceLoader.exists(file_path): return true
 	return overwrite_existing
 
-func _get_or_create_resource(path, script_class):
-	if ResourceLoader.exists(path): return load(path)
-	return script_class.new()
+func _import_buildables(list, _category, target):
+	var script = load(BUILDABLE_SCRIPT)
+	for entry in list:
+		if not entry is Dictionary: continue
+		var path = RESOURCE_BASE_PATH + "buildables/" + str(entry.get("id", "unknown")) + ".tres"
+		if not _should_process(str(entry.get("id")), path, target): continue
+		
+		var res = _get_or_create_resource(path, script)
+		if "scene" in res: res.scene = null 
+
+		var new_scene_path = ""
+		if entry.has("template") and (entry.has("visuals") or entry.has("structure")):
+			new_scene_path = SCENE_BUILDABLES_PATH + str(entry.get("id")) + ".tscn"
+			_generate_building_scene(entry, new_scene_path)
+			
+		res.buildable_name = str(entry.get("name", "Unnamed"))
+		res.description = str(entry.get("description", ""))
+		
+		var tex_path = ""
+		if entry.has("structure") and not entry["structure"].is_empty():
+			tex_path = entry["structure"][0].get("texture", "")
+		elif entry.has("texture"): tex_path = entry["texture"]
+		elif entry.has("visuals") and entry["visuals"].has("texture"): tex_path = entry["visuals"]["texture"]
+		
+		if tex_path != "" and ResourceLoader.exists(tex_path):
+			res.icon = load(tex_path)
+		
+		res.width = 1
+		res.height = 1
+		if entry.has("grid") and entry["grid"] is Dictionary:
+			res.width = entry["grid"].get("width", 1)
+			res.height = entry["grid"].get("height", 1)
+			res.layer = 0 if entry["grid"].get("layer") == "wire" else 1
+		elif entry.has("structure"):
+			var min_x = 0; var max_x = 0; var min_z = 0; var max_z = 0
+			for part in entry["structure"]:
+				var off = part.get("offset", [0,0])
+				min_x = min(min_x, off[0]); max_x = max(max_x, off[0])
+				min_z = min(min_z, off[1]); max_z = max(max_z, off[1])
+			res.width = (max_x - min_x) + 1
+			res.height = (max_z - min_z) + 1
+		elif entry.has("visuals") and entry["visuals"].has("width") and entry["visuals"].has("height"):
+			var w_px = entry["visuals"].get("width", 32)
+			var h_px = entry["visuals"].get("height", 32)
+			res.width = max(1, int(w_px / 32))
+			res.height = max(1, int(h_px / 32))
+			
+		if entry.has("logic") and entry["logic"] is Dictionary:
+			res.has_input = entry["logic"].get("has_input", false)
+			res.has_output = entry["logic"].get("has_output", false)
+			var io_config = entry["logic"].get("io_config", {})
+			res.default_input_mask = _parse_io_mask(io_config.get("input", ["all"]))
+			res.default_output_mask = _parse_io_mask(io_config.get("output", ["all"]))
+		
+		res.display_offset = Vector2.ZERO 
+		if new_scene_path != "":
+			res.scene = ResourceLoader.load(new_scene_path, "", ResourceLoader.CACHE_MODE_REPLACE)
+		ResourceSaver.save(res, path)
+
+func _parse_io_mask(directions_array: Array) -> int:
+	var mask = 0
+	if "all" in directions_array: return 15
+	if "none" in directions_array: return 0
+	for d in directions_array:
+		match d:
+			"back", "down": mask |= (1 << 0)
+			"left": mask |= (1 << 1)
+			"front", "up": mask |= (1 << 2)
+			"right": mask |= (1 << 3)
+	return mask
+
+func _import_enemies(list, target):
+	var script = load(ENEMY_SCRIPT)
+	for entry in list:
+		if not entry is Dictionary: continue
+		var path = RESOURCE_BASE_PATH + "enemies/" + str(entry.get("id", "unknown")) + ".tres"
+		if not _should_process(str(entry.get("id")), path, target): continue
+		
+		var res = _get_or_create_resource(path, script)
+		if "scene" in res: res.scene = null
+		
+		var new_scene_path = ""
+		if entry.has("scene_path"):
+			var raw_path = entry["scene_path"]
+			if raw_path.begins_with("res://"):
+				new_scene_path = raw_path
+			else:
+				new_scene_path = SCENE_ENEMIES_PATH + str(entry.get("id")) + ".tscn"
+			_generate_enemy_scene(entry, new_scene_path)
+		
+		res.enemy_name = str(entry.get("name", "Enemy"))
+		
+		if new_scene_path != "":
+			res.scene = ResourceLoader.load(new_scene_path, "", ResourceLoader.CACHE_MODE_REPLACE)
+		elif entry.has("template") and ResourceLoader.exists(entry["template"]):
+			res.scene = load(entry["template"])
+			
+		if entry.has("logic") and entry["logic"] is Dictionary:
+			res.health = entry["logic"].get("health", 50.0)
+			res.speed = entry["logic"].get("speed", 50.0)
+			res.defense = entry["logic"].get("defense", 0.0)
+			res.magical_defense = entry["logic"].get("magical_defense", 0.0)
+			res.elemental_cd = entry["logic"].get("elemental_cd", 0.0)
+			res.elemental_resistances = entry["logic"].get("resistances", {})
+		if entry.has("params") and entry["params"] is Dictionary:
+			res.attack_damage = entry["params"].get("attack_damage", 10.0)
+			res.attack_speed = entry["params"].get("attack_speed", 1.0)
+		if entry.has("drops") and entry["drops"] is Array:
+			res.drops = entry["drops"]
+		ResourceSaver.save(res, path)
+
+func _import_blocks(list, _target):
+	var lib: MeshLibrary
+	if ResourceLoader.exists(mesh_library_path): lib = load(mesh_library_path)
+	else: lib = MeshLibrary.new()
+	_populate_library_from_list(lib, list, _target)
+	ResourceSaver.save(lib, mesh_library_path)
+
+func _import_debug_blocks(list, _target):
+	var lib: MeshLibrary
+	if ResourceLoader.exists(DEBUG_MESH_LIBRARY_PATH): lib = load(DEBUG_MESH_LIBRARY_PATH)
+	else: lib = MeshLibrary.new()
+	_populate_library_from_list(lib, list, _target)
+	ResourceSaver.save(lib, DEBUG_MESH_LIBRARY_PATH)
+
+func _populate_library_from_list(lib: MeshLibrary, list: Array, _target: String) -> void:
+	var existing_ids = lib.get_item_list()
+	var next_id = 0
+	for id in existing_ids:
+		if id >= next_id: next_id = id + 1
+	for entry in list:
+		if not entry is Dictionary: continue
+		var block_id = str(entry.get("id", "unknown"))
+		if not _should_process(block_id, "", _target): continue
+		var block_name = str(entry.get("name", "Unnamed Block"))
+		var base_texture_path = str(entry.get("texture_base", ""))
+		var size = Vector3(1, 1, 1)
+		if entry.has("dimensions") and entry["dimensions"] is Array:
+			var d = entry["dimensions"]
+			if d.size() >= 3: size = Vector3(d[0], d[1], d[2])
+		_create_mesh_item_in_library(lib, next_id, block_name, base_texture_path, size, false)
+		next_id += 1
+		if _check_texture_exists(base_texture_path, "on"):
+			var on_name = block_name + " (ON)"
+			_create_mesh_item_in_library(lib, next_id, on_name, base_texture_path, size, true)
+			next_id += 1
+
+func _import_elements(list, target):
+	var script = load(ELEMENT_SCRIPT)
+	for entry in list:
+		if not entry is Dictionary: continue
+		var path = RESOURCE_BASE_PATH + "elements/" + str(entry.get("id", "unknown")) + ".tres"
+		if not _should_process(str(entry.get("id")), path, target): continue
+		
+		var res = _get_or_create_resource(path, script)
+		res.element_name = str(entry.get("name", "Unnamed"))
+		if entry.has("color"): res.color = Color(entry["color"])
+		if entry.has("duration"): res.duration = float(entry["duration"])
+		
+		if entry.has("reactions") and entry["reactions"] is Dictionary: 
+			res.reaction_rules = entry["reactions"]
+		
+		if entry.has("effects") and entry["effects"] is Dictionary: 
+			res.stat_modifiers = entry["effects"]
+			
+		# Import Cooldown
+		res.application_cooldown = float(entry.get("cooldown", 0.0))
+			
+		ResourceSaver.save(res, path)

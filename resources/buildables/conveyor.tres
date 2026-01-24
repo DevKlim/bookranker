@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="BuildableResource" load_steps=4 format=3 uid="uid://b8idj7bgvrli3"]
+[gd_resource type="Resource" script_class="BuildableResource" format=3 uid="uid://b8idj7bgvrli3"]
 
-[ext_resource type="Texture2D" uid="uid://bclf0y7fpxq7m" path="res://assets/buildables/conveyor.png" id="1_souto"]
+[ext_resource type="Texture2D" uid="uid://c1431rrakana5" path="res://assets/buildables/conveyor2.png" id="1_souto"]
 [ext_resource type="PackedScene" uid="uid://l0dt41vcpltn" path="res://scenes/buildables/conveyor.tscn" id="2_souto"]
 [ext_resource type="Script" uid="uid://qpm1dylmnjld" path="res://scripts/resources/buildable_resource.gd" id="3_43ptq"]
 
@@ -8,4 +8,6 @@
 script = ExtResource("3_43ptq")
 buildable_name = "Conveyor"
 icon = ExtResource("1_souto")
+default_input_mask = 1
+default_output_mask = 4
 scene = ExtResource("2_souto")

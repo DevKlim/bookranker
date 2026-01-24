@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://cfwqoaa66i5ir"]
+
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_1rbrh"]
+[ext_resource type="Texture2D" uid="uid://wjdb4xmihdl" path="res://assets/icons/light.png" id="1_d4rm7"]
+
+[resource]
+script = ExtResource("1_1rbrh")
+element_name = "Light"
+icon = ExtResource("1_d4rm7")
+application_cooldown = 0.5
+reaction_rules = {
+"igni": "plasma"
+}
+stat_modifiers = {
+"incoming_damage_mult": 0.1
+}

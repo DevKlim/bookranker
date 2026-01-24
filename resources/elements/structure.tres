@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://p3k8u1ekhxl2"]
+
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_errax"]
+
+[resource]
+script = ExtResource("1_errax")
+element_name = "Structure"
+duration = 10.0
+reaction_rules = {
+"lux": "black_hole"
+}
+stat_modifiers = {
+"max_health_mult": 0.5
+}

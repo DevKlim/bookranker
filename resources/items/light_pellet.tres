@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://besppqa5x8s0l"]
+
+[ext_resource type="Resource" uid="uid://cfwqoaa66i5ir" path="res://resources/elements/light.tres" id="1_grkcu"]
+[ext_resource type="Texture2D" uid="uid://blve3d28wxebt" path="res://assets/items/light_pellet.png" id="2_ykty6"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="3_74bv5"]
+
+[resource]
+script = ExtResource("3_74bv5")
+item_name = "Light Pellet"
+icon = ExtResource("2_ykty6")
+damage = 2.0
+element = ExtResource("1_grkcu")

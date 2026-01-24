@@ -1,16 +1,13 @@
 extends Node
 
 ## Manages the entire power grid, tracking all providers and consumers.
-## It calculates the net power and tells consumers if they have power.
+## Calculates net power and updates consumer status with robust connection checks.
 
-## Signal emitted when the grid's status is updated.
 signal grid_updated(total_power, total_demand, net_power)
 
-# Arrays to keep track of all power providers and consumers in the game.
 var providers: Array[PowerProviderComponent] = []
 var consumers: Array[PowerConsumerComponent] = []
 
-# Variables to store the calculated state of the power grid.
 var total_power_generation: float = 0.0
 var total_power_demand: float = 0.0
 var net_power: float = 0.0
@@ -21,18 +18,24 @@ var net_power: float = 0.0
 
 func _ready() -> void:
 	print("PowerGridManager Initialized.")
+	# Respond to wire network changes
 	wiring_manager.network_updated.connect(update_grid)
 
+## Updates the power state for all consumers.
 func update_grid(_arg = null) -> void:
-	# 1. Calculate total generation
+	if not is_inside_tree(): return
+	call_deferred("_process_grid_update")
+
+func _process_grid_update() -> void:
+	# 1. Total Generation
 	total_power_generation = 0.0
 	for provider in providers:
 		if is_instance_valid(provider):
 			total_power_generation += provider.power_generation
 
-	# 2. Check Consumer Eligibility (Wire Connection)
+	# 2. Check Connections
 	var eligible_consumers: Array[PowerConsumerComponent] = []
-	var disconnected_count = 0
+	var _disconnected_count = 0
 	
 	for consumer in consumers:
 		if not is_instance_valid(consumer): continue
@@ -42,14 +45,25 @@ func update_grid(_arg = null) -> void:
 		if consumer.requires_wire_connection:
 			var parent = consumer.get_parent()
 			if parent and parent is Node3D:
-				# Use LaneManager to get the logical tile of the building
-				var logic_coord = lane_manager.world_to_tile(parent.global_position)
+				# Skip if parent hasn't been placed fully (e.g. at 0,0,0 if not intended)
+				# But (0,0) is a valid tile, so we trust standard placement flow.
 				
-				# Check if the wire at this coordinate is powered (connected to source)
-				if not wiring_manager.is_powered(logic_coord):
+				var wire_found = false
+				var origin_coord = lane_manager.world_to_tile(parent.global_position)
+				
+				# Check Multi-block footprints
+				if parent.has_method("get_occupied_cells"):
+					var offsets = parent.get_occupied_cells()
+					for offset in offsets:
+						if wiring_manager.is_powered(origin_coord + offset):
+							wire_found = true
+							break
+				else:
+					if wiring_manager.is_powered(origin_coord):
+						wire_found = true
+				
+				if not wire_found:
 					is_eligible = false
-					# Optional: Debug only if we suspect issues
-					# print("PowerGrid: %s at %s is disconnected from power source." % [parent.name, logic_coord])
 			else:
 				is_eligible = false
 		
@@ -57,22 +71,18 @@ func update_grid(_arg = null) -> void:
 			eligible_consumers.append(consumer)
 		else:
 			consumer.set_power_status(false)
-			disconnected_count += 1
+			_disconnected_count += 1
 
 	# 3. Calculate Demand
 	total_power_demand = 0.0
 	for consumer in eligible_consumers:
 		total_power_demand += consumer.power_consumption
 
-	# 4. Determine Grid Status
+	# 4. Determine Status
 	net_power = total_power_generation - total_power_demand
 	var has_sufficient_main_power: bool = net_power >= 0
 	
-	print("--- Power Grid Update ---")
-	print("Gen: %.1f | Demand: %.1f | Net: %.1f" % [total_power_generation, total_power_demand, net_power])
-	print("Consumers: %d Total | %d Eligible | %d Disconnected" % [consumers.size(), eligible_consumers.size(), disconnected_count])
-
-	# 5. Apply Status
+	# Apply Status
 	for consumer in eligible_consumers:
 		consumer.set_power_status(has_sufficient_main_power)
 		

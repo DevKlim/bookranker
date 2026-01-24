@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://bh8pqaoiqnouh"]
+
+[ext_resource type="Resource" uid="uid://cj5yq1wbhxj3n" path="res://resources/elements/magne.tres" id="1_tmqkd"]
+[ext_resource type="Texture2D" uid="uid://bwkq7jym1ble2" path="res://assets/items/magne_pellet.png" id="2_tmynk"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="3_oyijr"]
+
+[resource]
+script = ExtResource("3_oyijr")
+item_name = "Magne Pellet"
+icon = ExtResource("2_tmynk")
+damage = 2.0
+element = ExtResource("1_tmqkd")

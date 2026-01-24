@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://b4yvu6ghvn656"]
+
+[ext_resource type="Resource" uid="uid://bocnm61fjtt88" path="res://resources/elements/aero.tres" id="1_32lef"]
+[ext_resource type="Texture2D" uid="uid://cpiiphf5b5gfr" path="res://assets/items/aero_pellet.png" id="2_75dtx"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="3_65qeb"]
+
+[resource]
+script = ExtResource("3_65qeb")
+item_name = "Aero Pellet"
+icon = ExtResource("2_75dtx")
+damage = 2.0
+element = ExtResource("1_32lef")

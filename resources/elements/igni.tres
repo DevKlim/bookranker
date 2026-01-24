@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://d1xx6pi3kbvyn"]
+
+[ext_resource type="Texture2D" uid="uid://dmvlqg44qx41w" path="res://assets/icons/igni.png" id="1_e3ulj"]
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_f5f6t"]
+
+[resource]
+script = ExtResource("1_f5f6t")
+element_name = "Igni"
+icon = ExtResource("1_e3ulj")
+color = Color(1, 0.27058825, 0, 1)
+application_cooldown = 0.2
+reaction_rules = {
+"aero": "tailwind",
+"aqua": "extinguish",
+"chem": "pollute",
+"magne": "fuse",
+"tera": "scorch",
+"volt": "light"
+}
+stat_modifiers = {
+"damage_mult": 0.02,
+"incoming_damage_mult": 0.0
+}

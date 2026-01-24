@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://b20b7i5mod8oo"]
+
+[ext_resource type="Resource" uid="uid://d1xx6pi3kbvyn" path="res://resources/elements/igni.tres" id="1_i7ayh"]
+[ext_resource type="Texture2D" uid="uid://c4i2dyiixka3i" path="res://assets/items/igni_pellet.png" id="2_esjho"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="3_qlnol"]
+
+[resource]
+script = ExtResource("3_qlnol")
+item_name = "Igni Pellet"
+icon = ExtResource("2_esjho")
+damage = 2.0
+element = ExtResource("1_i7ayh")

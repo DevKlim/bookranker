@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="BuildableResource" load_steps=4 format=3 uid="uid://fibg44odnwpl"]
+[gd_resource type="Resource" script_class="BuildableResource" format=3 uid="uid://fibg44odnwpl"]
 
 [ext_resource type="Texture2D" uid="uid://cub3q6laxvbq2" path="res://assets/buildables/burnace.png" id="1_6mtcf"]
 [ext_resource type="PackedScene" uid="uid://c12t6lk1mnjpn" path="res://scenes/buildables/burnace.tscn" id="2_6mtcf"]

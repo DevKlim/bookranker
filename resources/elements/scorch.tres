@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://cblv4j3v64wxv"]
+
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_tc28o"]
+
+[resource]
+script = ExtResource("1_tc28o")
+element_name = "Scorch"
+color = Color(0.54509807, 0, 0, 1)
+duration = 8.0
+application_cooldown = 0.5
+stat_modifiers = {
+"defense_flat": -5.0
+}
