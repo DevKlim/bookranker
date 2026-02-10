@@ -4,9 +4,17 @@ extends Node
 
 signal mode_changed(is_creative)
 signal equipped_item_changed(item)
+signal player_selection_changed(is_selected)
 
-var player_inventory: InventoryComponent
+# Renamed to game_inventory to distinguish from the Player Entity's local inventory component
+var game_inventory: InventoryComponent
 var crafter: CrafterComponent
+var player_entity: Node = null # Reference to the actual player entity
+var is_player_selected: bool = false:
+	set(value):
+		if is_player_selected != value:
+			is_player_selected = value
+			emit_signal("player_selection_changed", is_player_selected)
 
 var equipped_item: ItemResource = null:
 	set(value):
@@ -23,14 +31,14 @@ var is_creative_mode: bool = false:
 			emit_signal("mode_changed", is_creative_mode)
 
 func _ready() -> void:
-	# Initialize a persistent inventory for the player
-	player_inventory = InventoryComponent.new()
-	player_inventory.name = "PlayerInventory"
-	player_inventory.max_slots = 40 # 10 Hotbar + 30 Storage
-	player_inventory.slot_capacity = 99
-	player_inventory.can_receive = true
-	player_inventory.can_output = true
-	add_child(player_inventory)
+	# Initialize a persistent inventory for the player (Backpack/Hotbar)
+	game_inventory = InventoryComponent.new()
+	game_inventory.name = "GameInventory"
+	game_inventory.max_slots = 40 # 10 Hotbar + 30 Storage
+	game_inventory.slot_capacity = 99
+	game_inventory.can_receive = true
+	game_inventory.can_output = true
+	add_child(game_inventory)
 	
 	# Initialize Player Crafter
 	crafter = CrafterComponent.new()
@@ -46,7 +54,7 @@ func request_craft(recipe: RecipeResource) -> void:
 		return
 
 	# Take away resources immediately
-	if player_inventory.consume_ingredients_for(recipe):
+	if game_inventory.consume_ingredients_for(recipe):
 		crafter.start_craft(recipe)
 
 func _on_craft_finished(recipe: RecipeResource) -> void:
@@ -56,7 +64,7 @@ func _award_recipe_outputs(recipe: RecipeResource) -> void:
 	if recipe.outputs.is_empty(): return
 	for out_entry in recipe.outputs:
 		if out_entry.get("resource") and out_entry.get("count", 0) > 0:
-			player_inventory.add_item(out_entry.resource, out_entry.count)
+			game_inventory.add_item(out_entry.resource, out_entry.count)
 
 func set_equipped_item(item: ItemResource) -> void:
 	self.equipped_item = item
@@ -65,17 +73,17 @@ func has_resources_to_build(buildable: BuildableResource) -> bool:
 	if is_creative_mode: return true
 	# For simplicity in this factory phase, the "Item" required to build
 	# is the BuildableResource itself.
-	return player_inventory.has_item_count(buildable, 1)
+	return game_inventory.has_item_count(buildable, 1)
 
 func consume_build_resource(buildable: BuildableResource) -> void:
 	if is_creative_mode: return
-	player_inventory.remove_item(buildable, 1)
+	game_inventory.remove_item(buildable, 1)
 
 ## Internal helper to wipe inventory (kept for manual use/resets)
 func _clear_all_items() -> void:
-	if player_inventory:
-		player_inventory.slots.fill(null)
-		player_inventory.emit_signal("inventory_changed")
+	if game_inventory:
+		game_inventory.slots.fill(null)
+		game_inventory.emit_signal("inventory_changed")
 	
 	# Also clear the hand to prevent holding a deleted item
 	set_equipped_item(null)

@@ -35,14 +35,17 @@ func _ready() -> void:
 		container.add_child(button)
 		_buttons.append(button)
 	
-	PlayerManager.player_inventory.inventory_changed.connect(_update_visuals)
+	PlayerManager.game_inventory.inventory_changed.connect(_update_visuals)
 	BuildManager.selected_buildable_changed.connect(_update_visuals)
 	# Listen to build mode changes to clear highlight when right-clicking/canceling
 	BuildManager.build_mode_changed.connect(_on_build_mode_changed)
 	_update_visuals()
 
 func _on_slot_pressed(index: int) -> void:
-	var slot = PlayerManager.player_inventory.slots[index]
+	# Bounds check
+	if index >= PlayerManager.game_inventory.slots.size(): return
+
+	var slot = PlayerManager.game_inventory.slots[index]
 	
 	# Deselect if clicking the same slot
 	if selected_slot_index == index:
@@ -80,19 +83,35 @@ func _on_build_mode_changed(is_building: bool) -> void:
 	# If build mode is cancelled externally (e.g. Right Click), clear slot highlight
 	if not is_building:
 		if selected_slot_index != -1:
-			var slot = PlayerManager.player_inventory.slots[selected_slot_index]
-			# If the selected item was a Buildable, we deselect it.
-			if slot and slot.item is BuildableResource:
+			# Bounds check
+			if selected_slot_index < PlayerManager.game_inventory.slots.size():
+				var slot = PlayerManager.game_inventory.slots[selected_slot_index]
+				# If the selected item was a Buildable, we deselect it.
+				if slot and slot.item is BuildableResource:
+					selected_slot_index = -1
+			else:
 				selected_slot_index = -1
 		_update_visuals()
 
 func _update_visuals(_arg = null) -> void:
-	var slots = PlayerManager.player_inventory.slots
+	var slots = PlayerManager.game_inventory.slots
 	
 	for i in range(SLOT_COUNT):
 		var button = _buttons[i]
 		var lbl = button.get_node("CountLabel")
-		var slot = slots[i]
+		
+		# Handle case where inventory is smaller than hotbar
+		var slot = null
+		if i < slots.size():
+			slot = slots[i]
+		else:
+			# Slot is disabled/locked/non-existent
+			button.icon = null
+			button.text = "X"
+			lbl.text = ""
+			button.tooltip_text = "Locked Slot"
+			button.modulate = Color(0.5, 0.5, 0.5, 0.5)
+			continue
 		
 		if slot:
 			button.icon = slot.item.icon
@@ -115,7 +134,9 @@ func _update_visuals(_arg = null) -> void:
 # --- Drag and Drop Logic ---
 
 func _get_slot_drag_data(_pos, index: int) -> Variant:
-	var slot = PlayerManager.player_inventory.slots[index]
+	if index >= PlayerManager.game_inventory.slots.size(): return null
+
+	var slot = PlayerManager.game_inventory.slots[index]
 	if not slot: return null
 	
 	var preview = TextureRect.new()
@@ -127,7 +148,7 @@ func _get_slot_drag_data(_pos, index: int) -> Variant:
 	
 	return { 
 		"type": "inventory_drag", 
-		"inventory": PlayerManager.player_inventory, 
+		"inventory": PlayerManager.game_inventory, 
 		"slot_index": index, 
 		"item": slot.item, 
 		"count": slot.count 
@@ -138,7 +159,9 @@ func _can_drop(_pos, data) -> bool:
 	return data.type in ["creative_spawn", "inventory_drag"]
 
 func _drop(_pos, data, index: int) -> void:
-	var inv = PlayerManager.player_inventory
+	var inv = PlayerManager.game_inventory
+	# Prevent dropping into locked/non-existent slots
+	if index >= inv.slots.size(): return
 	
 	if data.type == "creative_spawn":
 		var res = data.resource

@@ -79,13 +79,12 @@ metadata/_custom_type_script = "uid://cgqs7pvpbdrdo"
 [node name="BuildPreview" type="Node3D" parent="." unique_id=1336234951]
 
 [node name="GameUI" parent="." unique_id=1261807733 instance=ExtResource("5_53nla")]
-visible = true
 
 [node name="DataImporter" type="Node" parent="." unique_id=477849547]
 script = ExtResource("7_nxtc6")
-target_category = "Recipes"
+target_category = "Items"
 overwrite_existing = true
-target_item_id = "draft_wire"
+target_item_id = "bent_pipe"
 
 [node name="GridMap" parent="." unique_id=786906317 instance=ExtResource("5_tbgi4")]
 

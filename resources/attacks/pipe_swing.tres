@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://c0ned2feqtm4k"]
+
+[ext_resource type="Script" uid="uid://dj7657xb6odwr" path="res://scripts/resources/attack_resource.gd" id="1_t1x8r"]
+[ext_resource type="PackedScene" uid="uid://d3yq1wbhxj3n" path="res://scenes/attacks/pipe_swing.tscn" id="2_n5m4x"]
+
+[resource]
+script = ExtResource("1_t1x8r")
+id = "pipe_swing"
+cooldown = 1.2
+base_damage = 8.0
+is_aoe = true
+visual_scene = ExtResource("2_n5m4x")
+attach_visual_to_source = true
+visual_duration = 0.4

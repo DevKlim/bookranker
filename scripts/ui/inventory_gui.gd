@@ -27,6 +27,9 @@ var cancel_recipe_btn: Button
 var recipe_scroll: ScrollContainer
 var recipe_grid: HFlowContainer
 
+# Ally/Generic Grid
+var generic_grid: GridContainer
+
 var current_inventory: InventoryComponent
 var current_context: Object = null 
 
@@ -79,13 +82,10 @@ func _ready() -> void:
 	status_hbox.add_child(fuel_slot)
 	fuel_icon = fuel_slot.get_node("Icon")
 	
-	# Create a procedural arrow texture
 	var arrow = TextureRect.new()
 	arrow.custom_minimum_size = Vector2(32, 32)
 	arrow.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	arrow.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	
-	# Procedural Gradient Arrow (Right Facing)
 	var grad = Gradient.new()
 	grad.colors = [Color.WHITE, Color.WHITE]
 	var grad_tex = GradientTexture2D.new()
@@ -95,14 +95,11 @@ func _ready() -> void:
 	grad_tex.fill = GradientTexture2D.FILL_LINEAR
 	grad_tex.fill_from = Vector2(0, 0)
 	grad_tex.fill_to = Vector2(1, 0.5) 
-	
 	if ResourceLoader.exists("res://assets/ui/arrowright.png"):
 		arrow.texture = load("res://assets/ui/arrowright.png")
 	else:
-		# Fallback: A simple rect, rotated to look dynamic
 		arrow.texture = grad_tex
 		arrow.modulate = Color(0.6, 0.6, 0.6)
-	
 	status_hbox.add_child(arrow)
 	
 	output_slot = _create_slot_panel()
@@ -120,6 +117,15 @@ func _ready() -> void:
 	cancel_recipe_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	cancel_recipe_btn.pressed.connect(_on_cancel_recipe)
 	machine_container.add_child(cancel_recipe_btn)
+
+	# Setup Generic Grid (for Allies or generic chests)
+	generic_grid = GridContainer.new()
+	generic_grid.columns = 5
+	generic_grid.add_theme_constant_override("h_separation", 8)
+	generic_grid.add_theme_constant_override("v_separation", 8)
+	generic_grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	generic_grid.visible = false
+	content_container.add_child(generic_grid)
 
 func _create_slot_panel() -> Panel:
 	var p = Panel.new()
@@ -167,21 +173,16 @@ func _get_slot_drag_data(_pos, data_ctx):
 		"count": count 
 	}
 
-# RENAMED to avoid virtual function conflict
 func _on_slot_can_drop(_pos, data, target_inv: InventoryComponent) -> bool:
 	if typeof(data) != TYPE_DICTIONARY or data.get("type") != "inventory_drag": 
 		return false
-	
 	if not target_inv or not target_inv.can_receive: 
 		return false
-		
 	if not target_inv.is_item_allowed(data.item):
 		return false
-		
 	return true
 
-# RENAMED to avoid virtual function conflict
-func _on_slot_drop(_pos, data, target_inv: InventoryComponent, target_slot_idx: int) -> void:
+func _on_slot_drop(_pos, data, target_inv: InventoryComponent, to_index: int) -> void:
 	var source_inv = data.inventory
 	var source_idx = data.slot_index
 	var item = data.item
@@ -192,11 +193,26 @@ func _on_slot_drop(_pos, data, target_inv: InventoryComponent, target_slot_idx: 
 	if source_inv.slots[source_idx] == null:
 		return
 
-	var remainder = target_inv.add_item(item, count)
-	var taken = count - remainder
+	# Handle Swap
+	var target_slot = target_inv.slots[to_index]
 	
-	if taken > 0:
-		source_inv.remove_item(item, taken)
+	if source_inv == target_inv:
+		# Same inventory swap
+		if target_slot == null:
+			target_inv.slots[to_index] = source_inv.slots[source_idx]
+			source_inv.slots[source_idx] = null
+		else:
+			# Stack logic omitted for brevity in swap, mostly covered by standard drag
+			var temp = target_inv.slots[to_index]
+			target_inv.slots[to_index] = source_inv.slots[source_idx]
+			source_inv.slots[source_idx] = temp
+		target_inv.inventory_changed.emit()
+	else:
+		# Cross inventory transfer
+		var remainder = target_inv.add_item(item, count)
+		var taken = count - remainder
+		if taken > 0:
+			source_inv.remove_item(item, taken)
 
 # ----------------------------------
 
@@ -237,8 +253,10 @@ func _disconnect_context_signals():
 				inv.inventory_changed.disconnect(_update_display)
 
 func _update_display(_arg = null) -> void:
+	# Machine Context Logic
 	if current_context and current_context.has_method("get_processing_icon"):
 		item_panel.hide()
+		generic_grid.hide()
 		var needs_selection = false
 		if current_context.has_method("requires_recipe_selection"):
 			needs_selection = current_context.requires_recipe_selection()
@@ -278,41 +296,81 @@ func _update_display(_arg = null) -> void:
 				fuel_slot.visible = false
 		return
 
-	# Generic Display
+	# Generic / Ally Display
 	machine_container.hide()
 	recipe_scroll.hide()
 	content_container.show()
-	item_panel.show()
+	item_panel.hide()
 	
 	if not current_inventory: 
-		_clear_generic_display()
 		return
-	
-	# Enable Drag for Generic
-	var slot = null
-	if current_inventory.slots.size() > 0: slot = current_inventory.slots[0]
-	
-	if slot != null and slot.count > 0:
-		item_icon.texture = slot.item.icon
-		item_icon.modulate = slot.item.color
-		count_label.text = str(slot.count)
-		item_panel.tooltip_text = slot.item.item_name
-	else:
-		_clear_generic_display()
 
-	# UPDATED: Use the renamed functions
-	item_panel.set_drag_forwarding(
-		Callable(self, "_get_slot_drag_data").bind({"inv": current_inventory, "slot": 0}), 
-		Callable(self, "_on_slot_can_drop").bind(current_inventory), 
-		Callable(self, "_on_slot_drop").bind(current_inventory, 0)
-	)
+	# Populate Generic Grid for Ally
+	generic_grid.show()
+	for child in generic_grid.get_children():
+		child.queue_free()
+	
+	var is_ally = (current_context and current_context.is_in_group("allies"))
+	
+	for i in range(current_inventory.slots.size()):
+		var slot_data = current_inventory.slots[i]
+		var btn = Button.new()
+		btn.custom_minimum_size = Vector2(50, 50)
+		btn.expand_icon = true
+		
+		var tooltip = ""
+		
+		# Ally Specific Slot Styling
+		if is_ally:
+			match i:
+				0: 
+					btn.modulate = Color(1.0, 0.8, 0.8) # Tool Slot Tint
+					tooltip = "[Tool] "
+				1: 
+					btn.modulate = Color(0.8, 1.0, 0.8) # Weapon Slot Tint
+					tooltip = "[Weapon] "
+				2: 
+					btn.modulate = Color(0.8, 0.8, 1.0) # Armor Slot Tint
+					tooltip = "[Armor] "
+				3: 
+					btn.modulate = Color(1.0, 1.0, 0.8) # Artifact Slot Tint
+					tooltip = "[Artifact] "
+		
+		if slot_data:
+			var item = slot_data.item
+			btn.icon = item.icon
+			if item.get("color"): btn.modulate = btn.modulate * item.color
+			
+			var lbl = Label.new()
+			lbl.text = str(slot_data.count)
+			lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			lbl.anchors_preset = Control.PRESET_BOTTOM_RIGHT
+			btn.add_child(lbl)
+			tooltip += item.item_name
+		else:
+			if is_ally:
+				match i:
+					0: btn.text = "TOOL"
+					1: btn.text = "WPN"
+					2: btn.text = "ARM"
+					3: btn.text = "ART"
+			tooltip += "Empty"
+		
+		btn.tooltip_text = tooltip
+		
+		btn.set_drag_forwarding(
+			Callable(self, "_get_slot_drag_data").bind({"inv": current_inventory, "slot": i}), 
+			Callable(self, "_on_slot_can_drop").bind(current_inventory), 
+			Callable(self, "_on_slot_drop").bind(current_inventory, i)
+		)
+		
+		generic_grid.add_child(btn)
 
 func _update_machine_io(panel: Panel, icon_rect: TextureRect, count_lbl: Label, inv: InventoryComponent, recipe: RecipeResource, is_input: bool) -> void:
 	var current_amount = 0
 	if inv and inv.slots.size() > 0 and inv.slots[0] != null:
 		current_amount = inv.slots[0].count
 	
-	# UPDATED: Use the renamed functions
 	if panel and inv:
 		panel.set_drag_forwarding(
 			Callable(self, "_get_slot_drag_data").bind({"inv": inv, "slot": 0}), 
@@ -329,21 +387,23 @@ func _update_machine_io(panel: Panel, icon_rect: TextureRect, count_lbl: Label, 
 	
 	if recipe:
 		if is_input:
-			if recipe.input_item:
-				target_icon = recipe.input_item.icon
-				target_color = recipe.input_item.color
-				required_amount = recipe.input_count
-				item_name = recipe.input_item.item_name
+			if recipe.inputs.size() > 0:
+				var entry = recipe.inputs[0] # Simplification for single-slot UI
+				target_icon = entry.resource.icon
+				if entry.resource.get("color"): target_color = entry.resource.color
+				required_amount = entry.count
+				if "item_name" in entry.resource: item_name = entry.resource.item_name
 		else:
-			if recipe.output_item:
-				target_icon = recipe.output_item.icon
-				target_color = recipe.output_item.color
-				required_amount = recipe.output_count
-				item_name = recipe.output_item.item_name
+			if recipe.outputs.size() > 0:
+				var entry = recipe.outputs[0]
+				target_icon = entry.resource.icon
+				if entry.resource.get("color"): target_color = entry.resource.color
+				required_amount = entry.count
+				if "item_name" in entry.resource: item_name = entry.resource.item_name
 	
 	if current_amount > 0 and inv.slots[0] != null:
 		icon_rect.texture = inv.slots[0].item.icon
-		icon_rect.modulate = inv.slots[0].item.color
+		if inv.slots[0].item.get("color"): icon_rect.modulate = inv.slots[0].item.color
 		icon_rect.modulate.a = 1.0
 	elif target_icon:
 		icon_rect.texture = target_icon
@@ -359,11 +419,6 @@ func _update_machine_io(panel: Panel, icon_rect: TextureRect, count_lbl: Label, 
 			count_lbl.text = "" if current_amount == 0 else str(current_amount)
 	
 	if panel: panel.tooltip_text = item_name
-
-func _clear_generic_display() -> void:
-	item_icon.texture = null
-	count_label.text = ""
-	item_panel.tooltip_text = "Empty"
 
 func _populate_recipe_grid() -> void:
 	for child in recipe_grid.get_children():
@@ -383,12 +438,13 @@ func _populate_recipe_grid() -> void:
 			btn.custom_minimum_size = Vector2(80, 80)
 			btn.expand_icon = true
 			var name_str = recipe.recipe_name
-			if recipe.output_item: name_str = recipe.output_item.item_name
+			var out = recipe.get_main_output()
+			if out: name_str = out.item_name
 			btn.tooltip_text = "%s\n(Tier %d)" % [name_str, recipe.tier]
 			
-			if recipe.output_item and recipe.output_item.icon:
-				btn.icon = recipe.output_item.icon
-				if recipe.output_item.color != Color.WHITE: btn.modulate = recipe.output_item.color
+			if out and out.icon:
+				btn.icon = out.icon
+				if out.get("color"): btn.modulate = out.color
 			else:
 				btn.text = name_str.left(4)
 			

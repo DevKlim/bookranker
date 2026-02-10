@@ -13,6 +13,8 @@ extends StaticBody3D
 var _default_material: Material
 var _transparent_material: StandardMaterial3D
 
+# Damage Visuals
+var _tint_tween: Tween
 
 ## Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -22,6 +24,7 @@ func _ready() -> void:
 		
 	# Connect to the health component's 'died' signal to handle game over.
 	health_component.died.connect(_on_died)
+	health_component.health_changed.connect(_on_health_changed)
 	
 	# Set power generation to 100 as requested
 	power_provider_component.power_generation = 100.0
@@ -69,6 +72,29 @@ func _on_died(_node_that_died) -> void:
 	GameManager.end_game(false) # player_won = false
 	# The Core disappears from the game.
 	queue_free()
+
+func _on_health_changed(new_val, old_val) -> void:
+	if new_val < old_val:
+		_flash_damage()
+
+func _flash_damage() -> void:
+	if not mesh_instance: return
+	if _tint_tween: _tint_tween.kill()
+	_tint_tween = create_tween()
+	
+	var base_col = Color(0.2, 0.5, 1.0) # Core Blue
+	if _default_material is StandardMaterial3D:
+		base_col = _default_material.albedo_color
+		
+	var damage_col = Color(1.0, 0.2, 0.2, 1.0) # Flash Red
+	
+	_tint_tween.tween_method(_apply_tint_color, damage_col, base_col, 0.3)
+
+func _apply_tint_color(col: Color) -> void:
+	# Apply to the active material override (could be default or transparent)
+	var mat = mesh_instance.material_override
+	if mat is StandardMaterial3D:
+		mat.albedo_color = col
 
 func set_transparent(is_transparent: bool) -> void:
 	if not mesh_instance: return

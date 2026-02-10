@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://nicfdaskbt0r"]
+
+[ext_resource type="Resource" uid="uid://ckf2r7qth5b1x" path="res://resources/items/circuit.tres" id="1_5m4jk"]
+[ext_resource type="Resource" uid="uid://6eqk5mgdwpgy" path="res://resources/items/gear.tres" id="2_1mlc0"]
+[ext_resource type="Resource" uid="uid://ccxtemo42mkml" path="res://resources/items/iron_alloy.tres" id="3_52vpr"]
+[ext_resource type="Resource" uid="uid://bi7wovhm4224g" path="res://resources/buildables/asourcer.tres" id="4_s4gtf"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="5_aienu"]
+
+[resource]
+script = ExtResource("5_aienu")
+category = "basic"
+recipe_name = "Asourcer"
+craft_time = 3.0
+inputs = [{
+"count": 2,
+"resource": ExtResource("1_5m4jk")
+}, {
+"count": 8,
+"resource": ExtResource("2_1mlc0")
+}, {
+"count": 8,
+"resource": ExtResource("3_52vpr")
+}]
+outputs = [{
+"count": 1,
+"resource": ExtResource("4_s4gtf")
+}]

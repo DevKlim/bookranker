@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://cqfbvwuayxlk"]
+
+[ext_resource type="Resource" uid="uid://cj5yq1wbhxj3n" path="res://resources/elements/magne.tres" id="1_s4udh"]
+[ext_resource type="Texture2D" uid="uid://cfhokau5n8750" path="res://assets/items/hand_drill.png" id="2_k4b0d"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="3_8qyv2"]
+
+[resource]
+script = ExtResource("3_8qyv2")
+item_name = "Drill Bit"
+icon = ExtResource("2_k4b0d")
+damage = 5.0
+element = ExtResource("1_s4udh")

@@ -13,6 +13,6 @@ inputs = [{
 "resource": ExtResource("1_6owia")
 }]
 outputs = [{
-"count": 2,
+"count": 3,
 "resource": ExtResource("2_xaelf")
 }]

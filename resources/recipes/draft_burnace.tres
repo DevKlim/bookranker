@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://dh5fo1m0vxyor"]
 
 [ext_resource type="Resource" uid="uid://f2yu5yfckp4d" path="res://resources/items/stone.tres" id="1_v6ovd"]
-[ext_resource type="Resource" uid="uid://b20b7i5mod8oo" path="res://resources/items/igni_pellet.tres" id="2_iuk3g"]
+[ext_resource type="Resource" uid="uid://biw6jmu3536df" path="res://resources/items/lux.tres" id="2_iuk3g"]
 [ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="2_p6bg4"]
 [ext_resource type="Resource" uid="uid://fibg44odnwpl" path="res://resources/buildables/burnace.tres" id="3_k6nxe"]
 
@@ -10,7 +10,7 @@ script = ExtResource("2_p6bg4")
 category = "basic"
 recipe_name = "Burnace"
 inputs = [{
-"count": 10,
+"count": 12,
 "resource": ExtResource("1_v6ovd")
 }, {
 "count": 1,

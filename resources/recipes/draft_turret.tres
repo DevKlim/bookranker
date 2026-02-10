@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://cor146eyau1md"]
+
+[ext_resource type="Resource" uid="uid://f2yu5yfckp4d" path="res://resources/items/stone.tres" id="1_m2qgl"]
+[ext_resource type="Resource" uid="uid://ccxtemo42mkml" path="res://resources/items/iron_alloy.tres" id="2_girmy"]
+[ext_resource type="Resource" uid="uid://cw1gqh7dw6wm7" path="res://resources/items/copper_alloy.tres" id="3_v32jd"]
+[ext_resource type="Resource" uid="uid://6eqk5mgdwpgy" path="res://resources/items/gear.tres" id="4_mm0nd"]
+[ext_resource type="Resource" uid="uid://qy84r7b6lnkr" path="res://resources/buildables/turret.tres" id="5_a5sj0"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="6_8r0ip"]
+
+[resource]
+script = ExtResource("6_8r0ip")
+category = "basic"
+recipe_name = "Turret"
+craft_time = 3.0
+inputs = [{
+"count": 12,
+"resource": ExtResource("1_m2qgl")
+}, {
+"count": 8,
+"resource": ExtResource("2_girmy")
+}, {
+"count": 8,
+"resource": ExtResource("3_v32jd")
+}, {
+"count": 8,
+"resource": ExtResource("4_mm0nd")
+}]
+outputs = [{
+"count": 1,
+"resource": ExtResource("5_a5sj0")
+}]

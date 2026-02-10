@@ -1,0 +1,44 @@
+[gd_scene format=3 uid="uid://ncmb8rjnansq"]
+
+[ext_resource type="Script" uid="uid://ctpvoct0f4u8e" path="res://scripts/entities/ally.gd" id="1_w6dnk"]
+[ext_resource type="Resource" uid="uid://cjc5yksr34hnh" path="res://resources/allies/player.tres" id="2_ebyhe"]
+[ext_resource type="Script" uid="uid://duudv3f6u8n6m" path="res://scripts/components/health_component.gd" id="2_s5oq4"]
+[ext_resource type="Script" uid="uid://c6lfioqpkvor7" path="res://scripts/components/move_component.gd" id="3_ebyhe"]
+[ext_resource type="Script" uid="uid://dad3f8h2j4k5l" path="res://scripts/components/inventory_component.gd" id="4_utbb3"]
+[ext_resource type="Script" uid="uid://dg4gfri6lu5o2" path="res://scripts/components/elemental_component.gd" id="5_msu75"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_w6dnk"]
+albedo_color = Color(0.2, 0.6, 1, 1)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_s5oq4"]
+material = SubResource("StandardMaterial3D_w6dnk")
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_ebyhe"]
+radius = 0.25
+
+[node name="Player" type="CharacterBody3D" unique_id=1074419252]
+collision_layer = 4
+script = ExtResource("1_w6dnk")
+stats = ExtResource("2_ebyhe")
+
+[node name="Visual" type="MeshInstance3D" parent="." unique_id=69151728]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+mesh = SubResource("CapsuleMesh_s5oq4")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1930312955]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("CapsuleShape3D_ebyhe")
+
+[node name="HealthComponent" type="Node" parent="." unique_id=718692455]
+script = ExtResource("2_s5oq4")
+
+[node name="MoveComponent" type="Node" parent="." unique_id=620583816]
+script = ExtResource("3_ebyhe")
+stop_distance = 0.1
+
+[node name="InventoryComponent" type="Node" parent="." unique_id=1492466593]
+script = ExtResource("4_utbb3")
+max_slots = 40
+
+[node name="ElementalComponent" type="Node" parent="." unique_id=1087034252]
+script = ExtResource("5_msu75")

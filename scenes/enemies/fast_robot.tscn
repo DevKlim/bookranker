@@ -3,30 +3,34 @@
 [ext_resource type="Script" uid="uid://87pk5o5eu28v" path="res://scripts/entities/enemy.gd" id="1_0e8et"]
 [ext_resource type="Script" uid="uid://duudv3f6u8n6m" path="res://scripts/components/health_component.gd" id="2_5liak"]
 [ext_resource type="Script" uid="uid://bw7f6w3g67r4d" path="res://scripts/components/attacker_component.gd" id="3_064wh"]
+[ext_resource type="Script" uid="uid://c6lfioqpkvor7" path="res://scripts/components/move_component.gd" id="4_5liak"]
 [ext_resource type="Script" uid="uid://dg4gfri6lu5o2" path="res://scripts/components/elemental_component.gd" id="4_n6ldx"]
 
-[sub_resource type="CapsuleMesh" id="CapsuleMesh_0e8et"]
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_5liak"]
 
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_5liak"]
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_064wh"]
 
-[node name="Fast Robot" type="CharacterBody3D" unique_id=1087076518]
+[node name="Fast Robot" type="CharacterBody3D" unique_id=578231139]
 script = ExtResource("1_0e8et")
 
-[node name="ModelFallback" type="MeshInstance3D" parent="." unique_id=336866546]
-mesh = SubResource("CapsuleMesh_0e8et")
+[node name="ModelFallback" type="MeshInstance3D" parent="." unique_id=2111712175]
+mesh = SubResource("CapsuleMesh_5liak")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=917600691]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=39162751]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
-shape = SubResource("CapsuleShape3D_5liak")
+shape = SubResource("CapsuleShape3D_064wh")
 
-[node name="HealthComponent" type="Node" parent="." unique_id=1656703309]
+[node name="HealthComponent" type="Node" parent="." unique_id=2018657672]
 script = ExtResource("2_5liak")
 max_health = 30.0
 
-[node name="AttackerComponent" type="Node" parent="." unique_id=1063268592]
+[node name="AttackerComponent" type="Node" parent="." unique_id=1498310357]
 script = ExtResource("3_064wh")
 
-[node name="AttackTimer" type="Timer" parent="AttackerComponent" unique_id=696263433]
+[node name="AttackTimer" type="Timer" parent="AttackerComponent" unique_id=1265467908]
 
-[node name="ElementalComponent" type="Node" parent="." unique_id=1180276218]
+[node name="MoveComponent" type="Node" parent="." unique_id=652887692]
+script = ExtResource("4_5liak")
+
+[node name="ElementalComponent" type="Node" parent="." unique_id=917644430]
 script = ExtResource("4_n6ldx")

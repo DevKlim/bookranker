@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ClutterResource" format=3 uid="uid://bmj4pyjyx03w0"]
+
+[ext_resource type="Resource" uid="uid://f2yu5yfckp4d" path="res://resources/items/stone.tres" id="1_utu2p"]
+[ext_resource type="PackedScene" uid="uid://cwxd0imdwrfeh" path="res://scenes/clutter/rock.tscn" id="2_7awnm"]
+[ext_resource type="Script" uid="uid://d3135ippqfpyx" path="res://scripts/resources/clutter_resource.gd" id="3_7he0x"]
+
+[resource]
+script = ExtResource("3_7he0x")
+scene = ExtResource("2_7awnm")
+drop_item = ExtResource("1_utu2p")
+drop_count = 2
+min_depth = 2
+max_depth = 10
+rarity = 0.05
+guaranteed_spawns = 3

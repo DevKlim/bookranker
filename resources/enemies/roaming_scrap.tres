@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="EnemyResource" format=3 uid="uid://dsff007w8tub4"]
+
+[ext_resource type="PackedScene" uid="uid://cpsmin34hmf8u" path="res://scenes/enemies/roaming_scrap.tscn" id="1_ejcl5"]
+[ext_resource type="Script" uid="uid://bykln6bau3775" path="res://scripts/resources/enemy_resource.gd" id="2_dpj55"]
+
+[resource]
+script = ExtResource("2_dpj55")
+enemy_name = "Roaming Scrap"
+scene = ExtResource("1_ejcl5")
+health = 25.0
+speed = 35.0
+attack_damage = 2.0
+is_field_enemy = true
+field_spawn_min_depth = 10.0
+field_spawn_max_depth = 50.0
+field_spawn_interval = 8.0
+field_spawn_chance = 0.6
+max_field_spawns = 4.0
+aggro_range = 8.0
+wander_radius = 6.0
+idle_time = 5.0
+drops = [{
+"chance": 0.3,
+"item": "drill_bit"
+}, {
+"chance": 0.3,
+"item": "gear"
+}, {
+"chance": 0.1,
+"item": "lux"
+}, {
+"chance": 0.1,
+"item": "engine"
+}, {
+"chance": 0.2,
+"item": "rubber"
+}]

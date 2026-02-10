@@ -19,10 +19,41 @@ signal inventory_changed
 
 # Array of Dictionaries: { "item": Resource, "count": int } or null
 var slots: Array = []
+# Dictionary mapping slot_index (int) -> ItemResource.EquipmentType (int)
+var slot_restrictions: Dictionary = {}
 
 func _ready():
+	# Initial resize based on inspector value
+	if slots.size() != max_slots:
+		slots.resize(max_slots)
+		# Fill strictly if empty (resize fills with nulls for untyped arrays usually)
+		for i in range(slots.size()):
+			if slots[i] == null: slots[i] = null
+
+## Dynamically update slot count (e.g. from stats/upgrades)
+func set_capacity(new_count: int) -> void:
+	if new_count < 0: new_count = 0
+	if new_count == max_slots: return
+	
+	max_slots = new_count
 	slots.resize(max_slots)
-	slots.fill(null)
+	emit_signal("inventory_changed")
+
+## Defines a strict type restriction for a specific slot index.
+func set_slot_restriction(index: int, type: int) -> void:
+	slot_restrictions[index] = type
+
+## Checks if an item is allowed in a specific slot index.
+func is_allowed_in_slot(item: Resource, index: int) -> bool:
+	if not is_item_allowed(item): return false
+	
+	# Check specific slot restriction
+	if slot_restrictions.has(index):
+		if not (item is ItemResource): return false # Buildables can't be equipment
+		if item.equipment_type != slot_restrictions[index]:
+			return false
+	
+	return true
 
 func is_item_allowed(item: Resource) -> bool:
 	if not item: return false
@@ -50,10 +81,13 @@ func add_item(item: Resource, count: int = 1) -> int:
 	var cap = _get_stack_limit(item)
 	var initial_count = count
 	
-	# 1. Try to stack in existing slots
+	# 1. Try to stack in existing slots (Respecting filters)
 	for i in range(max_slots):
 		if slots[i] != null:
 			if _items_match(slots[i].item, item):
+				# Even if it matches, ensure it didn't somehow get into a restricted slot invalidly
+				if not is_allowed_in_slot(item, i): continue
+				
 				var space = cap - slots[i].count
 				if space > 0:
 					var to_add = min(space, count)
@@ -63,10 +97,13 @@ func add_item(item: Resource, count: int = 1) -> int:
 						emit_signal("inventory_changed")
 						return 0
 
-	# 2. Try empty slots
+	# 2. Try empty slots (Respecting filters)
 	if count > 0:
 		for i in range(max_slots):
 			if slots[i] == null:
+				# Check restriction before placing new item
+				if not is_allowed_in_slot(item, i): continue
+				
 				var to_add = min(cap, count)
 				slots[i] = { "item": item, "count": to_add }
 				count -= to_add
@@ -128,7 +165,8 @@ func has_space_for(item: Resource) -> bool:
 		if slots[i] != null and _items_match(slots[i].item, item):
 			if slots[i].count < cap: return true
 	for i in range(max_slots):
-		if slots[i] == null: return true
+		if slots[i] == null:
+			if is_allowed_in_slot(item, i): return true
 	return false
 
 func has_item() -> bool:

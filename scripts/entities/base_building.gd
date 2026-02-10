@@ -55,6 +55,11 @@ var is_active: bool = false
 var is_staggered: bool = false
 var stats: Dictionary = {}
 
+# Damage Visuals
+var _tint_tween: Tween
+var _tint_materials: Array[StandardMaterial3D] = []
+var _tint_sprites: Array[Node] = []
+
 func _get_main_sprite() -> AnimatedSprite3D:
 	return get_node_or_null("AnimatedSprite3D")
 
@@ -79,7 +84,26 @@ func _ready() -> void:
 	_setup_health_component()
 	_setup_inventory_component()
 	
+	# Cache visuals for damage flash
+	_cache_visual_materials(self)
+	
 	_on_power_status_changed(false)
+
+func _cache_visual_materials(node: Node) -> void:
+	if node is Sprite3D or node is AnimatedSprite3D:
+		_tint_sprites.append(node)
+	elif node is MeshInstance3D:
+		if node.mesh:
+			var surf_count = node.mesh.get_surface_count()
+			for i in range(surf_count):
+				var mat = node.get_active_material(i)
+				if not mat: mat = StandardMaterial3D.new()
+				if mat is StandardMaterial3D:
+					var unique_mat = mat.duplicate()
+					node.set_surface_override_material(i, unique_mat)
+					_tint_materials.append(unique_mat)
+	for child in node.get_children():
+		_cache_visual_materials(child)
 
 func _setup_visuals() -> void:
 	# FIX: Add offset to existing position (from Scene Editor) instead of overwriting it.
@@ -141,6 +165,28 @@ func _setup_health_component() -> void:
 	health_component.died.connect(_on_died)
 	health_component.staggered.connect(_on_staggered)
 	health_component.recovered.connect(_on_recovered)
+	health_component.health_changed.connect(_on_health_changed)
+
+func _on_health_changed(new_val, old_val) -> void:
+	if new_val < old_val:
+		_flash_damage()
+
+func _flash_damage() -> void:
+	if _tint_tween: _tint_tween.kill()
+	_tint_tween = create_tween()
+	
+	var base_col = powered_color if is_active else unpowered_color
+	# Flash reddish
+	var damage_col = Color(1.0, 0.4, 0.4, 1.0)
+	
+	_tint_tween.tween_method(_apply_tint_ratio.bind(base_col, damage_col), 1.0, 0.0, 0.3)
+
+func _apply_tint_ratio(ratio: float, base: Color, dmg: Color) -> void:
+	var final = base.lerp(dmg, ratio)
+	for s in _tint_sprites:
+		if is_instance_valid(s): s.modulate = final
+	for m in _tint_materials:
+		if is_instance_valid(m): m.albedo_color = final
 
 func _setup_inventory_component() -> void:
 	inventory_component = get_node_or_null("InventoryComponent")
@@ -150,9 +196,17 @@ func _setup_inventory_component() -> void:
 func _on_power_status_changed(has_power: bool) -> void:
 	is_active = has_power and not is_staggered
 	
+	# If currently tweening damage, rely on tween to restore color eventually
+	if _tint_tween and _tint_tween.is_running(): return
+
+	var target_col = powered_color if has_power else unpowered_color
 	var animated_sprite = _get_main_sprite()
 	if is_instance_valid(animated_sprite):
-		animated_sprite.modulate = powered_color if has_power else unpowered_color
+		animated_sprite.modulate = target_col
+	
+	# Ensure materials are updated too (for mesh buildings)
+	for m in _tint_materials:
+		if is_instance_valid(m): m.albedo_color = target_col
 	
 	set_process(is_active)
 	set_physics_process(is_active)

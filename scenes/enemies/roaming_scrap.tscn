@@ -1,0 +1,36 @@
+[gd_scene format=3 uid="uid://cpsmin34hmf8u"]
+
+[ext_resource type="Script" uid="uid://87pk5o5eu28v" path="res://scripts/entities/enemy.gd" id="1_yh6vh"]
+[ext_resource type="PackedScene" uid="uid://db5sot4awi1u2" path="res://assets/enemies/roomba.glb" id="2_rc74l"]
+[ext_resource type="Script" uid="uid://duudv3f6u8n6m" path="res://scripts/components/health_component.gd" id="2_xklfl"]
+[ext_resource type="Script" uid="uid://bw7f6w3g67r4d" path="res://scripts/components/attacker_component.gd" id="3_rc74l"]
+[ext_resource type="Script" uid="uid://c6lfioqpkvor7" path="res://scripts/components/move_component.gd" id="4_hv64t"]
+[ext_resource type="Script" uid="uid://dg4gfri6lu5o2" path="res://scripts/components/elemental_component.gd" id="5_xxmtb"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_hv64t"]
+size = Vector3(0.809, 0.1, 0.8)
+
+[node name="Roaming Scrap" type="CharacterBody3D" unique_id=3751984]
+script = ExtResource("1_yh6vh")
+
+[node name="blockbench_export" parent="." unique_id=740473271 instance=ExtResource("2_rc74l")]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 0, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=245042991]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.018554688, 0.08544922, -0.033203125)
+shape = SubResource("BoxShape3D_hv64t")
+
+[node name="HealthComponent" type="Node" parent="." unique_id=818788774]
+script = ExtResource("2_xklfl")
+max_health = 25.0
+
+[node name="AttackerComponent" type="Node" parent="." unique_id=288164335]
+script = ExtResource("3_rc74l")
+
+[node name="AttackTimer" type="Timer" parent="AttackerComponent" unique_id=1617554579]
+
+[node name="MoveComponent" type="Node" parent="." unique_id=463109827]
+script = ExtResource("4_hv64t")
+
+[node name="ElementalComponent" type="Node" parent="." unique_id=498562565]
+script = ExtResource("5_xxmtb")

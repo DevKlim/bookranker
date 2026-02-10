@@ -66,6 +66,19 @@
         { "id": "prism", "name": "Prism", "color": "#E6E6FA", "duration": 5.0, "cooldown": 0.5, "reactions": {}, "effects": {} },
         { "id": "crystal", "name": "Crystal", "color": "#D8BFD8", "duration": 10.0, "cooldown": 0.0, "reactions": {}, "effects": { "luck_stat": 10.0 } }
     ],
+    "attacks": [
+        {
+            "id": "pipe_swing",
+            "cooldown": 1.2,
+            "damage": 8.0,
+            "visual_scene": "res://scenes/attacks/pipe_swing.tscn",
+            "attach_to_source": true,
+            "min_range": 0, "max_range": 1, "is_aoe": true,
+            "spawn_point": 0,
+            "offset": [0, 0.5, 0],
+            "visual_duration": 0.4
+        }
+    ],
     "items": [
         { "id": "coal", "name": "Coal", "texture": "res://assets/ores/coal.png", "item_data": { "damage": 2.0, "element": "igni", "element_units": 1, "stack": 100 }, "ore_generation": { "block": "Coal Ore", "min_depth": 0, "max_depth": 30, "rarity": 0.1 } },
         { "id": "iron", "name": "Iron Ore", "texture": "res://assets/ores/iron.png", "item_data": { "damage": 3.0, "element": "magne", "element_units": 1, "stack": 50 }, "ore_generation": { "block": "Iron Ore", "min_depth": 0, "max_depth": 30, "rarity": 0.1 } },
@@ -83,9 +96,20 @@
         
         { "id": "rod", "name": "Iron Rod", "texture": "res://assets/items/rod.png", "item_data": { "damage": 4.0, "element": "magne", "stack": 100 } },
         { "id": "gear", "name": "Gear", "texture": "res://assets/items/gear.png", "item_data": { "damage": 4.0, "element": "magne", "stack": 100 } },
+        { 
+            "id": "bent_pipe", "name": "Bent Pipe", "texture": "res://assets/items/meshes/bent_pipe_0.png", 
+            "item_data": { "damage": 8.0, "element": "magne", "stack": 1 },
+            "equipment_type": "weapon",
+            "attack_config": "pipe_swing"
+        },
+        { "id": "engine", "name": "Engine", "texture": "res://assets/items/brass_ingot.png", "item_data": { "damage": 10.0, "element": "chem", "stack": 20 } },
+        { "id": "rubber", "name": "Rubber", "texture": "res://assets/items/slime_ball.png", "item_data": { "damage": 1.0, "element": "tera", "stack": 100 } },
+
         { "id": "cable", "name": "Cable", "texture": "res://assets/wires/wire_line.png", "item_data": { "damage": 1.0, "element": "volt", "stack": 200 } },
         { "id": "circuit", "name": "Circuit", "texture": "res://assets/items/integrated_circuit.png", "item_data": { "damage": 2.0, "element": "volt", "element_units": 2, "stack": 100 } },
         { "id": "adv_circuit", "name": "Adv. Circuit", "texture": "res://assets/items/advanced_integrated_circuit.png", "item_data": { "damage": 5.0, "element": "lux", "element_units": 3, "stack": 50 } },
+        { "id": "drill_bit", "name": "Drill Bit", "texture": "res://assets/items/hand_drill.png", "item_data": { "damage": 5.0, "element": "magne", "stack": 50 } },
+        
         { "id": "aqua_pellet", "name": "Aqua Pellet", "texture": "res://assets/items/aqua_pellet.png", "item_data": { "damage": 2.0, "element": "aqua", "element_units": 1, "stack": 50 } },
         { "id": "igni_pellet", "name": "Igni Pellet", "texture": "res://assets/items/igni_pellet.png", "item_data": { "damage": 2.0, "element": "igni", "element_units": 1, "stack": 50 } },
         { "id": "volt_pellet", "name": "Volt Pellet", "texture": "res://assets/items/volt_pellet.png", "item_data": { "damage": 2.0, "element": "volt", "element_units": 1, "stack": 50 } },
@@ -98,7 +122,16 @@
         { 
             "id": "hand_drill", "name": "Hand Drill", "texture": "res://assets/items/hand_drill.png", 
             "item_data": { "damage": 1.0, "element_units": 0, "stack": 1 },
-            "tool_data": { "type": "drill", "time": 3.0, "offset": [0, 0.5, 0] }
+            "tool_data": { "type": "drill", "time": 3.0, "offset": [0, 0.5, 0] },
+            "equipment_type": "tool"
+        }
+    ],
+    "clutter": [
+        {
+            "id": "rock", "name": "Rock", "block_texture": "res://assets/blocks/stone.png",
+            "generation": { "min_depth": 0, "max_depth": 10, "rarity": 0.2 },
+            "drops": { "item": "stone", "count": 3 },
+            "health": 10.0
         }
     ],
     "blocks": [
@@ -160,17 +193,22 @@
     ],
     "recipes": [
         { "id": "craft_hand_drill", "name": "Hand Drill", "category": "basic", "time": 0.5, "tier": 1, "output": "hand_drill", "count": 1, "inputs": { "stone": 5 } },
-        { "id": "draft_burnace", "name": "Burnace", "category": "basic", "time": 2.0, "tier": 1, "output": "burnace", "count": 1, "inputs": { "stone": 10, "igni_pellet": 1} },
-        { "id": "draft_drill", "name": "Drill", "category": "basic", "time": 2.0, "tier": 1, "output": "drill", "count": 1, "inputs": { "gear": 5, "iron_alloy": 5, "burnace": 5} },
+        { "id": "draft_burnace", "name": "Burnace", "category": "basic", "time": 2.0, "tier": 1, "output": "burnace", "count": 1, "inputs": { "stone": 12, "lux": 1 } },
+        { "id": "draft_drill", "name": "Drill", "category": "basic", "time": 2.0, "tier": 1, "output": "drill", "count": 1, "inputs": { "stone": 12, "drill_bit": 1, "gear": 3, "lux": 1 } },
         { "id": "draft_wire", "name": "Wire", "category": "basic", "time": 0.5, "tier": 1, "output": "wire", "count": 1, "inputs": { "lux": 1 } },
         { "id": "draft_conveyor", "name": "Conveyor", "category": "basic", "time": 0.5, "tier": 1, "output": "conveyor", "count": 1, "inputs": { "iron_alloy": 1, "gear": 2 } },
-        { "id": "draft_rod", "name": "Iron Rod", "category": "basic", "time": 0.5, "tier": 1, "output": "rod", "count": 2, "inputs": { "iron_alloy": 1 } },
+        { "id": "draft_rod", "name": "Iron Rod", "category": "basic", "time": 0.5, "tier": 1, "output": "rod", "count": 3, "inputs": { "stone": 1, "iron_alloy": 3 } },
         { "id": "draft_gear", "name": "Iron Gear", "category": "basic", "time": 1.0, "tier": 1, "output": "gear", "count": 1, "inputs": { "iron_alloy": 2 } },
+        { "id": "draft_asourcer", "name": "Asourcer", "category": "basic", "time": 3.0, "tier": 1, "output": "asourcer", "count": 1, "inputs": { "circuit": 2, "gear": 8, "iron_alloy": 8 } },
+        { "id": "draft_turret", "name": "Turret", "category": "basic", "time": 3.0, "tier": 1, "output": "turret", "count": 1, "inputs": { "stone": 12, "iron_alloy": 8, "copper_alloy": 8, "gear": 8 } },
         { "id": "smelt_iron", "name": "Smelt Iron", "category": "smelting", "time": 2.0, "tier": 1, "output": "iron_alloy", "count": 1, "inputs": { "iron": 1, "coal": 1 } },
         { "id": "smelt_copper", "name": "Smelt Copper", "category": "smelting", "time": 2.0, "tier": 1, "output": "copper_alloy", "count": 1, "inputs": { "copper": 1, "coal": 1 } },
         { "id": "craft_rod", "name": "Iron Rod", "category": "assembly", "time": 0.5, "tier": 1, "output": "rod", "count": 2, "inputs": { "iron_alloy": 1 } },
         { "id": "craft_gear", "name": "Iron Gear", "category": "assembly", "time": 1.0, "tier": 1, "output": "gear", "count": 1, "inputs": { "iron_alloy": 2 } },
-        { "id": "craft_cable", "name": "Copper Cable", "category": "assembly", "time": 0.5, "tier": 1, "output": "cable", "count": 2, "inputs": { "copper_alloy": 1 } }
+        { "id": "craft_bent_pipe", "name": "Bent Pipe", "category": "assembly", "time": 0.5, "tier": 1, "output": "bent_pipe", "count": 1, "inputs": { "stone": 1, "rod": 3 } },
+        { "id": "craft_cable", "name": "Copper Cable", "category": "assembly", "time": 0.5, "tier": 1, "output": "cable", "count": 3, "inputs": { "copper_alloy": 1 } },
+        { "id": "craft_circuit", "name": "Copper Circuit", "category": "assembly", "time": 1.0, "tier": 1, "output": "circuit", "count": 1, "inputs": { "iron_alloy": 1, "cable": 4 } },
+        { "id": "craft_lux_circuit", "name": "Lux Circuit", "category": "assembly", "time": 1.0, "tier": 1, "output": "adv_circuit", "count": 1, "inputs": { "iron_alloy": 1, "wire": 4 } }
     ],
     "enemies": [
         {
@@ -178,7 +216,8 @@
             "name": "Basic Robot",
             "scene_path": "res://scenes/enemies/basic_robot.tscn",
             "logic": { "health": 50, "speed": 40, "defense": 0, "magical_defense": 0.2, "elemental_cd": 0.0 },
-            "params": { "attack_damage": 5, "attack_speed": 1.0 }
+            "params": { "attack_damage": 5, "attack_speed": 1.0 },
+            "field_config": { "spawn_interval": 15.0, "spawn_chance": 0.4, "max_spawns": 3, "aggro_range": 6.0, "wander_radius": 4.0, "min_depth": 35, "max_depth": 60 }
         },
         {
             "id": "fast_robot",
@@ -186,6 +225,29 @@
             "scene_path": "res://scenes/enemies/fast_robot.tscn",
             "logic": { "health": 30, "speed": 70, "defense": 0, "magical_defense": 0.0 },
             "params": { "attack_damage": 3, "attack_speed": 2.0 }
+        },
+        {
+            "id": "roaming_scrap",
+            "name": "Roaming Scrap",
+            "scene_path": "res://scenes/enemies/roaming_scrap.tscn",
+            "logic": { "health": 25, "speed": 35, "defense": 0 },
+            "params": { "attack_damage": 2, "attack_speed": 1.0, "attack_range": 1 },
+            "field_config": { "spawn_interval": 8.0, "spawn_chance": 0.6, "max_spawns": 4, "aggro_range": 8.0, "wander_radius": 6.0, "min_depth": 10, "max_depth": 50 },
+            "drops": [ { "item": "drill_bit", "chance": 0.3 }, { "item": "gear", "chance": 0.3 }, { "item": "lux", "chance": 0.1 }, { "item": "engine", "chance": 0.1 }, { "item": "rubber", "chance": 0.2 } ]
+        }
+    ],
+    "allies": [
+        {
+            "id": "drone",
+            "name": "Drone",
+            "texture": "res://icon.svg",
+            "logic": { "health": 100, "speed": 60, "inventory_slots": 8 }
+        },
+        {
+            "id": "player",
+            "name": "Player",
+            "texture": "res://icon.svg",
+            "logic": { "health": 100, "speed": 5.0, "inventory_slots": 40 }
         }
     ]
 }
