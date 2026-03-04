@@ -169,3 +169,16 @@ Elements flagged as `SPATIAL_ELEMENTS` (e.g., Conduct) register themselves in a 
 *   **Updates:** Driven by event signals (`tile_changed`) from Enemies. This avoids iterating through all enemies every frame to update their position in this specific registry.
 *   **Cleanup:** The registry auto-cleans empty tiles and empty keys to keep memory usage low.
 *   **Benefit:** When damage occurs to an enemy at `(10, 2)`, the system uses this registry to only check the 9 adjacent tiles (e.g., `(9..11, 1..3)`) for enemies *specifically holding* the Conduct element, rather than scanning the general entity grid.
+
+
+# 9 - Game Progression
+Define a tile as explored and unexplored; unexplored tiles are shadowed, pitch
+black to indicate the tile is unaccessible and you cannot see enemies in that
+tile. Explored tiles are normal and player starts with 15 explored tiles from
+the beginning of the lane for each lane.
+
+Unexplored - tile cannot be interacted any way. Buildings (turrets for example)
+cannot be placed, detect, and interact with unexplored tiles. Each unexplored
+tile has ways it could be "explored". First, players could navigate with an ally
+using a Lux Lantern tool to light up a 3x3 area around the ally. The tile will
+be temporarily explored. 
