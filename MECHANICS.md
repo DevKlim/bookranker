@@ -181,4 +181,44 @@ Unexplored - tile cannot be interacted any way. Buildings (turrets for example)
 cannot be placed, detect, and interact with unexplored tiles. Each unexplored
 tile has ways it could be "explored". First, players could navigate with an ally
 using a Lux Lantern tool to light up a 3x3 area around the ally. The tile will
-be temporarily explored. 
+be temporarily explored. Some specialized buildings(ex. Lighthouse) can emit a 
+'light' effect that will explore nearby tile based on area size. Lastly, after
+defeating a wave, unexplored depths will be permanently explored for that level.
+
+As a roguelike, game will split into levels with different mobs and items.
+At the end of each level, player can decide what to output, whether it is
+materials, items, buildings; each level acts as a "factory". This means, future
+levels can import factories which are beaten levels with exported goods. Player
+can retry levels and save new factories after beating the boss and configuring
+the export. There are only a limited number of exports
+
+Level starts with giving player starting items unique to the level. Player,
+if allowed, can import factories and get a constant output based on that
+level's output speed calculated(which we will find the prod. speeds of all
+buildings in a factory as well as the travel time of the transport to
+calculate the output speed of a level/factory). Throughout the course of
+the level, player will have periods of plan time and periods of enemy/boss waves.
+
+Levels will start short and ramp up in either difficulty or est. time duration.
+
+Levels separate section of depths with new mechanics, terrain, ores, enemies,
+and bosses. Typically, at the end of a level, emerges a boss that the player
+must eliminate to progress to the next level. It will unlock new crafting tiers,
+elemental reactions, and spawnable loot.
+
+There is a time cycle where daytime is the time that players will explore, farm
+materials, build, etc. Nighttime will spawn hordes and waves of enemies. After
+each horde, player will receive rewards based on the "Wave Rewards" which could be
+XP, Gold, Items, Permanent Buffs, Temporary Buffs, New Recipes, New Buildings.
+
+# 10 - Biomes
+
+## 1 - Junkyard
+First biome which is full of scrap metal and rusted machinery. Enemies are near
+malfunctioning robots and machinery made from old tech of the previous era (2000s).
+Some enemies include Roamba(Roomba), Unidryl(One wheel robot with drill arms), ...
+
+There are scrap parts scattered throughout the biome with iron, copper, coal,
+zinc, and aluminum to mine as well..
+
+## 2 - 

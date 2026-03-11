@@ -1,4 +1,25 @@
+Roguelike system:
+Game will split into levels with different mobs and items.
+At the end of each level, player can decide what to output, whether it is
+materials, items, buildings; each level acts as a "factory". This means, future
+levels can import factories which are beaten levels with exported goods. Player
+can retry levels and save new factories after beating the boss and configuring
+the export. There are only a limited number of exports
+
+Level starts with giving player starting items unique to the level. Player,
+if allowed, can import factories and get a constant output based on that
+level's output speed calculated(which we will find the prod. speeds of all
+buildings in a factory as well as the travel time of the transport to
+calculate the output speed of a level/factory). Throughout the course of
+the level, player will have periods of plan time and periods of enemy/boss waves.
+
+Levels will start short and ramp up in either difficulty or est. time duration.
+
+
+
+Scrapyard
 Spawn with 1x Ally
+10 mins
 
 Pick up rocks(clutter) -> stone
 Pick up scrap_pile(clutter) -> gears,nails,iron_rod,iron_plate,iron_bar,
