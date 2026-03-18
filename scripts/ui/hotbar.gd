@@ -1,13 +1,19 @@
 extends PanelContainer
 
-const SLOT_COUNT = 10
+const SLOT_COUNT = 9
 @onready var container: HBoxContainer = $MarginContainer/HBoxContainer
-var _buttons: Array[Button] = []
+var _buttons: Array[Button] =[]
 
 # Track active slot index locally
 var selected_slot_index: int = -1
 
 func _ready() -> void:
+	# Wipe default gray box padding so it perfectly fits the glass window
+	add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	
+	# Set proper alignment so scaled-up dimensions neatly place the elements centrally
+	container.alignment = BoxContainer.ALIGNMENT_CENTER
+	
 	for child in container.get_children(): child.queue_free()
 	for i in range(SLOT_COUNT):
 		var button = Button.new()
@@ -117,8 +123,8 @@ func _update_visuals(_arg = null) -> void:
 			button.icon = slot.item.icon
 			button.text = "" # Hide number if item exists
 			lbl.text = str(slot.count) # Show count
-			if slot.item is BuildableResource: button.tooltip_text = "%s (%d)" % [slot.item.buildable_name, slot.count]
-			else: button.tooltip_text = "%s (%d)" % [slot.item.item_name, slot.count]
+			if slot.item is BuildableResource: button.tooltip_text = "%s (%d)" %[slot.item.buildable_name, slot.count]
+			else: button.tooltip_text = "%s (%d)" %[slot.item.item_name, slot.count]
 		else:
 			button.icon = null
 			button.text = str((i + 1) % 10) # Show slot number if empty

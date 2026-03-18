@@ -33,7 +33,7 @@ func import_items(list: Array) -> void:
 			res.is_tool = true
 			res.tool_type = td.get("type", "none")
 			res.action_time = float(td.get("time", 1.0))
-			var off = td.get("offset", [0, 0, 0])
+			var off = td.get("offset",[0, 0, 0])
 			if off.size() >= 3:
 				res.highlight_offset = Vector3(off[0], off[1], off[2])
 			else:
@@ -51,7 +51,7 @@ func import_items(list: Array) -> void:
 				if ResourceLoader.exists(atk_path):
 					res.attack_config = load(atk_path)
 				else:
-					printerr("ItemImporter: Attack resource '%s' not found for item '%s'" % [ac_data, res.item_name])
+					printerr("ItemImporter: Attack resource '%s' not found for item '%s'" %[ac_data, res.item_name])
 
 			# Case 2: Inline definition (Dictionary)
 			elif ac_data is Dictionary:
@@ -92,13 +92,16 @@ func import_items(list: Array) -> void:
 			"accessory", "artifact": res.equipment_type = ItemResClass.EquipmentType.ACCESSORY
 			_: res.equipment_type = ItemResClass.EquipmentType.NONE
 		
-		if entry.has("ore_generation") and entry["ore_generation"] is Dictionary:
-			var gen = entry["ore_generation"]
-			res.is_ore = true
-			res.ore_block_name = str(gen.get("block", ""))
-			res.min_depth = int(gen.get("min_depth", 0))
-			res.max_depth = int(gen.get("max_depth", 30))
-			res.rarity = float(gen.get("rarity", 0.0))
-		else:
-			res.is_ore = false
+		res.is_ore = false
+		res.ore_block_name = ""
+		var file = FileAccess.open("res://data/content/blocks.json", FileAccess.READ)
+		if file:
+			var json = JSON.new()
+			if json.parse(file.get_as_text()) == OK and json.data is Array:
+				for b in json.data:
+					if b.has("ore_item") and str(b["ore_item"]) == str(entry["id"]):
+						res.is_ore = true
+						res.ore_block_name = str(b.get("name", ""))
+						break
+
 		ResourceSaver.save(res, path)

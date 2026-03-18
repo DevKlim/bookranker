@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://bvu1hxasqnujd"]
+
+[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="1_q0m3t"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="2_3kurr"]
+
+[resource]
+script = ExtResource("2_3kurr")
+item_name = "Byt Miner (Mod)"
+icon = ExtResource("1_q0m3t")
+equipment_type = 5
+modifiers = {
+"cost": 4.0,
+"effects": {},
+"type": "core"
+}

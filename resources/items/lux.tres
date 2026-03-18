@@ -14,5 +14,3 @@ element = ExtResource("1_rciyt")
 element_units = 2
 is_ore = true
 ore_block_name = "Lux Ore"
-min_depth = 15
-rarity = 0.02

@@ -12,7 +12,7 @@ const TRANSPORT_SPEED = 1.0
 
 # Lanes: Array of Arrays. Index 0 = Left, Index 1 = Right
 # Entry: { "item": Resource, "progress": float, "visual": Node3D }
-var lanes: Array = [[], []]
+var lanes: Array = [[],[]]
 
 # Dynamic Input Direction derived from neighbors
 var active_input_direction: Direction = Direction.UP 
@@ -77,11 +77,11 @@ func _notify_neighbors() -> void:
 			n._update_adjacency()
 
 func _update_adjacency(force_tile: Vector2i = Vector2i(-1, -1)) -> void:
-	var candidates = []
+	var candidates =[]
 	var is_preview_check = (force_tile != Vector2i(-1, -1))
 	var my_tile = force_tile if is_preview_check else LaneManager.world_to_tile(global_position)
 	
-	for d in [Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT]:
+	for d in[Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT]:
 		var n = null
 		if is_preview_check:
 			var offset = Vector2i.ZERO
@@ -90,7 +90,7 @@ func _update_adjacency(force_tile: Vector2i = Vector2i(-1, -1)) -> void:
 				Direction.UP:   offset = Vector2i(0, -1)
 				Direction.LEFT: offset = Vector2i(-1, 0)
 				Direction.RIGHT:offset = Vector2i(1, 0)
-			n = LaneManager.get_buildable_at(my_tile + offset)
+			n = LaneManager.get_entity_at(my_tile + offset, "building")
 		else:
 			n = get_neighbor(d)
 			
@@ -212,7 +212,7 @@ func _setup_scrolling_shader() -> void:
 		local_input_face = 5 # Right
 
 	# Iterate relevant surfaces
-	for i in [0, 2, 3, 4, 5]: 
+	for i in[0, 2, 3, 4, 5]: 
 		if i >= surface_count: continue
 		
 		var active_mat = mesh_inst.get_surface_override_material(i)
@@ -477,4 +477,4 @@ func _exit_tree() -> void:
 	for l in lanes:
 		for entry in l:
 			if is_instance_valid(entry.visual): entry.visual.queue_free()
-	lanes = [[], []]
+	lanes = [[],[]]

@@ -10,3 +10,5 @@ item_name = "Igni Pellet"
 icon = ExtResource("2_esjho")
 damage = 2.0
 element = ExtResource("1_i7ayh")
+is_ore = true
+ore_block_name = "Igni Marble"

@@ -12,5 +12,3 @@ damage = 4.0
 element = ExtResource("1_y1d8p")
 is_ore = true
 ore_block_name = "Petroleum Ore"
-min_depth = 10
-rarity = 0.08

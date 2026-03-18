@@ -1,41 +1,38 @@
-[gd_scene format=3 uid="uid://bb5muybl44kdf"]
+[gd_scene format=3 uid="uid://bkt23q1v660iw"]
 
-[ext_resource type="Script" uid="uid://ctpvoct0f4u8e" path="res://scripts/entities/ally.gd" id="1_58lb6"]
-[ext_resource type="Script" uid="uid://duudv3f6u8n6m" path="res://scripts/components/health_component.gd" id="2_4suxp"]
-[ext_resource type="Script" uid="uid://c6lfioqpkvor7" path="res://scripts/components/move_component.gd" id="3_vfl6a"]
-[ext_resource type="Script" uid="uid://dad3f8h2j4k5l" path="res://scripts/components/inventory_component.gd" id="4_c0x4k"]
-[ext_resource type="Script" uid="uid://dg4gfri6lu5o2" path="res://scripts/components/elemental_component.gd" id="5_2rtel"]
+[ext_resource type="Script" uid="uid://ctpvoct0f4u8e" path="res://scripts/entities/ally.gd" id="1_4suxp"]
+[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="2_vfl6a"]
+[ext_resource type="Script" uid="uid://duudv3f6u8n6m" path="res://scripts/components/health_component.gd" id="3_c0x4k"]
+[ext_resource type="Script" uid="uid://c6lfioqpkvor7" path="res://scripts/components/move_component.gd" id="4_2rtel"]
+[ext_resource type="Script" uid="uid://dad3f8h2j4k5l" path="res://scripts/components/inventory_component.gd" id="5_yl2tk"]
+[ext_resource type="Script" uid="uid://dg4gfri6lu5o2" path="res://scripts/components/elemental_component.gd" id="6_4anwo"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_58lb6"]
-albedo_color = Color(0.2, 0.6, 1, 1)
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_4suxp"]
 
-[sub_resource type="CapsuleMesh" id="CapsuleMesh_4suxp"]
-material = SubResource("StandardMaterial3D_58lb6")
-
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_vfl6a"]
-
-[node name="Drone" type="CharacterBody3D" unique_id=1499444990]
+[node name="Drone" type="CharacterBody3D" unique_id=1373090817]
 collision_layer = 4
-script = ExtResource("1_58lb6")
+script = ExtResource("1_4suxp")
 
-[node name="Visual" type="MeshInstance3D" parent="." unique_id=1350995972]
+[node name="Visual" type="Sprite3D" parent="." unique_id=1241110642]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
-mesh = SubResource("CapsuleMesh_4suxp")
+pixel_size = 0.03
+billboard = 1
+texture = ExtResource("2_vfl6a")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1445023523]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1544904996]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
-shape = SubResource("CapsuleShape3D_vfl6a")
+shape = SubResource("CapsuleShape3D_4suxp")
 
-[node name="HealthComponent" type="Node" parent="." unique_id=2108323349]
-script = ExtResource("2_4suxp")
+[node name="HealthComponent" type="Node" parent="." unique_id=352924842]
+script = ExtResource("3_c0x4k")
 
-[node name="MoveComponent" type="Node" parent="." unique_id=525839845]
-script = ExtResource("3_vfl6a")
+[node name="MoveComponent" type="Node" parent="." unique_id=1559732276]
+script = ExtResource("4_2rtel")
 stop_distance = 0.1
 
-[node name="InventoryComponent" type="Node" parent="." unique_id=432601948]
-script = ExtResource("4_c0x4k")
+[node name="InventoryComponent" type="Node" parent="." unique_id=644654980]
+script = ExtResource("5_yl2tk")
 max_slots = 8
 
-[node name="ElementalComponent" type="Node" parent="." unique_id=2013037770]
-script = ExtResource("5_2rtel")
+[node name="ElementalComponent" type="Node" parent="." unique_id=2137531502]
+script = ExtResource("6_4anwo")

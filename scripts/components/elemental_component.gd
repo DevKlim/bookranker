@@ -56,7 +56,6 @@ func add_or_refresh_status(element: ElementResource, units: int) -> void:
 		sprite.texture = element.icon
 		sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		sprite.pixel_size = 0.02
-		sprite.modulate = element.color
 		visual_container.add_child(sprite)
 		
 		var lbl = Label3D.new()
@@ -137,7 +136,7 @@ func _update_visual_label(data: Dictionary) -> void:
 
 func _arrange_visuals() -> void:
 	if not is_instance_valid(visual_container): return
-	var valid_visuals = []
+	var valid_visuals =[]
 	for id in active_statuses:
 		var vis = active_statuses[id].visual
 		if is_instance_valid(vis) and not vis.is_queued_for_deletion():
@@ -183,4 +182,5 @@ func _process(delta: float) -> void:
 			var res = data.resource
 			if res.stat_modifiers.has("damage_per_second"):
 				var dmg = res.stat_modifiers["damage_per_second"] * delta
-				_health_component.take_damage(dmg)
+				_health_component.take_damage(dmg, res)
+

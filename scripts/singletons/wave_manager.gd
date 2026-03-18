@@ -1,38 +1,51 @@
 extends Node
 
 ## Manages wave data and enemy spawning logic.
-## Reads configuration from 'res://data/waves.json'.
+## Injected by GameManager from the active level config.
 
 signal wave_started(wave_index)
 signal wave_ended
 signal wave_cleared
 
-var waves_config: Array = []
+var waves_config: Array =[]
 var current_wave_idx: int = -1
-var active_enemies: Array = []
+var active_enemies: Array =[]
+var active_bosses: Array =[]
 var is_wave_active: bool = false
+var _spawning_done: bool = false
+var _wave_has_bosses: bool = false
 
 # Dictionary to cache loaded EnemyResources
 var enemy_cache: Dictionary = {}
 
 func _ready() -> void:
-	_load_waves_config()
+	pass
 
-func _load_waves_config() -> void:
-	var file = FileAccess.open("res://data/waves.json", FileAccess.READ)
-	if not file:
-		printerr("WaveManager: Could not open waves.json")
-		return
-	
-	var json = JSON.new()
-	var err = json.parse(file.get_as_text())
-	if err == OK:
-		var data = json.data
-		if data.has("waves"):
-			waves_config = data["waves"]
-			print("WaveManager: Loaded %d waves." % waves_config.size())
-	else:
-		printerr("WaveManager: JSON Parse Error: ", json.get_error_message())
+func _process(_delta: float) -> void:
+	if is_wave_active and _spawning_done:
+		# Clean up nulls from active enemies
+		for i in range(active_enemies.size() - 1, -1, -1):
+			if not is_instance_valid(active_enemies[i]) or active_enemies[i].is_queued_for_deletion():
+				active_enemies.remove_at(i)
+				
+		for i in range(active_bosses.size() - 1, -1, -1):
+			if not is_instance_valid(active_bosses[i]) or active_bosses[i].is_queued_for_deletion():
+				active_bosses.remove_at(i)
+				
+		var wave_clear_condition_met = false
+		if _wave_has_bosses:
+			wave_clear_condition_met = active_bosses.is_empty()
+		else:
+			wave_clear_condition_met = active_enemies.is_empty()
+			
+		if wave_clear_condition_met:
+			_spawning_done = false
+			stop_wave()
+			emit_signal("wave_cleared")
+
+func load_waves_from_config(waves: Array) -> void:
+	waves_config = waves
+	print("WaveManager: Loaded %d waves from level config." % waves_config.size())
 
 func get_total_waves() -> int:
 	return waves_config.size()
@@ -40,6 +53,9 @@ func get_total_waves() -> int:
 func start_wave(index: int) -> void:
 	if index < 0 or index >= waves_config.size():
 		printerr("WaveManager: Invalid wave index %d" % index)
+		# Fallback to clear instantly so game doesn't softlock
+		_spawning_done = true 
+		is_wave_active = true
 		return
 	
 	if is_wave_active:
@@ -48,16 +64,19 @@ func start_wave(index: int) -> void:
 
 	current_wave_idx = index
 	is_wave_active = true
+	_spawning_done = false
+	_wave_has_bosses = false
+	active_bosses.clear()
 	emit_signal("wave_started", index + 1)
 	
 	var wave_data = waves_config[index]
-	var groups = wave_data.get("groups", [])
+	var groups = wave_data.get("groups",[])
 	
 	print("WaveManager: Starting Wave %d..." % (index + 1))
 	
 	if LaneManager.spawners_by_lane.is_empty():
 		printerr("WaveManager: No spawners detected! Cannot spawn enemies.")
-		stop_wave()
+		_spawning_done = true
 		return
 
 	# Start processing groups
@@ -67,9 +86,10 @@ func stop_wave() -> void:
 	is_wave_active = false
 	# Clear active enemies immediately
 	for e in active_enemies:
-		if is_instance_valid(e):
+		if is_instance_valid(e) and not e.is_queued_for_deletion():
 			e.queue_free()
 	active_enemies.clear()
+	active_bosses.clear()
 	emit_signal("wave_ended")
 
 func _run_wave_sequence(groups: Array) -> void:
@@ -79,6 +99,9 @@ func _run_wave_sequence(groups: Array) -> void:
 		var enemy_id = group.get("enemy_id", "")
 		var count = group.get("count", 1)
 		var interval = group.get("interval", 1.0)
+		var is_boss = group.get("is_boss", false)
+		if is_boss: _wave_has_bosses = true
+		var spawn_lane = group.get("spawn_lane", "random")
 		
 		var res = _get_enemy_resource(enemy_id)
 		if not res:
@@ -89,25 +112,35 @@ func _run_wave_sequence(groups: Array) -> void:
 		for i in range(count):
 			if not is_wave_active: break
 			
-			_spawn_single_random(res)
+			_spawn_single_with_lane(res, spawn_lane, is_boss)
 			
 			if interval > 0:
 				await get_tree().create_timer(interval).timeout
-	
-	# Note: Wave doesn't auto-end here; it usually waits for enemies to die.
-	# For now, we leave it active until manually stopped or logic added for clear condition.
+				
+	if is_wave_active:
+		_spawning_done = true
 
-func _spawn_single_random(res: EnemyResource) -> void:
-	# Pick ONE random lane from available spawners
+func _spawn_single_with_lane(res: EnemyResource, spawn_lane: Variant, is_boss: bool) -> void:
 	var lanes = LaneManager.spawners_by_lane.keys()
 	if lanes.is_empty(): return
 	
-	var random_lane = lanes.pick_random()
-	var spawn_pos = LaneManager.spawners_by_lane[random_lane]
-	
-	_spawn_enemy(res, random_lane, spawn_pos)
+	var chosen_lane = lanes[0]
+	if typeof(spawn_lane) == TYPE_STRING:
+		if spawn_lane == "center":
+			var sorted_lanes = lanes.duplicate()
+			sorted_lanes.sort()
+			chosen_lane = sorted_lanes[sorted_lanes.size() / 2]
+		else:
+			chosen_lane = lanes.pick_random()
+	elif typeof(spawn_lane) == TYPE_FLOAT or typeof(spawn_lane) == TYPE_INT:
+		chosen_lane = int(spawn_lane)
+		if not lanes.has(chosen_lane):
+			chosen_lane = lanes.pick_random()
+			
+	var spawn_pos = LaneManager.spawners_by_lane[chosen_lane]
+	_spawn_enemy(res, chosen_lane, spawn_pos, is_boss)
 
-func _spawn_enemy(res: EnemyResource, lane_id: int, spawn_pos: Vector3) -> void:
+func _spawn_enemy(res: EnemyResource, lane_id: int, spawn_pos: Vector3, is_boss: bool = false) -> void:
 	if not res.scene: return
 	
 	var enemy = res.scene.instantiate()
@@ -128,9 +161,16 @@ func _spawn_enemy(res: EnemyResource, lane_id: int, spawn_pos: Vector3) -> void:
 		# Stats
 		enemy.initialize_from_resource(res)
 		
+		# Override their mode to wave enemy so they walk straight down the lane and do not use field AStar logic
+		enemy.set_as_wave_enemy()
+		
 		# Tracking
 		active_enemies.append(enemy)
-		enemy.tree_exiting.connect(func(): active_enemies.erase(enemy))
+		if is_boss:
+			active_bosses.append(enemy)
+			enemy.tree_exiting.connect(func(): if active_bosses.has(enemy): active_bosses.erase(enemy))
+			
+		enemy.tree_exiting.connect(func(): if active_enemies.has(enemy): active_enemies.erase(enemy))
 
 func _get_enemy_resource(id: String) -> EnemyResource:
 	if enemy_cache.has(id): return enemy_cache[id]

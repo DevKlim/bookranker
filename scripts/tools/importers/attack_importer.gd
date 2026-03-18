@@ -30,6 +30,14 @@ func import_attacks(list: Array) -> void:
 		res.range_width = int(entry.get("range_width", 0))
 		res.is_aoe = bool(entry.get("is_aoe", false))
 		
+		# Projectiles
+		res.spawn_projectile = bool(entry.get("spawn_projectile", false))
+		res.projectile_speed = float(entry.get("projectile_speed", 10.0))
+		if entry.has("projectile_scene"):
+			var scene_path = str(entry["projectile_scene"])
+			if ResourceLoader.exists(scene_path):
+				res.projectile_scene = load(scene_path)
+		
 		# Visuals
 		if entry.has("visual_scene"):
 			var scene_path = entry["visual_scene"]
@@ -38,7 +46,7 @@ func import_attacks(list: Array) -> void:
 		
 		res.visual_spawn_point = int(entry.get("spawn_point", 0))
 		res.attach_visual_to_source = bool(entry.get("attach_to_source", false))
-		var off = entry.get("offset", [0, 0.5, 0])
+		var off = entry.get("offset",[0, 0.5, 0])
 		if off.size() >= 3:
 			res.visual_offset = Vector3(off[0], off[1], off[2])
 			

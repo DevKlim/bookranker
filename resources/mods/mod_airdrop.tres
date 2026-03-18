@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://s7i5p8swlhso"]
+
+[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="1_rhntp"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="2_3ih0n"]
+
+[resource]
+script = ExtResource("2_3ih0n")
+item_name = "Airdrop (Mod)"
+icon = ExtResource("1_rhntp")
+equipment_type = 5
+modifiers = {
+"cost": 2.0,
+"effects": {},
+"type": "core"
+}

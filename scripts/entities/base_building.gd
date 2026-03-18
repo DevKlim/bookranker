@@ -11,6 +11,9 @@ var inventory_component: InventoryComponent
 var inventory_component_alt: InventoryComponent # Handle "InputInventory" legacy
 var elemental_component: ElementalComponent
 
+var mod_inventory: InventoryComponent
+var mod_handler: ModHandlerComponent
+
 var grid_component: Node
 @export var powered_color: Color = Color(1, 1, 1, 1)
 @export var unpowered_color: Color = Color(0.2, 0.2, 0.2, 1)
@@ -48,7 +51,7 @@ var output_direction: Direction = Direction.DOWN
 var input_direction: Direction = Direction.UP
 
 @export_group("Layout")
-@export var layout_config: Array = []
+@export var layout_config: Array =[]
 
 var visual_offset: Vector3 = Vector3.ZERO
 var is_active: bool = false
@@ -57,8 +60,8 @@ var stats: Dictionary = {}
 
 # Damage Visuals
 var _tint_tween: Tween
-var _tint_materials: Array[StandardMaterial3D] = []
-var _tint_sprites: Array[Node] = []
+var _tint_materials: Array[StandardMaterial3D] =[]
+var _tint_sprites: Array[Node] =[]
 
 func _get_main_sprite() -> AnimatedSprite3D:
 	return get_node_or_null("AnimatedSprite3D")
@@ -84,7 +87,6 @@ func _ready() -> void:
 	_setup_health_component()
 	_setup_inventory_component()
 	
-	# Cache visuals for damage flash
 	_cache_visual_materials(self)
 	
 	_on_power_status_changed(false)
@@ -106,8 +108,6 @@ func _cache_visual_materials(node: Node) -> void:
 		_cache_visual_materials(child)
 
 func _setup_visuals() -> void:
-	# FIX: Add offset to existing position (from Scene Editor) instead of overwriting it.
-	# This ensures adjustments made in the .tscn file are preserved.
 	var sprite = _get_main_sprite()
 	if sprite: 
 		sprite.position += visual_offset
@@ -157,8 +157,9 @@ func _setup_health_component() -> void:
 		health_component.name = "HealthComponent"
 		add_child(health_component)
 	
-	health_component.max_health = max_health
-	health_component.current_health = max_health
+	var mod_health = max_health * GameManager.get_stat_multiplier("building_health")
+	health_component.max_health = mod_health
+	health_component.current_health = mod_health
 	health_component.max_energy = max_energy
 	health_component.current_energy = max_energy
 	
@@ -176,7 +177,6 @@ func _flash_damage() -> void:
 	_tint_tween = create_tween()
 	
 	var base_col = powered_color if is_active else unpowered_color
-	# Flash reddish
 	var damage_col = Color(1.0, 0.4, 0.4, 1.0)
 	
 	_tint_tween.tween_method(_apply_tint_ratio.bind(base_col, damage_col), 1.0, 0.0, 0.3)
@@ -193,10 +193,51 @@ func _setup_inventory_component() -> void:
 	if not inventory_component:
 		inventory_component = get_node_or_null("InputInventory")
 
+	mod_inventory = InventoryComponent.new()
+	mod_inventory.name = "ModInventory"
+	mod_inventory.max_slots = 3
+	mod_inventory.set_capacity(3)
+	
+	# Restrict slots to Mod items
+	var ItemResClass = load("res://scripts/resources/item_resource.gd")
+	if ItemResClass and "MOD" in ItemResClass.EquipmentType.keys():
+		for i in range(3):
+			mod_inventory.set_slot_restriction(i, ItemResClass.EquipmentType.MOD)
+	
+	mod_inventory.custom_filter = func(item):
+		var t = item.get("mod_type")
+		if not t or t == "":
+			if "modifiers" in item and item.modifiers.has("type"):
+				t = item.modifiers.get("type")
+			elif "type" in item:
+				t = item.get("type")
+		return t == "building"
+		
+	add_child(mod_inventory)
+	
+	mod_handler = ModHandlerComponent.new()
+	mod_handler.name = "ModHandlerComponent"
+	add_child(mod_handler)
+	mod_handler.initialize(self, mod_inventory)
+	mod_handler.mods_updated.connect(_recalculate_stats)
+
+func _recalculate_stats() -> void:
+	if health_component:
+		var base_max_hp = max_health * GameManager.get_stat_multiplier("building_health")
+		var hp_mult = mod_handler.get_stat_modifier("max_health_mult")
+		health_component.max_health = base_max_hp * (1.0 + hp_mult)
+		if health_component.current_health > health_component.max_health:
+			health_component.current_health = health_component.max_health
+
+		var base_max_energy = max_energy
+		var energy_flat = mod_handler.get_stat_modifier("max_energy_flat")
+		health_component.max_energy = base_max_energy + energy_flat
+		if health_component.current_energy > health_component.max_energy:
+			health_component.current_energy = health_component.max_energy
+
 func _on_power_status_changed(has_power: bool) -> void:
 	is_active = has_power and not is_staggered
 	
-	# If currently tweening damage, rely on tween to restore color eventually
 	if _tint_tween and _tint_tween.is_running(): return
 
 	var target_col = powered_color if has_power else unpowered_color
@@ -204,7 +245,6 @@ func _on_power_status_changed(has_power: bool) -> void:
 	if is_instance_valid(animated_sprite):
 		animated_sprite.modulate = target_col
 	
-	# Ensure materials are updated too (for mesh buildings)
 	for m in _tint_materials:
 		if is_instance_valid(m): m.albedo_color = target_col
 	
@@ -272,10 +312,10 @@ func _rotate_bitmask(mask: int, steps: int) -> int:
 	return result
 
 func get_occupied_cells(rotation_index: int = -1) -> Array[Vector2i]:
-	if layout_config.is_empty(): return [Vector2i.ZERO]
+	if layout_config.is_empty(): return[Vector2i.ZERO]
 	var ri = rotation_index
 	if ri == -1: ri = int(output_direction)
-	var result: Array[Vector2i] = []
+	var result: Array[Vector2i] =[]
 	for point in layout_config:
 		var p
 		if point is Vector2i: p = point
@@ -324,7 +364,7 @@ func get_neighbor(dir: Direction) -> Node3D:
 		Direction.LEFT: offset = Vector2i(-1, 0)
 		Direction.RIGHT:offset = Vector2i(1, 0)
 	
-	var b = LaneManager.get_buildable_at(tile + offset)
+	var b = LaneManager.get_entity_at(tile + offset, "building")
 	if b: return b
 	return null
 
@@ -348,13 +388,33 @@ func try_output_from_inventory(inv: InventoryComponent) -> bool:
 
 func requires_recipe_selection() -> bool: return false
 
-func get_stat(stat_name: String, base_value: float) -> float:
-	var final_val = base_value
+func get_stat(stat_name: String, default_value: float = 0.0) -> float:
+	var base_val = default_value
+	
+	# Extract base stat directly from building logic if available
+	if stat_name in self:
+		var val = get(stat_name)
+		if typeof(val) in[TYPE_INT, TYPE_FLOAT]:
+			base_val = float(val)
+	elif stats.has(stat_name):
+		base_val = float(stats[stat_name])
+	
+	var final_val = base_val
+	
+	# External Element Multipliers
 	if elemental_component:
 		var mult = elemental_component.get_stat_modifier(stat_name + "_mult")
 		final_val *= (1.0 + mult)
 		var flat = elemental_component.get_stat_modifier(stat_name + "_flat")
 		final_val += flat
+	
+	# External Mod Chip Multipliers dynamically
+	if mod_handler:
+		var mult = mod_handler.get_stat_modifier(stat_name + "_mult")
+		final_val *= (1.0 + mult)
+		var flat = mod_handler.get_stat_modifier(stat_name + "_flat")
+		final_val += flat
+
 	return max(0.0, final_val)
 
 ## Updated to accept 3 arguments to match Enemy and HealthComponent signature

@@ -18,5 +18,11 @@ extends Resource
 @export var has_armor_slot: bool = true
 @export var has_artifact_slot: bool = true
 
+@export_group("Respawns")
+@export var respawns_count: int = 0
+@export var respawns_unlimited: bool = false
+@export var respawns_cooldown: float = 5.0
+
 @export_group("Visuals")
 @export var texture: Texture2D
+

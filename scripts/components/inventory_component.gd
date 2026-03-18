@@ -15,12 +15,14 @@ signal inventory_changed
 
 @export_group("Filters")
 @export var allowed_items: Array[Resource] = []
-@export var denied_items: Array[Resource] = []
+@export var denied_items: Array[Resource] =[]
 
 # Array of Dictionaries: { "item": Resource, "count": int } or null
-var slots: Array = []
+var slots: Array =[]
 # Dictionary mapping slot_index (int) -> ItemResource.EquipmentType (int)
 var slot_restrictions: Dictionary = {}
+
+var custom_filter: Callable
 
 func _ready():
 	# Initial resize based on inspector value
@@ -29,6 +31,9 @@ func _ready():
 		# Fill strictly if empty (resize fills with nulls for untyped arrays usually)
 		for i in range(slots.size()):
 			if slots[i] == null: slots[i] = null
+			
+	# Delay emitting the initial changed signal so late-joining UI can accurately populate its display upon open!
+	call_deferred("emit_signal", "inventory_changed")
 
 ## Dynamically update slot count (e.g. from stats/upgrades)
 func set_capacity(new_count: int) -> void:
@@ -64,6 +69,9 @@ func is_item_allowed(item: Resource) -> bool:
 	
 	if not allowed_items.is_empty():
 		return _is_in_list(item, allowed_items)
+		
+	if custom_filter.is_valid():
+		if not custom_filter.call(item): return false
 			
 	return true
 

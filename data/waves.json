@@ -1,44 +1,21 @@
 {
-	"waves": [
-		{
-			"id": 1,
-			"groups": [
-				{
-					"enemy_id": "basic_robot",
-					"count": 5,
-					"interval": 1.0
-				}
-			]
-		},
-		{
-			"id": 2,
-			"groups": [
-				{
-					"enemy_id": "basic_robot",
-					"count": 999,
-					"interval": 0.2
-				},
-				{
-					"enemy_id": "basic_robot",
-					"count": 5,
-					"interval": 0.2
-				}
-			]
-		},
-		{
-			"id": 3,
-			"groups": [
-				{
-					"enemy_id": "basic_robot",
-					"count": 10,
-					"interval": 0.5
-				},
-				{
-					"enemy_id": "fast_robot",
-					"count": 5,
-					"interval": 0.3
-				}
-			]
-		}
-	]
+    "waves":[
+        {
+            "groups":[
+                { "enemy_id": "basic_robot", "count": 3, "interval": 2.0 }
+            ]
+        },
+        {
+            "groups":[
+                { "enemy_id": "roaming_scrap", "count": 5, "interval": 1.5 },
+                { "enemy_id": "basic_robot", "count": 2, "interval": 1.0 }
+            ]
+        },
+        {
+            "groups":[
+                { "enemy_id": "fast_robot", "count": 4, "interval": 1.0 },
+                { "enemy_id": "basic_robot", "count": 5, "interval": 1.0 }
+            ]
+        }
+    ]
 }

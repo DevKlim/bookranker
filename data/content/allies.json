@@ -1,0 +1,16 @@
+[
+{
+        "id": "drone",
+        "name": "Drone",
+        "texture": "res://icon.svg",
+        "logic": { "health": 100, "speed": 60, "inventory_slots": 8 },
+        "respawns": { "count": 3, "unlimited": false, "cooldown": 5.0 }
+    },
+    {
+        "id": "player",
+        "name": "Player",
+        "texture": "res://icon.svg",
+        "logic": { "health": 100, "speed": 5.0, "inventory_slots": 40 },
+        "respawns": { "count": 0, "unlimited": true, "cooldown": 2.0 }
+    }
+]

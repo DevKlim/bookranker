@@ -161,7 +161,7 @@ func _generate_building_scene(data: Dictionary, save_path: String) -> void:
 		inv.can_output = inv_data.get("can_output", true)
 		inv.omni_directional = inv_data.get("omni", false)
 		if inv_data.has("whitelist") and inv_data["whitelist"] is Array:
-			var allowed: Array[Resource] = []
+			var allowed: Array[Resource] =[]
 			for item_id in inv_data["whitelist"]:
 				var p = RESOURCE_BASE_PATH + "items/" + str(item_id) + ".tres"
 				if ResourceLoader.exists(p): allowed.append(load(p))
@@ -176,6 +176,9 @@ func _generate_building_scene(data: Dictionary, save_path: String) -> void:
 	_add_component(inst, COMP_ELEMENTAL, "ElementalComponent")
 	
 	_apply_logic_params(inst, data)
+	if logic.has("stats"):
+		_apply_param(inst, "stats", logic["stats"])
+		
 	if logic.has("io_config"):
 		var io = logic["io_config"]
 		var i_mask = _parse_io_mask(io.get("input", ["all"]))

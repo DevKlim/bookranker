@@ -1,25 +1,22 @@
-[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://bmgtisnh8eacw"]
-
-[ext_resource type="Script" uid="uid://dj7657xb6odwr" path="res://scripts/resources/attack_resource.gd" id="1_2rnve"]
-[ext_resource type="Resource" uid="uid://cj5yq1wbhxj3n" path="res://resources/elements/magne.tres" id="2_jiw6y"]
-[ext_resource type="Texture2D" uid="uid://crd2itpx28q3h" path="res://assets/items/meshes/bent_pipe_0.png" id="3_7nj72"]
-[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="4_lika2"]
-
-[sub_resource type="Resource" id="Resource_enmwp"]
-script = ExtResource("1_2rnve")
-id = "pipe_swing"
-cooldown = 1.2
-animation_name = "swing"
-base_damage = 8.0
-is_aoe = true
-visual_duration = 0.2
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://bmgtisnh8eacw"][ext_resource type="Resource" uid="uid://c0ned2feqtm4k" path="res://resources/attacks/pipe_swing.tres" id="1_2rnve"][ext_resource type="Texture2D" uid="uid://crd2itpx28q3h" path="res://assets/items/meshes/bent_pipe_0.png" id="3_7nj72"][ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="4_lika2"]
 
 [resource]
 script = ExtResource("4_lika2")
 item_name = "Bent Pipe"
 icon = ExtResource("3_7nj72")
+color = Color(1, 1, 1, 1)
 stack_size = 1
+is_projectile = false
 equipment_type = 2
-attack_config = SubResource("Resource_enmwp")
-damage = 8.0
-element = ExtResource("2_jiw6y")
+mod_type = ""
+attack_config = ExtResource("1_2rnve")
+damage = 2.0
+element_units = 1
+ignore_element_cooldown = false
+modifiers = {}
+is_ore = false
+ore_block_name = ""
+is_tool = false
+tool_type = "none"
+action_time = 1.0
+highlight_offset = Vector3(0, 0, 0)

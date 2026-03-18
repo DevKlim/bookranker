@@ -10,3 +10,5 @@ item_name = "Aero Pellet"
 icon = ExtResource("2_75dtx")
 damage = 2.0
 element = ExtResource("1_32lef")
+is_ore = true
+ore_block_name = "Aero Pellet"

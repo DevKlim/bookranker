@@ -1,14 +1,26 @@
-[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://c0ned2feqtm4k"]
-
-[ext_resource type="Script" uid="uid://dj7657xb6odwr" path="res://scripts/resources/attack_resource.gd" id="1_t1x8r"]
-[ext_resource type="PackedScene" uid="uid://d3yq1wbhxj3n" path="res://scenes/attacks/pipe_swing.tscn" id="2_n5m4x"]
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://c0ned2feqtm4k"][ext_resource type="Script" uid="uid://dj7657xb6odwr" path="res://scripts/resources/attack_resource.gd" id="1_t1x8r"][ext_resource type="PackedScene" uid="uid://d3yq1wbhxj3n" path="res://scenes/attacks/pipe_swing.tscn" id="2_n5m4x"]
 
 [resource]
 script = ExtResource("1_t1x8r")
 id = "pipe_swing"
-cooldown = 1.2
-base_damage = 8.0
+cooldown = 3.0
+animation_name = "attack"
+base_damage = 2.0
+scaling_stat = "attack_damage"
+scaling_factor = 1.0
+element_units = 1
+ignore_element_cd = false
+min_range = 1
+max_range = 1
+range_width = 0
 is_aoe = true
+hitbox_extents = Vector3(0, 0, 0)
+spawn_projectile = false
+projectile_speed = 10.0
+projectile_color = Color(1, 1, 1, 1)
 visual_scene = ExtResource("2_n5m4x")
+visual_spawn_point = 0
 attach_visual_to_source = true
+visual_offset = Vector3(0, 0.5, 0)
 visual_duration = 0.4
+chain_delay = 0.5

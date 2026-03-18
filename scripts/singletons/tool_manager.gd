@@ -5,7 +5,7 @@ extends Node
 
 static var instance: ToolManager
 
-var active_miners: Dictionary = {} # { AgentNode: { "target": Node/Resource, "time": float, "max_time": float, "type": String } }
+var active_miners: Dictionary = {} # { AgentNode: { "target": Node/Resource, "time": float, "max_time": float, "type": String, "tile": Vector2i } }
 
 # Visuals for Player
 var _ui_layer: CanvasLayer
@@ -41,16 +41,34 @@ func _setup_mining_visuals() -> void:
 	_ui_layer.add_child(_mining_bar)
 
 func _process(delta: float) -> void:
-	# Process Player Input (Manual)
-	if Input.is_action_pressed("build_place") and not _is_ui_blocked():
-		var player = get_tree().get_first_node_in_group("player")
+	# Process Player Auto-Mining
+	var player = get_tree().get_first_node_in_group("player")
+	var player_mining = false
+	if player and PlayerManager.equipped_item and PlayerManager.equipped_item.is_tool:
+		var target_data = _find_target_at_agent(player)
+		if not target_data.is_empty():
+			if target_data.type == "ore" and PlayerManager.equipped_item.tool_type != "drill":
+				pass # Needs a drill to mine an ore
+			else:
+				player_mining = true
+				if not active_miners.has(player):
+					request_mining(player, PlayerManager.equipped_item)
+				else:
+					if active_miners[player].target != target_data.target:
+						_reset_player_mining()
+						request_mining(player, PlayerManager.equipped_item)
+		else:
+			if not Input.is_action_pressed("build_place") or _is_ui_blocked():
+				_reset_player_mining()
+	
+	if Input.is_action_pressed("build_place") and not _is_ui_blocked() and not player_mining:
 		if player and PlayerManager.equipped_item and PlayerManager.equipped_item.is_tool:
 			request_mining(player, PlayerManager.equipped_item)
-	else:
+	elif not player_mining and not Input.is_action_pressed("build_place"):
 		_reset_player_mining()
 
 	# Process Active Miners
-	var finished_agents = []
+	var finished_agents =[]
 	for agent in active_miners:
 		if not is_instance_valid(agent): 
 			finished_agents.append(agent)
@@ -78,11 +96,16 @@ func request_mining(agent: Node3D, tool_item: ItemResource) -> void:
 	var target_data = _find_target_at_agent(agent)
 	if target_data.is_empty(): return
 	
+	# Only drills can mine ores
+	if target_data.type == "ore" and tool_item.tool_type != "drill":
+		return
+	
 	var time = tool_item.action_time
 	
 	active_miners[agent] = {
 		"target": target_data.target,
 		"type": target_data.type,
+		"tile": target_data.get("tile", Vector2i.ZERO),
 		"time": 0.0,
 		"max_time": time,
 		"tool": tool_item
@@ -108,13 +131,13 @@ func _find_target_at_agent(agent: Node3D) -> Dictionary:
 	# Simplified: Check tile center
 	var clutter = LaneManager.get_entity_at(tile, "building")
 	if clutter is ClutterObject:
-		return { "target": clutter, "type": "clutter" }
+		return { "target": clutter, "type": "clutter", "tile": tile }
 	
 	# Priority 2: Ore
 	var tile_world = LaneManager.tile_to_world(tile)
 	var ore = LaneManager.get_ore_at_world_pos(tile_world)
 	if ore:
-		return { "target": ore, "type": "ore" }
+		return { "target": ore, "type": "ore", "tile": tile }
 		
 	return {}
 
@@ -127,19 +150,24 @@ func _complete_mining(agent: Node3D, data: Dictionary) -> void:
 	
 	if not inv: return
 
+	var tool_item = data.get("tool") as ItemResource
+	if tool_item:
+		var artifact = tool_item.get_artifact_instance()
+		if artifact and artifact.has_method("on_mine_complete"):
+			artifact.on_mine_complete(agent, data.target, tool_item)
+
 	if data.type == "ore":
 		var ore = data.target as ItemResource
 		if inv.has_space_for(ore):
 			inv.add_item(ore, 1)
+			var tile = data.get("tile", LaneManager.world_to_tile(agent.global_position))
+			LaneManager.consume_ore_at(tile)
 		elif agent.is_in_group("player"):
 			_show_notification("Inventory Full!", Color.RED)
 
 	elif data.type == "clutter":
 		var clutter = data.target as ClutterObject
 		if is_instance_valid(clutter):
-			# Clutter drops are handled by its _on_died, which tries to give to PlayerManager
-			# We need to ensure Clutter gives to the *agent* who mined it.
-			# For now, Clutter simply dies.
 			clutter.take_damage(9999.0)
 
 func _is_ui_blocked() -> bool:

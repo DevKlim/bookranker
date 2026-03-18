@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://boomhrieu6mpg"]
+
+[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="1_hh0kj"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="2_bqkv0"]
+
+[resource]
+script = ExtResource("2_bqkv0")
+item_name = "Kernal Corns (Mod)"
+icon = ExtResource("1_hh0kj")
+equipment_type = 5
+modifiers = {
+"cost": 4.0,
+"effects": {},
+"type": "core"
+}

@@ -45,6 +45,7 @@ func take_damage(amount: float, _element: Resource = null, source: Node = null) 
 	# Trigger generic on-damage logic (Conduct, Ripple, etc.)
 	if damage_taken > 0:
 		ElementManager.on_damage_dealt(get_parent(), damage_taken, source)
+		_spawn_damage_number(damage_taken, _element)
 		
 	return damage_taken
 
@@ -52,6 +53,8 @@ func take_damage(amount: float, _element: Resource = null, source: Node = null) 
 func take_damage_no_conduct(amount: float, _source: Node = null) -> float:
 	var damage_taken = _calculate_mitigation(amount)
 	_apply_damage(damage_taken)
+	if damage_taken > 0:
+		_spawn_damage_number(damage_taken, null)
 	return damage_taken
 
 func _calculate_mitigation(amount: float) -> float:
@@ -94,3 +97,33 @@ func _on_stagger_end() -> void:
 	current_energy = max_energy
 	emit_signal("energy_changed", current_energy, max_energy)
 	emit_signal("recovered")
+
+func _spawn_damage_number(amount: float, element: Resource) -> void:
+	if amount < 0.5: return # Avoid spawning tons of 0s for tiny DPS
+	var label = Label3D.new()
+	label.text = str(round(amount))
+	label.pixel_size = 0.02
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.no_depth_test = true
+	label.sorting_offset = amount # Layer highest number on top
+	label.render_priority = 100
+	
+	if element and "color" in element:
+		label.modulate = element.color
+	else:
+		label.modulate = Color.WHITE
+		
+	var root = get_tree().current_scene
+	if root:
+		root.add_child(label)
+	else:
+		get_parent().add_child(label)
+		
+	var pos = get_parent().global_position + Vector3(0, 1.5, 0)
+	pos += Vector3(randf_range(-0.5, 0.5), randf_range(0.0, 0.5), randf_range(-0.5, 0.5))
+	label.global_position = pos
+	
+	var tween = label.create_tween()
+	tween.tween_property(label, "global_position:y", pos.y + 1.0, 1.0)
+	tween.parallel().tween_property(label, "modulate:a", 0.0, 1.0)
+	tween.tween_callback(label.queue_free)

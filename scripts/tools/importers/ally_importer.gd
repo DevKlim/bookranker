@@ -30,6 +30,11 @@ func import_allies(list: Array) -> void:
 		res.has_armor_slot = bool(logic.get("armor_slot", true))
 		res.has_artifact_slot = bool(logic.get("artifact_slot", true))
 		
+		var respawns = entry.get("respawns", {})
+		res.respawns_count = int(respawns.get("count", 0))
+		res.respawns_unlimited = bool(respawns.get("unlimited", false))
+		res.respawns_cooldown = float(respawns.get("cooldown", 5.0))
+		
 		ResourceSaver.save(res, path)
 
 func _generate_ally_scene(data: Dictionary, save_path: String) -> void:
@@ -79,3 +84,4 @@ func _generate_ally_scene(data: Dictionary, save_path: String) -> void:
 	
 	_apply_logic_params(inst, data)
 	_save_scene(inst, save_path)
+

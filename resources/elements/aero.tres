@@ -7,6 +7,7 @@
 script = ExtResource("1_4q35u")
 element_name = "Aero"
 icon = ExtResource("1_fwlj4")
+color = Color(0.6360196, 0.9252048, 0.8529584, 1)
 duration = 1.0
 application_cooldown = 0.5
 stat_modifiers = {

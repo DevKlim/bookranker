@@ -11,6 +11,9 @@ var health_component: HealthComponent
 var grid_component: GridComponent
 
 func _ready() -> void:
+	# 1. Add to group to bypass all script-based type checks reliably
+	add_to_group("clutter")
+	
 	# Setup Components
 	health_component = HealthComponent.new()
 	health_component.name = "HealthComponent"

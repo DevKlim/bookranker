@@ -26,10 +26,13 @@ extends Resource
 @export var range_width: int = 0
 ## If true, hits all entities in the target tile(s).
 @export var is_aoe: bool = false
+## If aoe is false and this is set, does a physics overlap check instead of grid
+@export var hitbox_extents: Vector3 = Vector3.ZERO
 
 @export_group("Visuals")
 @export var spawn_projectile: bool = false
 @export var projectile_scene: PackedScene
+@export var projectile_texture: Texture2D
 @export var projectile_speed: float = 10.0
 @export var projectile_color: Color = Color.WHITE
 

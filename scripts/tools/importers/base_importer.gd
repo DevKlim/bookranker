@@ -5,7 +5,7 @@ extends RefCounted
 ## Base class for specific content importers. 
 ## Provides shared constants, paths, and utility functions for resource/scene generation.
 
-const JSON_PATH = "res://data/content_manifest.json"
+const CONTENT_DIR = "res://data/content/"
 const RESOURCE_BASE_PATH = "res://resources/"
 
 const SCENE_BUILDABLES_PATH = "res://scenes/buildables/"
@@ -138,7 +138,7 @@ func _create_advanced_block_mesh(base_path: String, size: Vector3, is_on_state: 
 	var base_no_ext = base_path.get_basename()
 	
 	var get_tex = func(face_suffix: String) -> String:
-		var candidates = []
+		var candidates =[]
 		if is_on_state: candidates.append(base_no_ext + "_" + face_suffix + "_on." + ext)
 		candidates.append(base_no_ext + "_" + face_suffix + "." + ext)
 		if is_on_state: candidates.append(base_no_ext + "_on." + ext)
@@ -147,7 +147,7 @@ func _create_advanced_block_mesh(base_path: String, size: Vector3, is_on_state: 
 			if ResourceLoader.exists(p): return p
 		return base_path 
 		
-	var faces = [
+	var faces =[
 		{ "name": "Top", "normal": Vector3.UP, "suffix": "top" },
 		{ "name": "Bottom", "normal": Vector3.DOWN, "suffix": "bottom" },
 		{ "name": "Front", "normal": Vector3.FORWARD, "suffix": "front" },
@@ -175,13 +175,13 @@ func _create_advanced_block_mesh(base_path: String, size: Vector3, is_on_state: 
 
 func _add_face_geometry(st: SurfaceTool, normal: Vector3, h: Vector3, offset: Vector3) -> void:
 	var u00 = Vector2(1, 0); var u10 = Vector2(0, 0); var u11 = Vector2(0, 1); var u01 = Vector2(1, 1)
-	var v = []
-	if normal == Vector3.UP: v = [Vector3(-h.x, h.y, -h.z), Vector3(h.x, h.y, -h.z), Vector3(h.x, h.y, h.z), Vector3(-h.x, h.y, h.z)]
-	elif normal == Vector3.DOWN: v = [Vector3(-h.x, -h.y, h.z), Vector3(h.x, -h.y, h.z), Vector3(h.x, -h.y, -h.z), Vector3(-h.x, -h.y, -h.z)]
-	elif normal == Vector3.FORWARD: v = [Vector3(-h.x, h.y, h.z), Vector3(h.x, h.y, h.z), Vector3(h.x, -h.y, h.z), Vector3(-h.x, -h.y, h.z)]
-	elif normal == Vector3.BACK: v = [Vector3(h.x, h.y, -h.z), Vector3(-h.x, h.y, -h.z), Vector3(-h.x, -h.y, -h.z), Vector3(h.x, -h.y, -h.z)]
-	elif normal == Vector3.LEFT: v = [Vector3(-h.x, h.y, -h.z), Vector3(-h.x, h.y, h.z), Vector3(-h.x, -h.y, h.z), Vector3(-h.x, -h.y, -h.z)]
-	elif normal == Vector3.RIGHT: v = [Vector3(h.x, h.y, h.z), Vector3(h.x, h.y, -h.z), Vector3(h.x, -h.y, -h.z), Vector3(h.x, -h.y, h.z)]
+	var v =[]
+	if normal == Vector3.UP: v =[Vector3(-h.x, h.y, -h.z), Vector3(h.x, h.y, -h.z), Vector3(h.x, h.y, h.z), Vector3(-h.x, h.y, h.z)]
+	elif normal == Vector3.DOWN: v =[Vector3(-h.x, -h.y, h.z), Vector3(h.x, -h.y, h.z), Vector3(h.x, -h.y, -h.z), Vector3(-h.x, -h.y, -h.z)]
+	elif normal == Vector3.FORWARD: v =[Vector3(-h.x, h.y, h.z), Vector3(h.x, h.y, h.z), Vector3(h.x, -h.y, h.z), Vector3(-h.x, -h.y, h.z)]
+	elif normal == Vector3.BACK: v =[Vector3(h.x, h.y, -h.z), Vector3(-h.x, h.y, -h.z), Vector3(-h.x, -h.y, -h.z), Vector3(h.x, -h.y, -h.z)]
+	elif normal == Vector3.LEFT: v =[Vector3(-h.x, h.y, -h.z), Vector3(-h.x, h.y, h.z), Vector3(-h.x, -h.y, h.z), Vector3(-h.x, -h.y, -h.z)]
+	elif normal == Vector3.RIGHT: v =[Vector3(h.x, h.y, h.z), Vector3(h.x, h.y, -h.z), Vector3(h.x, -h.y, -h.z), Vector3(h.x, -h.y, h.z)]
 	for i in range(v.size()): v[i] += offset
 	st.set_uv(u00); st.add_vertex(v[0]); st.set_uv(u10); st.add_vertex(v[1]); st.set_uv(u11); st.add_vertex(v[2])
 	st.set_uv(u00); st.add_vertex(v[0]); st.set_uv(u11); st.add_vertex(v[2]); st.set_uv(u01); st.add_vertex(v[3])
@@ -222,3 +222,4 @@ func _parse_io_mask(directions_array: Array) -> int:
 			"front", "up": mask |= (1 << 2)
 			"right": mask |= (1 << 3)
 	return mask
+

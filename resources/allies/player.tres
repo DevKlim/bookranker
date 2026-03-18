@@ -1,10 +1,17 @@
-[gd_resource type="Resource" script_class="AllyResource" format=3 uid="uid://cjc5yksr34hnh"]
+[gd_resource type="Resource" script_class="AllyResource" format=3 uid="uid://dcvl2n6ad0x66"]
 
 [ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="1_oryay"]
+[ext_resource type="PackedScene" uid="uid://dre1ofl7x0vgy" path="res://scenes/allies/player.tscn" id="2_oryay"]
 [ext_resource type="Script" uid="uid://c1irnf603307x" path="res://scripts/resources/ally_resource.gd" id="3_a7i87"]
 
 [resource]
 script = ExtResource("3_a7i87")
 ally_name = "Player"
+scene = ExtResource("2_oryay")
 icon = ExtResource("1_oryay")
 inventory_slots = 40
+respawns_unlimited = true
+respawns_cooldown = 2.0
+metadata/respawns_count = 0
+metadata/respawns_unlimited = true
+metadata/respawns_cooldown = 2.0

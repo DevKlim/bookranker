@@ -1,0 +1,31 @@
+[    {
+        "id": "basic_robot",
+        "name": "Basic Robot",
+        "scene_path": "res://scenes/enemies/basic_robot.tscn",
+        "logic": { "health": 10, "speed": 40, "defense": 0, "magical_defense": 0.2, "elemental_cd": 0.0 },
+        "params": { "attack_damage": 5, "attack_speed": 1.0 }
+    },
+    {
+        "id": "fast_robot",
+        "name": "Fast Robot",
+        "scene_path": "res://scenes/enemies/fast_robot.tscn",
+        "logic": { "health": 10, "speed": 70, "defense": 0, "magical_defense": 0.0 },
+        "params": { "attack_damage": 3, "attack_speed": 2.0 }
+    },
+    {
+        "id": "roaming_scrap",
+        "name": "Roaming Scrap",
+        "scene_path": "res://scenes/enemies/roaming_scrap.tscn",
+        "logic": { "health": 5, "speed": 35, "defense": 0 },
+        "params": { "attack_damage": 2, "attack_speed": 1.0, "attack_range": 1 },
+        "drops":[ { "item": "drill_bit", "chance": 0.3 }, { "item": "gear", "chance": 0.3 }, { "item": "lux", "chance": 0.1 }, { "item": "engine", "chance": 0.1 }, { "item": "rubber", "chance": 0.2 } ]
+    },
+    {
+        "id": "boss_scrap",
+        "name": "Beeg Roomba",
+        "scene_path": "res://scenes/enemies/beeg_scrap.tscn",
+        "logic": { "health": 50, "speed": 35, "defense": 0 },
+        "params": { "attack_damage": 2, "attack_speed": 1.0, "attack_range": 1 },
+        "drops":[ { "item": "drill_bit", "chance": 0.3 }, { "item": "gear", "chance": 0.3 }, { "item": "lux", "chance": 0.1 }, { "item": "engine", "chance": 0.1 }, { "item": "rubber", "chance": 0.2 } ]
+    }
+]

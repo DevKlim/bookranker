@@ -51,7 +51,7 @@ func is_element_active_globally(id: String) -> bool:
 func register_spatial_status(id: String, entity: Node, tile: Vector2i) -> void:
 	if id not in SPATIAL_ELEMENTS: return
 	if not status_registry.has(id): status_registry[id] = {}
-	if not status_registry[id].has(tile): status_registry[id][tile] = []
+	if not status_registry[id].has(tile): status_registry[id][tile] =[]
 	
 	if entity not in status_registry[id][tile]:
 		status_registry[id][tile].append(entity)
@@ -189,7 +189,7 @@ func apply_chain_damage(start_node: Node, damage: float, source: Node, bounce_ra
 		var neighbors = _get_neighbors_in_radius(current, bounce_range)
 		
 		# Filter valid next targets
-		var candidates = []
+		var candidates =[]
 		for n in neighbors:
 			if not is_instance_valid(n): continue
 			if n == current: continue
@@ -261,10 +261,13 @@ func apply_aoe_damage(center_node: Node, radius: float, damage: float, source: N
 			elif v.has_node("HealthComponent"):
 				v.get_node("HealthComponent").take_damage(applied_damage, null, source)
 		
-		if impulse > 0 and v.has_method("apply_impulse"):
+		if impulse > 0:
 			var dir = (v.global_position - center_pos).normalized()
 			dir.y = 0.5 # Add upward pop
-			v.apply_impulse(dir.normalized() * impulse)
+			if v.has_method("apply_impulse"):
+				v.apply_impulse(dir.normalized() * impulse)
+			elif v.has_node("EnemyMovementComponent"):
+				v.get_node("EnemyMovementComponent").apply_displacement(dir.normalized() * impulse)
 
 func _handle_extinguish(target: Node) -> void:
 	var ec = target.get_node_or_null("ElementalComponent")
@@ -299,17 +302,17 @@ func _handle_tailwind(target: Node, id1: String, id2: String, source: Node) -> v
 ## --- PUBLIC UTILITIES ---
 
 func get_closest_enemies_behind(reference_entity: Node, limit: int = 1) -> Array:
-	if not is_instance_valid(reference_entity): return []
+	if not is_instance_valid(reference_entity): return[]
 	
 	var target_lane = -1
 	if reference_entity.has_method("get_lane_id"):
 		target_lane = reference_entity.get_lane_id()
 	
-	if target_lane == -1: return []
+	if target_lane == -1: return[]
 
 	var enemies = LaneManager.get_enemies_in_lane(target_lane)
 	var ref_x = reference_entity.global_position.x
-	var candidates = []
+	var candidates =[]
 	
 	for enemy in enemies:
 		if not is_instance_valid(enemy) or enemy == reference_entity: continue
@@ -320,14 +323,14 @@ func get_closest_enemies_behind(reference_entity: Node, limit: int = 1) -> Array
 	
 	candidates.sort_custom(func(a, b): return a.dist < b.dist)
 	
-	var result = []
+	var result =[]
 	for i in range(min(limit, candidates.size())):
 		result.append(candidates[i].node)
 		
 	return result
 
 func _get_neighbors_in_radius(center: Node, radius: float) -> Array:
-	var found = []
+	var found =[]
 	var center_pos = center.global_position
 	var tile = LaneManager.world_to_tile(center_pos)
 	var r_int = int(ceil(radius))
@@ -343,7 +346,7 @@ func _get_neighbors_in_radius(center: Node, radius: float) -> Array:
 	return found
 
 func _get_registered_neighbors(tile: Vector2i, status_id: String) -> Array:
-	var found = []
+	var found =[]
 	if not status_registry.has(status_id): return found
 	
 	var registry = status_registry[status_id]

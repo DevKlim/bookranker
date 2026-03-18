@@ -1,0 +1,19 @@
+[    
+    { "id": 0, "name": "Dirt", "texture_base": "res://assets/blocks/dirt.png" },
+    { "id": 1, "name": "Stone", "texture_base": "res://assets/blocks/stone.png", "ore_item": "stone", "yield_min": 10, "yield_max": 20 },
+    { "id": 2, "name": "Stone Bricks", "texture_base": "res://assets/blocks/stone_bricks.png" },
+    { "id": 3, "name": "Coal Ore", "texture_base": "res://assets/blocks/coal_ore.png", "ore_item": "coal", "yield_min": 5, "yield_max": 10 },
+    { "id": 4, "name": "Iron Ore", "texture_base": "res://assets/blocks/iron_ore.png", "ore_item": "iron", "yield_min": 4, "yield_max": 8 },
+    { "id": 5, "name": "Copper Ore", "texture_base": "res://assets/blocks/copper_ore.png", "ore_item": "copper", "yield_min": 4, "yield_max": 8 },
+    { "id": 6, "name": "Gold Ore", "texture_base": "res://assets/blocks/gold_ore.png", "ore_item": "gold", "yield_min": 2, "yield_max": 5 },
+    { "id": 7, "name": "Lux Ore", "texture_base": "res://assets/blocks/lux_ore.png", "ore_item": "lux", "yield_min": 1, "yield_max": 3 },
+    { "id": 8, "name": "Petroleum Ore", "texture_base": "res://assets/blocks/petroleum_ore.png", "ore_item": "petroleum", "yield_min": 4, "yield_max": 8 },
+    { "id": 9, "name": "Redstone Ore", "texture_base": "res://assets/blocks/redstone_ore.png" },
+    { "id": 10, "name": "Lapis Ore", "texture_base": "res://assets/blocks/lapis_ore.png" },
+    { "id": 11, "name": "Marble", "texture_base": "res://assets/blocks/marble.png" },
+    { "id": 12, "name": "Graphite Marble", "texture_base": "res://assets/blocks/graphite_marb.png", "ore_item": "lux", "yield_min": 1, "yield_max": 3 },
+    { "id": 13, "name": "Aqua Marble", "texture_base": "res://assets/blocks/aqua_marb.png", "ore_item": "lux", "yield_min": 1, "yield_max": 3 },
+    { "id": 14, "name": "Ink Marble", "texture_base": "res://assets/blocks/ink_marb.png", "ore_item": "lux", "yield_min": 1, "yield_max": 3 },
+    { "id": 15, "name": "Igni Marble", "texture_base": "res://assets/blocks/igni_marb.png", "ore_item": "igni_pellet", "yield_min": 2, "yield_max": 5 },
+    { "id": 16, "name": "Aero Pellet", "texture_base": "res://assets/blocks/aero_marb.png", "ore_item": "aero_pellet", "yield_min": 2, "yield_max": 5 }
+]

@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="AllyResource" format=3 uid="uid://d386ml6j0pdcs"]
+[gd_resource type="Resource" script_class="AllyResource" format=3 uid="uid://cxs6dx24usr37"]
 
 [ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="1_pkj5g"]
-[ext_resource type="PackedScene" uid="uid://bb5muybl44kdf" path="res://scenes/allies/drone.tscn" id="2_8v5gq"]
+[ext_resource type="PackedScene" uid="uid://bkt23q1v660iw" path="res://scenes/allies/drone.tscn" id="2_8v5gq"]
 [ext_resource type="Script" uid="uid://c1irnf603307x" path="res://scripts/resources/ally_resource.gd" id="3_o1je7"]
 
 [resource]
@@ -10,3 +10,7 @@ ally_name = "Drone"
 scene = ExtResource("2_8v5gq")
 icon = ExtResource("1_pkj5g")
 speed = 60.0
+respawns_count = 3
+metadata/respawns_count = 3
+metadata/respawns_unlimited = false
+metadata/respawns_cooldown = 5.0

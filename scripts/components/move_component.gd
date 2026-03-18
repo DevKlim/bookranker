@@ -9,7 +9,7 @@ extends Node
 # Added to support entities (Enemy/Player) that set this directly for manual movement control
 var target_position: Vector3 = Vector3.ZERO
 
-var path: Array[Vector3] = []
+var path: Array[Vector3] =[]
 var current_path_index: int = 0
 var is_moving: bool = false
 
@@ -24,7 +24,8 @@ func move_to(target_pos: Vector3) -> void:
 	target_position = target_pos # Sync target_position
 	
 	# Calculate path using LaneManager
-	path = LaneManager.get_path_world(_body.global_position, target_pos)
+	var is_ally = _body.is_in_group("allies") or _body.is_in_group("player")
+	path = LaneManager.get_path_world(_body.global_position, target_pos, is_ally)
 	current_path_index = 0
 	
 	# If start node is the same as first path point, skip it
@@ -74,3 +75,4 @@ func _physics_process(_delta: float) -> void:
 	if direction.length_squared() > 0.01:
 		var look_target = _body.global_position + direction
 		_body.look_at(look_target, Vector3.UP)
+

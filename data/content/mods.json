@@ -1,0 +1,12 @@
+[
+    { "id": "mod_path_not_taken", "name": "Path Not Taken (Mod)", "texture": "res://icon.svg", "cost": 8, "type": "core", "effects": {} },
+    { "id": "mod_byt_miner", "name": "Byt Miner (Mod)", "texture": "res://icon.svg", "cost": 4, "type": "core", "effects": {} },
+    { "id": "mod_airdrop", "name": "Airdrop (Mod)", "texture": "res://icon.svg", "cost": 2, "type": "core", "effects": {} },
+    { "id": "mod_double_ping", "name": "Double Ping! (Mod)", "texture": "res://icon.svg", "cost": 2, "type": "core", "effects": {} },
+    { "id": "mod_kernal_corns", "name": "Kernal Corns (Mod)", "texture": "res://icon.svg", "cost": 4, "type": "core", "effects": {} },
+    { "id": "mod_overheat", "name": "Overheat (Mod)", "texture": "res://icon.svg", "cost": 2, "type": "building", "effects": {} },
+    { "id": "mod_battery", "name": "Battery (Mod)", "texture": "res://icon.svg", "cost": 2, "type": "building", "effects": {} },
+    { "id": "mod_shield", "name": "Shield (Mod)", "texture": "res://icon.svg", "cost": 2, "type": "building", "effects": {} },
+    { "id": "mod_coolant", "name": "Coolant (Mod)", "texture": "res://icon.svg", "cost": 2, "type": "building", "effects": {} },
+    { "id": "mod_harden", "name": "Harden (Mod)", "texture": "res://icon.svg", "cost": 2, "type": "building", "effects": {} }
+]

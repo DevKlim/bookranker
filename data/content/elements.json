@@ -1,0 +1,59 @@
+[    { 
+        "id": "igni", "name": "Igni", "color": "#FF4500", "duration": 5.0, "cooldown": 0.2,
+        "reactions": { "volt": "light", "magne": "fuse", "tera": "scorch", "aqua": "extinguish", "aero": "tailwind", "chem": "pollute" },
+        "effects": { "damage_mult": 0.02, "incoming_damage_mult": 0.0 } 
+    },
+    { 
+        "id": "volt", "name": "Volt", "color": "#FFFF00", "duration": 5.0, "cooldown": 0.2,
+        "reactions": { "igni": "light", "magne": "conduct", "aqua": "ripple", "tera": "ground", "lux": "ray", "aero": "tailwind", "chem": "pollute" },
+        "effects": {} 
+    },
+    { 
+        "id": "magne", "name": "Magne", "color": "#A9A9A9", "duration": 5.0, "cooldown": 0.2,
+        "reactions": { "volt": "conduct", "igni": "fuse", "aqua": "rust", "tera": "graviton", "aero": "tailwind", "chem": "pollute" },
+        "effects": { "defense_flat": 10.0 }
+    },
+    { 
+        "id": "aqua", "name": "Aqua", "color": "#1E90FF", "duration": 5.0, "cooldown": 0.2, 
+        "reactions": { "igni": "extinguish", "volt": "ripple", "magne": "rust", "tera": "mortar", "lux": "prism", "aero": "tailwind", "chem": "pollute" }, 
+        "effects": { "attack_speed_mult": -0.02 } 
+    },
+    { 
+        "id": "tera", "name": "Tera", "color": "#8B4513", "duration": 5.0, "cooldown": 0.2, 
+        "reactions": { "igni": "scorch", "volt": "ground", "magne": "graviton", "aqua": "mortar", "lux": "crystal", "tera": "structure", "aero": "tailwind", "chem": "pollute" }, 
+        "effects": { "max_health_mult": 0.2, "weight": 50.0 }
+    },
+    { 
+        "id": "aero", "name": "Aero", "color": "#E0FFFF", "duration": 3.0, "cooldown": 0.5, 
+        "reactions": {}, 
+        "effects": { "speed_mult": 0.2, "crafting_speed_mult": 0.2 }
+    },
+    { 
+        "id": "chem", "name": "Chem", "color": "#32CD32", "duration": 8.0, "cooldown": 0.5, 
+        "reactions": {}, 
+        "effects": { "output_chance": 1.0 }
+    },
+    { 
+        "id": "lux", "name": "Lux", "color": "#FFFACD", "duration": 5.0, "cooldown": 0.5,
+        "reactions": { "igni": "plasma", "volt": "ray", "magne": "plasma", "aqua": "prism", "tera": "crystal" }, 
+        "effects": { "lux_stat": 10.0 } 
+    },
+    
+    { "id": "light", "name": "Light", "color": "#FFF8DC", "duration": 5.0, "cooldown": 0.5, "reactions": { "igni": "plasma" }, "effects": { "incoming_damage_mult": 0.1 } },
+    { "id": "fuse", "name": "Fuse", "color": "#FFFFFF", "duration": 0.1, "cooldown": 0.0, "reactions": {}, "effects": {} },
+    { "id": "scorch", "name": "Scorch", "color": "#8B0000", "duration": 8.0, "cooldown": 0.5, "reactions": {}, "effects": { "defense_flat": -5.0 } },
+    { "id": "extinguish", "name": "Extinguish", "color": "#708090", "duration": 0.1, "cooldown": 0.0, "reactions": {}, "effects": {} },
+    { "id": "conduct", "name": "Conduct", "color": "#00CED1", "duration": 4.0, "cooldown": 1.0, "reactions": {}, "effects": { "processing_speed_mult": 0.05, "power_consumption_mult": 0.1 } },
+    { "id": "ripple", "name": "Ripple", "color": "#4682B4", "duration": 4.0, "cooldown": 0.5, "reactions": {}, "effects": {} },
+    { "id": "ground", "name": "Ground", "color": "#556B2F", "duration": 0.1, "cooldown": 0.0, "reactions": {}, "effects": {} },
+    { "id": "rust", "name": "Rust", "color": "#CD853F", "duration": 10.0, "cooldown": 1.0, "reactions": {}, "effects": { "defense_flat": -5.0 } },
+    { "id": "graviton", "name": "Graviton", "color": "#483D8B", "duration": 5.0, "cooldown": 0.5, "reactions": {}, "effects": { "speed_mult": -0.4, "weight": 100.0 } },
+    { "id": "structure", "name": "Structure", "color": "#2F4F4F", "duration": 10.0, "cooldown": 0.0, "reactions": { "lux": "black_hole" }, "effects": { "max_health_mult": 0.5 } },
+    { "id": "mortar", "name": "Mortar", "color": "#696969", "duration": 5.0, "cooldown": 0.5, "reactions": { "igni": "hardened_clay" }, "effects": { "speed_mult": -0.5 } },
+    { "id": "tailwind", "name": "Tailwind", "color": "#F0FFFF", "duration": 0.1, "cooldown": 0.0, "reactions": {}, "effects": {} },
+    
+    { "id": "plasma", "name": "Plasma", "color": "#9400D3", "duration": 5.0, "cooldown": 0.5, "reactions": {}, "effects": { "incoming_damage_mult": 0.25 } },
+    { "id": "ray", "name": "Ray", "color": "#FFFFE0", "duration": 5.0, "cooldown": 0.5, "reactions": {}, "effects": {} },
+    { "id": "prism", "name": "Prism", "color": "#E6E6FA", "duration": 5.0, "cooldown": 0.5, "reactions": {}, "effects": {} },
+    { "id": "crystal", "name": "Crystal", "color": "#D8BFD8", "duration": 10.0, "cooldown": 0.0, "reactions": {}, "effects": { "luck_stat": 10.0 } }
+]

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://be6viaejxcqeu"]
+
+[ext_resource type="Resource" uid="uid://f2yu5yfckp4d" path="res://resources/items/stone.tres" id="1_4652n"]
+[ext_resource type="Resource" uid="uid://ci6qhchtaulll" path="res://resources/items/rod.tres" id="2_flrmx"]
+[ext_resource type="Resource" uid="uid://bmgtisnh8eacw" path="res://resources/items/bent_pipe.tres" id="3_if17u"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="4_ya4ht"]
+
+[resource]
+script = ExtResource("4_ya4ht")
+recipe_name = "Bent Pipe"
+craft_time = 0.5
+inputs = [{
+"count": 1,
+"resource": ExtResource("1_4652n")
+}, {
+"count": 3,
+"resource": ExtResource("2_flrmx")
+}]
+outputs = [{
+"count": 1,
+"resource": ExtResource("3_if17u")
+}]

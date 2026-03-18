@@ -1,29 +1,37 @@
 [gd_resource type="MeshLibrary" format=4 uid="uid://buahgkoobw40c"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4no63"]
-texture_filter = 0
+[ext_resource type="Texture2D" uid="uid://mqxoqff2tw3y" path="res://assets/blocks/stone_bricks.png" id="1_4l1i6"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4l1i6"]
+albedo_texture = ExtResource("1_4l1i6")
 texture_filter = 0
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yk2qc"]
+albedo_texture = ExtResource("1_4l1i6")
 texture_filter = 0
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_u6hwt"]
+albedo_texture = ExtResource("1_4l1i6")
 texture_filter = 0
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_okqql"]
+albedo_texture = ExtResource("1_4l1i6")
 texture_filter = 0
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0tc1d"]
+albedo_texture = ExtResource("1_4l1i6")
 texture_filter = 0
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_8xb17"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8xb17"]
+albedo_texture = ExtResource("1_4l1i6")
+texture_filter = 0
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_macl7"]
 _surfaces = [{
 "aabb": AABB(-0.5, 0.5, -0.5, 1, 1e-05, 1),
 "attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
 "format": 34359738391,
-"material": SubResource("StandardMaterial3D_4no63"),
+"material": SubResource("StandardMaterial3D_4l1i6"),
 "primitive": 3,
 "uv_scale": Vector4(0, 0, 0, 0),
 "vertex_count": 6,
@@ -32,7 +40,7 @@ _surfaces = [{
 "aabb": AABB(-0.5, -0.5, -0.5, 1, 1e-05, 1),
 "attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
 "format": 34359738391,
-"material": SubResource("StandardMaterial3D_4l1i6"),
+"material": SubResource("StandardMaterial3D_yk2qc"),
 "primitive": 3,
 "uv_scale": Vector4(0, 0, 0, 0),
 "vertex_count": 6,
@@ -41,7 +49,7 @@ _surfaces = [{
 "aabb": AABB(-0.5, -0.5, 0.5, 1, 1, 1e-05),
 "attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
 "format": 34359738391,
-"material": SubResource("StandardMaterial3D_yk2qc"),
+"material": SubResource("StandardMaterial3D_u6hwt"),
 "primitive": 3,
 "uv_scale": Vector4(0, 0, 0, 0),
 "vertex_count": 6,
@@ -50,7 +58,7 @@ _surfaces = [{
 "aabb": AABB(-0.5, -0.5, -0.5, 1, 1, 1e-05),
 "attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
 "format": 34359738391,
-"material": SubResource("StandardMaterial3D_u6hwt"),
+"material": SubResource("StandardMaterial3D_okqql"),
 "primitive": 3,
 "uv_scale": Vector4(0, 0, 0, 0),
 "vertex_count": 6,
@@ -59,7 +67,7 @@ _surfaces = [{
 "aabb": AABB(-0.5, -0.5, -0.5, 1e-05, 1, 1),
 "attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
 "format": 34359738391,
-"material": SubResource("StandardMaterial3D_okqql"),
+"material": SubResource("StandardMaterial3D_0tc1d"),
 "primitive": 3,
 "uv_scale": Vector4(0, 0, 0, 0),
 "vertex_count": 6,
@@ -68,20 +76,20 @@ _surfaces = [{
 "aabb": AABB(0.5, -0.5, -0.5, 1e-05, 1, 1),
 "attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
 "format": 34359738391,
-"material": SubResource("StandardMaterial3D_0tc1d"),
+"material": SubResource("StandardMaterial3D_8xb17"),
 "primitive": 3,
 "uv_scale": Vector4(0, 0, 0, 0),
 "vertex_count": 6,
 "vertex_data": PackedByteArray("AAAAPwAAAD8AAAA/AAAAPwAAAD8AAAC/AAAAPwAAAL8AAAC/AAAAPwAAAD8AAAA/AAAAPwAAAL8AAAC/AAAAPwAAAL8AAAA/////f/9//z////9//3//P////3//f/8/////f/9//z////9//3//P////3//f/8/")
 }]
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_macl7"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_3iwgq"]
 
 [resource]
 item/0/name = "Spawner"
-item/0/mesh = SubResource("ArrayMesh_8xb17")
+item/0/mesh = SubResource("ArrayMesh_macl7")
 item/0/mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 item/0/mesh_cast_shadow = 1
-item/0/shapes = [SubResource("BoxShape3D_macl7"), Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)]
+item/0/shapes = [SubResource("BoxShape3D_3iwgq"), Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)]
 item/0/navigation_mesh_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 item/0/navigation_layers = 1

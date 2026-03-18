@@ -1,0 +1,19 @@
+[
+    { "id": "craft_hand_drill", "name": "Hand Drill", "category": "basic", "time": 0.5, "tier": 1, "output": "hand_drill", "count": 1, "inputs": { "stone": 5 } },
+    { "id": "draft_burnace", "name": "Burnace", "category": "basic", "time": 2.0, "tier": 1, "output": "burnace", "count": 1, "inputs": { "stone": 12, "lux": 1 } },
+    { "id": "draft_drill", "name": "Drill", "category": "basic", "time": 2.0, "tier": 1, "output": "drill", "count": 1, "inputs": { "stone": 12, "drill_bit": 1, "gear": 3, "lux": 1 } },
+    { "id": "draft_wire", "name": "Wire", "category": "basic", "time": 0.5, "tier": 1, "output": "wire", "count": 1, "inputs": { "lux": 1 } },
+    { "id": "draft_conveyor", "name": "Conveyor", "category": "basic", "time": 0.5, "tier": 1, "output": "conveyor", "count": 1, "inputs": { "iron_alloy": 1, "gear": 2 } },
+    { "id": "draft_rod", "name": "Iron Rod", "category": "basic", "time": 0.5, "tier": 1, "output": "rod", "count": 3, "inputs": { "stone": 1, "iron_alloy": 3 } },
+    { "id": "draft_gear", "name": "Iron Gear", "category": "basic", "time": 1.0, "tier": 1, "output": "gear", "count": 1, "inputs": { "iron_alloy": 2 } },
+    { "id": "draft_asourcer", "name": "Asourcer", "category": "basic", "time": 3.0, "tier": 1, "output": "asourcer", "count": 1, "inputs": { "circuit": 2, "gear": 8, "iron_alloy": 8 } },
+    { "id": "draft_turret", "name": "Turret", "category": "basic", "time": 3.0, "tier": 1, "output": "turret", "count": 1, "inputs": { "stone": 12, "iron_alloy": 8, "copper_alloy": 8, "gear": 8 } },
+    { "id": "smelt_iron", "name": "Smelt Iron", "category": "smelting", "time": 2.0, "tier": 1, "output": "iron_alloy", "count": 1, "inputs": { "iron": 1, "coal": 1 } },
+    { "id": "smelt_copper", "name": "Smelt Copper", "category": "smelting", "time": 2.0, "tier": 1, "output": "copper_alloy", "count": 1, "inputs": { "copper": 1, "coal": 1 } },
+    { "id": "craft_rod", "name": "Iron Rod", "category": "assembly", "time": 0.5, "tier": 1, "output": "rod", "count": 2, "inputs": { "iron_alloy": 1 } },
+    { "id": "craft_gear", "name": "Iron Gear", "category": "assembly", "time": 1.0, "tier": 1, "output": "gear", "count": 1, "inputs": { "iron_alloy": 2 } },
+    { "id": "craft_bent_pipe", "name": "Bent Pipe", "category": "assembly", "time": 0.5, "tier": 1, "output": "bent_pipe", "count": 1, "inputs": { "stone": 1, "rod": 3 } },
+    { "id": "craft_cable", "name": "Copper Cable", "category": "assembly", "time": 0.5, "tier": 1, "output": "cable", "count": 3, "inputs": { "copper_alloy": 1 } },
+    { "id": "craft_circuit", "name": "Copper Circuit", "category": "assembly", "time": 1.0, "tier": 1, "output": "circuit", "count": 1, "inputs": { "iron_alloy": 1, "cable": 4 } },
+    { "id": "craft_lux_circuit", "name": "Lux Circuit", "category": "assembly", "time": 1.0, "tier": 1, "output": "adv_circuit", "count": 1, "inputs": { "iron_alloy": 1, "wire": 4 } }
+]

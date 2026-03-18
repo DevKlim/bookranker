@@ -1,0 +1,36 @@
+[gd_scene format=3 uid="uid://vkagqybeoidp"]
+
+[ext_resource type="Script" uid="uid://87pk5o5eu28v" path="res://scripts/entities/enemy.gd" id="1_e8ibx"]
+[ext_resource type="Script" uid="uid://duudv3f6u8n6m" path="res://scripts/components/health_component.gd" id="2_dfbr2"]
+[ext_resource type="PackedScene" uid="uid://db5sot4awi1u2" path="res://assets/enemies/roomba.glb" id="2_og7jq"]
+[ext_resource type="Script" uid="uid://bw7f6w3g67r4d" path="res://scripts/components/attacker_component.gd" id="3_og7jq"]
+[ext_resource type="Script" uid="uid://c6lfioqpkvor7" path="res://scripts/components/move_component.gd" id="4_xjhse"]
+[ext_resource type="Script" uid="uid://dg4gfri6lu5o2" path="res://scripts/components/elemental_component.gd" id="5_h2wdu"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_uclam"]
+radius = 0.3
+
+[node name="Beeg Roomba" type="CharacterBody3D" unique_id=177952314]
+script = ExtResource("1_e8ibx")
+
+[node name="blockbench_export" parent="." unique_id=851971254 instance=ExtResource("2_og7jq")]
+transform = Transform3D(-8.742278e-08, 0, -2, 0, 2, 0, 2, 0, -8.742278e-08, 0, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1395533958]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("CapsuleShape3D_uclam")
+
+[node name="HealthComponent" type="Node" parent="." unique_id=1709699053]
+script = ExtResource("2_dfbr2")
+max_health = 50.0
+
+[node name="AttackerComponent" type="Node" parent="." unique_id=774834318]
+script = ExtResource("3_og7jq")
+
+[node name="AttackTimer" type="Timer" parent="AttackerComponent" unique_id=813725387]
+
+[node name="MoveComponent" type="Node" parent="." unique_id=557757532]
+script = ExtResource("4_xjhse")
+
+[node name="ElementalComponent" type="Node" parent="." unique_id=1855319208]
+script = ExtResource("5_h2wdu")

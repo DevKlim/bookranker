@@ -1,0 +1,7 @@
+[
+    {
+        "id": "rock", "name": "Rock", "block_texture": "res://assets/blocks/stone.png",
+        "drops": { "item": "stone", "count": 3 },
+        "health": 10.0
+    }
+]

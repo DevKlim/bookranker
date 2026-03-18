@@ -14,6 +14,7 @@
 script = ExtResource("1_script")
 
 [node name="ModelFallback" type="MeshInstance3D" parent="." unique_id=1520973638]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 mesh = SubResource("CapsuleMesh_cddyg")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=185664810]
@@ -22,7 +23,7 @@ shape = SubResource("CapsuleShape3D_gr16i")
 
 [node name="HealthComponent" type="Node" parent="." unique_id=2031118906]
 script = ExtResource("2_health")
-max_health = 50.0
+max_health = 5.0
 
 [node name="AttackerComponent" type="Node" parent="." unique_id=412343687]
 script = ExtResource("3_attack")

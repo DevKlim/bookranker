@@ -22,13 +22,14 @@ var health_component: HealthComponent
 var elemental_component: ElementalComponent
 var move_component: MoveComponent 
 var attacker_component: AttackerComponent
+var enemy_movement_component: EnemyMovementComponent
 
 # Visuals
 @onready var model_container: Node3D = get_node_or_null("ModelContainer")
 
 # Optimized Visual Tinting
-var _tint_materials: Array[StandardMaterial3D] = []
-var _tint_sprites: Array[Node] = []
+var _tint_materials: Array[StandardMaterial3D] =[]
+var _tint_sprites: Array[Node] =[]
 var _tint_timer: float = 0.0
 const TINT_DURATION: float = 0.5
 
@@ -46,9 +47,8 @@ var range_width: int = 0
 var is_field_enemy: bool = false
 var aggro_range: float = 10.0
 var wander_radius: float = 5.0
+var base_idle_time: float = 2.0
 var idle_timer: float = 0.0
-var _step_cooldown: float = 0.0 
-var _wander_target: Vector3 = Vector3.ZERO
 var _home_tile: Vector2i = Vector2i.ZERO 
 
 var is_staggered: bool = false
@@ -57,13 +57,10 @@ var current_attack_target: Node3D = null
 # Physics / Gravity Status
 var has_gravity_effect: bool = false
 var _ragdoll_recovery_timer: float = 0.0
-# Gravity lock timer for initial spawn
 var _spawn_settle_timer: float = 2.0 
 
 # Pathfinding
-var current_path_queue: Array[Vector3] = []
-var _current_move_target: Vector3 = Vector3.ZERO
-var _has_move_target: bool = false
+var current_path_queue: Array[Vector3] =[]
 
 # Attack State Variables
 var safe_tile_center: Vector3 = Vector3.ZERO
@@ -73,10 +70,11 @@ var attack_wait_timer: float = 0.0
 var _registered_lane_id: int = -1
 var _current_tile_coords: Vector2i = Vector2i(-9999, -9999)
 
+var _debug_timer: float = 0.0
+
 func _ready() -> void:
 	collision_layer = 2
 	collision_mask = 1 
-	set_collision_mask_value(2, false) 
 	
 	if not model_container:
 		model_container = get_node_or_null("ModelFallback")
@@ -92,8 +90,13 @@ func _ready() -> void:
 		move_component = MoveComponent.new()
 		move_component.name = "MoveComponent"
 		add_child(move_component)
-	
 	move_component.set_physics_process(false)
+	
+	enemy_movement_component = get_node_or_null("EnemyMovementComponent")
+	if not enemy_movement_component:
+		enemy_movement_component = EnemyMovementComponent.new()
+		enemy_movement_component.name = "EnemyMovementComponent"
+		add_child(enemy_movement_component)
 	
 	if health_component:
 		health_component.staggered.connect(_on_staggered)
@@ -109,11 +112,6 @@ func _ready() -> void:
 		current_state = State.MOVE
 		
 	_register_lane()
-	
-	if is_field_enemy:
-		_home_tile = LaneManager.world_to_tile(global_position)
-		# Ensure we start a bit above ground to settle
-		if global_position.y < 0.5: global_position.y = 0.5
 
 func _cache_visual_materials(node: Node) -> void:
 	if not is_instance_valid(node): return
@@ -143,7 +141,7 @@ func _register_lane() -> void:
 	_current_tile_coords = tile
 	LaneManager.register_enemy(self, _registered_lane_id)
 
-func initialize_from_resource(res: EnemyResource) -> void:
+func initialize_from_resource(res: EnemyResource, config: Dictionary = {}) -> void:
 	enemy_resource = res 
 	if health_component:
 		health_component.max_health = res.health
@@ -159,39 +157,48 @@ func initialize_from_resource(res: EnemyResource) -> void:
 	range_depth = res.attack_range_depth
 	range_width = res.attack_range_width
 	
-	is_field_enemy = res.is_field_enemy
-	aggro_range = res.aggro_range
-	wander_radius = res.wander_radius
-	
 	if attacker_component:
-		# Initialize default basic attack
 		attacker_component.initialize(res.attack_damage, res.attack_speed, res.attack_element)
 	
+	is_field_enemy = config.get("is_field_enemy", false)
+	aggro_range = config.get("aggro_range", 10.0)
+	wander_radius = config.get("wander_radius", 5.0)
+	base_idle_time = config.get("idle_time", 2.0)
+	idle_timer = base_idle_time
+
 	if is_field_enemy:
 		current_state = State.IDLE
-		idle_timer = res.idle_time
+		_home_tile = LaneManager.world_to_tile(global_position)
+		if global_position.y < 0.5: global_position.y = 0.5
+
+func set_as_wave_enemy() -> void:
+	is_field_enemy = false
+	current_state = State.MOVE
+	
+	# NEW ECS-FRIENDLY METHOD: Dynamically add physical exceptions for all clutter objects
+	# Ensures physics engine ignores them regardless of sub-node mesh static bodies
+	var clutters = get_tree().get_nodes_in_group("clutter")
+	for c in clutters:
+		if is_instance_valid(c):
+			_ignore_collisions_recursive(c)
+			
+	set_path([])
+
+func _ignore_collisions_recursive(node: Node) -> void:
+	if node is PhysicsBody3D:
+		add_collision_exception_with(node)
+	for child in node.get_children():
+		_ignore_collisions_recursive(child)
 
 func set_path(world_path: Array[Vector3]) -> void:
 	current_path_queue = world_path.duplicate()
-	_step_cooldown = 0.0
-	_has_move_target = false
+	
+	if enemy_movement_component:
+		enemy_movement_component.reset_target()
+		
 	if current_state != State.RAGDOLL:
 		if current_state != State.AGGRO:
 			current_state = State.MOVE
-		_advance_path_point()
-
-func _advance_path_point() -> void:
-	if current_path_queue.is_empty():
-		_has_move_target = false
-		return
-	
-	var next_point = current_path_queue.pop_front()
-	next_point.y = global_position.y
-	_current_move_target = next_point
-	_has_move_target = true
-	
-	if move_component:
-		move_component.target_position = _current_move_target
 
 func _process(delta: float) -> void:
 	_process_tint(delta)
@@ -224,22 +231,29 @@ func _physics_process(delta: float) -> void:
 	if current_attack_target:
 		if not is_instance_valid(current_attack_target) or current_attack_target.is_queued_for_deletion():
 			_stop_attacking_sequence()
-		elif is_field_enemy and global_position.distance_to(current_attack_target.global_position) > aggro_range * 1.5:
-			_stop_attacking_sequence()
-		elif not is_field_enemy and not _is_target_in_range(current_attack_target):
-			_stop_attacking_sequence()
+		elif current_state in[State.ATTACK_WAIT, State.ATTACK_LUNGE]:
+			if not _is_target_in_range(current_attack_target):
+				if attacker_component: attacker_component.stop_attacking()
+				
+				if is_field_enemy and global_position.distance_to(current_attack_target.global_position) <= aggro_range * 1.5:
+					current_state = State.AGGRO
+					set_path([])
+				else:
+					_stop_attacking_sequence()
+		elif is_field_enemy and current_state == State.AGGRO:
+			if global_position.distance_to(current_attack_target.global_position) > aggro_range * 1.5:
+				_stop_attacking_sequence()
 	
-	# --- GRAVITY LOGIC ---
 	if current_state == State.RAGDOLL:
-		# Full gravity during ragdoll
+		set_collision_mask_value(1, true)
 		if not is_on_floor(): velocity.y -= 20.0 * delta
 	elif _spawn_settle_timer > 0:
-		# Initial settling phase
+		set_collision_mask_value(1, true)
 		_spawn_settle_timer -= delta
 		if not is_on_floor(): velocity.y -= 20.0 * delta
 		else: velocity.y = 0
 	else:
-		# Gravity LOCKED for standard gameplay to prevent falling through map on lunge
+		set_collision_mask_value(1, true)
 		velocity.y = 0.0
 
 	match current_state:
@@ -261,6 +275,12 @@ func _physics_process(delta: float) -> void:
 			_process_aggro_state(delta)
 	
 	move_and_slide()
+	
+	_debug_timer += delta
+	if _debug_timer >= 2.0:
+		_debug_timer = 0.0
+		var tgt_name = current_attack_target.name if is_instance_valid(current_attack_target) else "None"
+		# print("[Enemy Debug] %s | Field: %s | State: %s | Pos: %.1f, %.1f | Target: %s" % [name, is_field_enemy, State.keys()[current_state], global_position.x, global_position.z, tgt_name])
 
 # --- PHYSICS SYSTEM ---
 
@@ -301,7 +321,7 @@ func _recover_from_ragdoll() -> void:
 	
 	if is_field_enemy:
 		current_state = State.IDLE
-		idle_timer = 1.0
+		idle_timer = base_idle_time
 	elif _registered_lane_id != -1:
 		var path = LaneManager.get_path_for_enemy(_registered_lane_id, global_position)
 		set_path(path)
@@ -316,12 +336,15 @@ func _process_idle_state(delta: float) -> void:
 	_check_aggro(delta)
 	if current_state != State.IDLE: return
 	
+	if enemy_resource and enemy_resource.field_movement == EnemyResource.FieldMovement.STATIC:
+		return 
+	
 	idle_timer -= delta
 	if idle_timer <= 0:
 		_pick_wander_target()
 
 func _pick_wander_target() -> void:
-	var valid_tiles = []
+	var valid_tiles =[]
 	for x in range(-int(wander_radius), int(wander_radius) + 1):
 		for y in range(-int(wander_radius), int(wander_radius) + 1):
 			var t = _home_tile + Vector2i(x,y)
@@ -331,7 +354,7 @@ func _pick_wander_target() -> void:
 			valid_tiles.append(t)
 	
 	if valid_tiles.is_empty():
-		idle_timer = 2.0
+		idle_timer = base_idle_time
 		return
 
 	var target_tile = valid_tiles.pick_random()
@@ -339,7 +362,7 @@ func _pick_wander_target() -> void:
 	var world_path = LaneManager.get_path_world(global_position, target_pos)
 	
 	if world_path.is_empty():
-		idle_timer = 1.0
+		idle_timer = base_idle_time
 		return
 
 	set_path(world_path)
@@ -349,9 +372,9 @@ func _process_wander_state(delta: float) -> void:
 	_check_aggro(delta)
 	if current_state != State.WANDER: return
 
-	if not _has_move_target and _step_cooldown <= 0:
+	if enemy_movement_component and not enemy_movement_component.has_target and enemy_movement_component.step_cooldown <= 0:
 		current_state = State.IDLE
-		idle_timer = enemy_resource.idle_time if enemy_resource else 2.0
+		idle_timer = base_idle_time
 		return
 
 	_process_grid_movement(delta)
@@ -369,12 +392,7 @@ func _process_aggro_state(delta: float) -> void:
 		_start_attacking_sequence(current_attack_target)
 		return
 	
-	if _step_cooldown > 0: 
-		velocity.x = 0; velocity.z = 0
-		_step_cooldown -= delta
-		return
-
-	if not _has_move_target:
+	if enemy_movement_component and not enemy_movement_component.has_target and enemy_movement_component.step_cooldown <= 0:
 		var path = LaneManager.get_path_world(global_position, current_attack_target.global_position)
 		if path.is_empty():
 			var look_pos = current_attack_target.global_position
@@ -387,9 +405,10 @@ func _process_aggro_state(delta: float) -> void:
 
 func _check_aggro(_delta: float) -> void:
 	if not is_field_enemy: return
-	# Simple check every frame in range for optimization
 	var nearby = LaneManager.get_entity_at(_current_tile_coords, "building")
-	if nearby and is_instance_valid(nearby):
+	
+	# Explicitly ignore clutter so enemies don't aggro rocks/trees
+	if nearby and is_instance_valid(nearby) and not (nearby is ClutterObject):
 		current_attack_target = nearby
 		current_state = State.AGGRO
 		set_path([])
@@ -407,48 +426,26 @@ func _check_aggro(_delta: float) -> void:
 # --- MOVEMENT & ATTACK ---
 
 func _process_move_state(delta: float) -> void:
-	if not _has_move_target and _step_cooldown <= 0:
-		if is_field_enemy:
-			current_state = State.IDLE
-			idle_timer = 1.0
+	if is_field_enemy and enemy_movement_component and not enemy_movement_component.has_target and enemy_movement_component.step_cooldown <= 0:
+		current_state = State.IDLE
+		idle_timer = 1.0
 		return
 	_process_grid_movement(delta)
 
 func _process_grid_movement(delta: float) -> void:
-	if _step_cooldown > 0:
-		velocity.x = 0; velocity.z = 0
-		_step_cooldown -= delta
-		if _step_cooldown <= 0: _advance_path_point()
-		return
-
-	if not _has_move_target:
-		velocity.x = 0; velocity.z = 0
-		return
-	
 	_scan_for_targets()
-	if current_state == State.ATTACK_RETURN or current_state == State.ATTACK_WAIT: return
+	if current_state in[State.ATTACK_WAIT, State.ATTACK_LUNGE, State.ATTACK_RETURN]: return
 
-	var my_flat = Vector3(global_position.x, 0, global_position.z)
-	var target_flat = Vector3(_current_move_target.x, 0, _current_move_target.z)
-	var dir = (target_flat - my_flat).normalized()
-	var spd = move_component.move_speed if move_component else base_speed
-	
-	velocity.x = dir.x * spd
-	velocity.z = dir.z * spd
-	
-	if dir.length_squared() > 0.01:
-		var look_target = global_position + dir
-		look_at(Vector3(look_target.x, global_position.y, look_target.z), Vector3.UP)
-	
-	if my_flat.distance_squared_to(target_flat) < 0.0025:
-		_handle_block_arrival()
+	if not enemy_movement_component: return
 
-func _handle_block_arrival() -> void:
-	global_position.x = _current_move_target.x
-	global_position.z = _current_move_target.z
-	velocity.x = 0; velocity.z = 0
-	_step_cooldown = 0.2 
-	_has_move_target = false
+	var spd: float = base_speed
+	if move_component:
+		spd = move_component.move_speed
+
+	var move_vel = enemy_movement_component.get_movement_velocity(delta, current_path_queue, is_field_enemy, spd, _registered_lane_id, enemy_resource)
+	
+	velocity.x = move_vel.x
+	velocity.z = move_vel.z
 
 func _process_attack_wait(delta: float) -> void:
 	velocity.x = 0; velocity.z = 0
@@ -470,26 +467,43 @@ func _process_attack_lunge(_delta: float) -> void:
 	var my_flat = Vector3(global_position.x, 0, global_position.z)
 	var t_flat = Vector3(target_pos.x, 0, target_pos.z)
 	var dir = (t_flat - my_flat).normalized()
-	var spd = (move_component.move_speed if move_component else base_speed) * 3.0
+	
+	var spd: float = base_speed
+	if move_component:
+		spd = move_component.move_speed
+	spd *= 3.0
 	
 	# Lunge physics
 	velocity.x = dir.x * spd
 	velocity.z = dir.z * spd
 	
-	if my_flat.distance_to(t_flat) < 1.0: 
+	var lunge_blocked = false
+	for i in get_slide_collision_count():
+		var col = get_slide_collision(i)
+		if abs(col.get_normal().y) < 0.5:
+			lunge_blocked = true
+			break
+	
+	if my_flat.distance_to(t_flat) < 0.8 or lunge_blocked: 
 		_perform_attack_damage()
 		current_state = State.ATTACK_RETURN
 
-func _process_attack_return(_delta: float) -> void:
+func _process_attack_return(delta: float) -> void:
 	var my_pos_2d = Vector2(global_position.x, global_position.z)
 	var target_pos_2d = Vector2(safe_tile_center.x, safe_tile_center.z)
 	
-	if my_pos_2d.distance_to(target_pos_2d) < 0.05:
+	var dist = my_pos_2d.distance_to(target_pos_2d)
+	
+	var spd: float = base_speed
+	if move_component:
+		spd = move_component.move_speed
+	spd *= 2.0
+	
+	if dist <= spd * delta or dist < 0.05:
 		global_position.x = safe_tile_center.x
 		global_position.z = safe_tile_center.z
 		velocity.x = 0; velocity.z = 0
 		
-		# Reset cooldown based on attacker component or resource
 		var cd = 1.0
 		if attacker_component and attacker_component.basic_attack:
 			cd = attacker_component.basic_attack.cooldown
@@ -499,7 +513,6 @@ func _process_attack_return(_delta: float) -> void:
 		return
 
 	var dir = (safe_tile_center - global_position).normalized()
-	var spd = (move_component.move_speed if move_component else base_speed) * 2.0
 	velocity.x = dir.x * spd
 	velocity.z = dir.z * spd
 	
@@ -511,32 +524,48 @@ func _scan_for_targets() -> void:
 	var allies = get_tree().get_nodes_in_group("allies")
 	for ally in allies:
 		if is_instance_valid(ally) and _is_target_in_range(ally):
-			_start_attacking_sequence(ally); return
+			if ally.has_method("take_damage") or ally.has_node("HealthComponent"):
+				_start_attacking_sequence(ally); return
 
 	var my_tile = LaneManager.world_to_tile(global_position)
 	for d in range(0, range_depth + 1):
 		for w in range(-range_width, range_width + 1):
+			if not is_field_enemy and w != 0: continue
+			
 			var check_tile = Vector2i(my_tile.x - d, my_tile.y + w)
 			var building = LaneManager.get_entity_at(check_tile, "building")
-			if building and is_instance_valid(building):
+			
+			# Group check bypasses script evaluation cyclic dependency issues
+			if building and is_instance_valid(building) and not building.is_in_group("clutter") and (building.has_method("take_damage") or building.has_node("HealthComponent")):
 				_start_attacking_sequence(building); return
 
 func _is_target_in_range(target: Node3D) -> bool:
 	if not is_instance_valid(target): return false
+	
+	var my_tile = LaneManager.world_to_tile(global_position)
 	
 	if is_field_enemy:
 		var attack_dist = (float(range_depth) * LaneManager.GRID_SCALE) + 0.5
 		var my_flat = Vector3(global_position.x, 0, global_position.z)
 		var t_flat = Vector3(target.global_position.x, 0, target.global_position.z)
 		return my_flat.distance_to(t_flat) <= attack_dist
-	
-	var my_tile = LaneManager.world_to_tile(global_position)
-	var target_tile = LaneManager.world_to_tile(target.global_position)
-	var lane_diff = abs(my_tile.y - target_tile.y)
-	if lane_diff > range_width: return false
-	var forward_diff = my_tile.x - target_tile.x
-	if forward_diff >= 0 and forward_diff <= range_depth: return true
-	return false
+	else:
+		# Wave Enemy Logic: Must be strictly forward
+		for d in range(0, range_depth + 1):
+			for w in range(-range_width, range_width + 1):
+				if w != 0: continue # Strict Lane Combat
+				
+				var check_tile = Vector2i(my_tile.x - d, my_tile.y + w)
+				
+				var entity = LaneManager.get_entity_at(check_tile, "building")
+				if entity == target:
+					return true
+					
+				var target_tile = LaneManager.world_to_tile(target.global_position)
+				if target_tile == check_tile:
+					return true
+					
+		return false
 
 func _start_attacking_sequence(target: Node) -> void:
 	if current_state != State.MOVE and current_state != State.AGGRO and current_state != State.WANDER and current_state != State.IDLE: return
@@ -553,11 +582,9 @@ func _start_attacking_sequence(target: Node) -> void:
 func _perform_attack_damage() -> void:
 	if not is_instance_valid(current_attack_target): return
 	
-	# Use new component logic
 	if attacker_component:
 		attacker_component.start_attacking(current_attack_target)
 	else:
-		# Fallback
 		if current_attack_target.has_method("take_damage"):
 			current_attack_target.take_damage(10.0, null, self)
 
@@ -570,7 +597,8 @@ func _stop_attacking_sequence() -> void:
 			idle_timer = 0.5
 		else:
 			current_state = State.MOVE
-			_handle_block_arrival()
+			if enemy_movement_component:
+				enemy_movement_component.reset_target()
 
 func _update_stats() -> void:
 	var final_speed = base_speed
@@ -599,7 +627,7 @@ func take_damage(amount: float, element: ElementResource = null, source: Node = 
 		if not current_attack_target:
 			current_attack_target = source
 			current_state = State.AGGRO
-			set_path([]) 
+			set_path([])
 	if health_component:
 		if element: ElementManager.apply_element(self, element, source, amount)
 		health_component.take_damage(amount, element, source)

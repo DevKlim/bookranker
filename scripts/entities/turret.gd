@@ -2,21 +2,16 @@
 class_name TurretBuilding
 extends BaseBuilding
 
-var target_acquirer: TargetAcquirerComponent
-var shooter: ShooterComponent
+var attacker: AttackerComponent
 
 # Visuals
 var ammo_visual: Sprite3D
 
 @export var storage_cap: int = 100
-@export var infinite_ammo: bool = false 
+@export var infinite_ammo: bool = true # Default true so it fires without ammo if powered
 
-# Cache ammo availability to avoid iterating inventory every frame
-var _cached_has_ammo: bool = false
-
-@export_group("Targeting Zone")
-@export var range_depth: int = 20
-@export var range_width: float = 0.8 
+var _is_firing: bool = false
+var _current_ammo: ItemResource = null
 
 func _init() -> void:
 	has_output = false
@@ -29,8 +24,14 @@ func _ready() -> void:
 	if Engine.is_editor_hint(): return
 	super._ready() 
 	
-	target_acquirer = get_node_or_null("TargetAcquirerComponent")
-	shooter = get_node_or_null("ShooterComponent")
+	attacker = get_node_or_null("AttackerComponent")
+	if not attacker:
+		attacker = AttackerComponent.new()
+		attacker.name = "AttackerComponent"
+		add_child(attacker)
+		
+	if attacker and not attacker.attack_started.is_connected(_on_attack_started):
+		attacker.attack_started.connect(_on_attack_started)
 	
 	var rotatable = get_node_or_null("Rotatable")
 	if rotatable:
@@ -42,9 +43,6 @@ func _ready() -> void:
 		ammo_visual.visible = false
 		rotatable.add_child(ammo_visual)
 	
-	if target_acquirer:
-		call_deferred("_setup_targeting")
-	
 	if inventory_component:
 		if not inventory_component.inventory_changed.is_connected(_update_state_check):
 			inventory_component.inventory_changed.connect(_update_state_check)
@@ -53,25 +51,20 @@ func _ready() -> void:
 
 func set_build_rotation(rotation_val: Variant) -> void:
 	super.set_build_rotation(rotation_val)
-	if target_acquirer:
-		call_deferred("_setup_targeting")
-
-func _setup_targeting() -> void:
-	if not target_acquirer: return
-	target_acquirer.setup_custom_shape(Vector3(0, 0, range_depth * LaneManager.GRID_SCALE), Vector3.ZERO)
+	if is_active and _is_firing:
+		_start_firing()
 
 func _update_state_check(_arg = null) -> void:
 	_update_ammo_visual()
 	
-	# Optimized: Cache the ammo state
-	if infinite_ammo:
-		_cached_has_ammo = true
-	else:
-		_cached_has_ammo = (inventory_component != null and inventory_component.has_item())
+	var new_ammo = null
+	if inventory_component:
+		new_ammo = inventory_component.get_first_item()
+
+	var ammo_changed = (new_ammo != _current_ammo)
+	_current_ammo = new_ammo
 	
-	# Disable targeting if we can't shoot, saving performance
-	if target_acquirer:
-		target_acquirer.is_active = is_active and _cached_has_ammo
+	_check_firing_state(ammo_changed)
 
 func _on_power_status_changed(has_power: bool) -> void:
 	super._on_power_status_changed(has_power)
@@ -87,50 +80,78 @@ func _update_ammo_visual() -> void:
 	else:
 		ammo_visual.visible = false
 
-func _process(_delta: float) -> void:
-	if Engine.is_editor_hint(): return
-	if not is_active: return
-	
-	# Stop firing logic: use cached state
-	if not _cached_has_ammo: return
-	
-	if not target_acquirer or not shooter: return
-		
-	var target = target_acquirer.current_target
-	if is_instance_valid(target):
-		if shooter.can_shoot():
-			_perform_shot(target)
+func _check_firing_state(force_restart: bool = false) -> void:
+	# Requires power (is_active) AND (infinite_ammo OR an actual loaded ammo item)
+	var can_fire = is_active and (infinite_ammo or _current_ammo != null)
+	if can_fire:
+		if not _is_firing or force_restart:
+			_start_firing()
+	else:
+		if _is_firing:
+			_stop_firing()
 
-func _perform_shot(_target: Node3D) -> void:
-	var ammo: ItemResource = null
-	if inventory_component:
-		ammo = inventory_component.get_first_item()
+func _start_firing() -> void:
+	if not attacker: return
+		
+	var attack = attacker.basic_attack
+	if not attack:
+		attack = load("res://resources/attacks/turret_shoot.tres")
+		
+	if _current_ammo and _current_ammo.attack_config:
+		attack = _current_ammo.attack_config.duplicate()
+	elif attack:
+		# Duplicate so we can modify it per ammo safely without altering the base resource globally
+		attack = attack.duplicate()
+		if _current_ammo:
+			attack.base_damage = _current_ammo.damage
+			attack.element = _current_ammo.element
+			attack.element_units = _current_ammo.element_units
+			attack.ignore_element_cd = _current_ammo.ignore_element_cooldown
+			if _current_ammo.projectile_scene:
+				attack.projectile_scene = _current_ammo.projectile_scene
+			if _current_ammo.icon:
+				attack.projectile_texture = _current_ammo.icon
+			attack.projectile_color = _current_ammo.color
+	else:
+		# Final failsafe
+		attack = AttackResource.new()
+		if _current_ammo:
+			attack.base_damage = _current_ammo.damage
+			attack.element = _current_ammo.element
+			attack.element_units = _current_ammo.element_units
+			attack.ignore_element_cd = _current_ammo.ignore_element_cooldown
+			if _current_ammo.projectile_scene:
+				attack.projectile_scene = _current_ammo.projectile_scene
+			if _current_ammo.icon:
+				attack.projectile_texture = _current_ammo.icon
+			attack.projectile_color = _current_ammo.color
+		attack.spawn_projectile = true
+		attack.cooldown = 1.0 # default attack speed
+		attack.projectile_speed = 200.0
 	
-	if ammo or infinite_ammo:
-		var shoot_dir = Vector3.FORWARD # Default -Z
-		match output_direction:
-			Direction.DOWN:  shoot_dir = Vector3(0, 0, 1)  # +Z
-			Direction.LEFT:  shoot_dir = Vector3(-1, 0, 0) # -X
-			Direction.UP:    shoot_dir = Vector3(0, 0, -1) # -Z
-			Direction.RIGHT: shoot_dir = Vector3(1, 0, 0)  # +X
+	var shoot_dir = Vector3.FORWARD # Default -Z
+	match output_direction:
+		Direction.DOWN:  shoot_dir = Vector3(0, 0, 1)  # +Z
+		Direction.LEFT:  shoot_dir = Vector3(-1, 0, 0) # -X
+		Direction.UP:    shoot_dir = Vector3(0, 0, -1) # -Z
+		Direction.RIGHT: shoot_dir = Vector3(1, 0, 0)  # +X
 
-		var my_lane = LaneManager.world_to_tile(global_position).y
-		
-		var start_pos = global_position + Vector3(0, 0.5, 0)
-		if has_node("ProjectileOrigin"):
-			start_pos = get_node("ProjectileOrigin").global_position
-		elif has_node("Rotatable/ProjectileOrigin"):
-			start_pos = get_node("Rotatable/ProjectileOrigin").global_position
-		
-		if shooter.shoot_in_direction(shoot_dir, my_lane, ammo, start_pos):
-			var s = _get_main_sprite()
-			if s and s.sprite_frames.has_animation("shoot_up"):
-				s.play("shoot_up")
-				get_tree().create_timer(0.2).timeout.connect(func(): if s and s.animation == "shoot_up": s.play("idle_up"))
+	attacker.start_attacking_direction(shoot_dir, attack)
+	_is_firing = true
 
-			# Consume Ammo
-			if ammo and not infinite_ammo:
-				inventory_component.remove_item(ammo, 1)
+func _stop_firing() -> void:
+	if attacker: attacker.stop_attacking()
+	_is_firing = false
+
+func _on_attack_started(_target, _attack_res) -> void:
+	var s = _get_main_sprite()
+	if s and s.sprite_frames and s.sprite_frames.has_animation("shoot_up"):
+		s.play("shoot_up")
+		get_tree().create_timer(0.2).timeout.connect(func(): if s and s.animation == "shoot_up": s.play("idle_up"))
+
+	# Consume Ammo
+	if not infinite_ammo and inventory_component and _current_ammo:
+		inventory_component.remove_item(_current_ammo, 1)
 
 func receive_item(item: Resource, _from_node: Node3D = null, _extra_data: Dictionary = {}) -> bool:
 	var i = item as ItemResource

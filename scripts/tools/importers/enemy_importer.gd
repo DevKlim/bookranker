@@ -41,20 +41,6 @@ func import_enemies(list: Array) -> void:
 			res.attack_range_depth = int(entry["params"].get("attack_range", 1))
 			res.attack_range_width = int(entry["params"].get("attack_width", 0))
 
-		# Field Configuration
-		if entry.has("field_config") and entry["field_config"] is Dictionary:
-			var fc = entry["field_config"]
-			res.is_field_enemy = true
-			res.field_spawn_min_depth = fc.get("min_depth", 15)
-			res.field_spawn_max_depth = fc.get("max_depth", 60)
-			res.field_spawn_interval = fc.get("spawn_interval", 10.0)
-			res.field_spawn_chance = fc.get("spawn_chance", 0.5)
-			res.max_field_spawns = fc.get("max_spawns", 5)
-			res.aggro_range = fc.get("aggro_range", 10.0)
-			res.wander_radius = fc.get("wander_radius", 5.0)
-		else:
-			res.is_field_enemy = false
-
 		if entry.has("drops") and entry["drops"] is Array:
 			res.drops = entry["drops"]
 		ResourceSaver.save(res, path)

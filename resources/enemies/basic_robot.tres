@@ -7,12 +7,6 @@
 script = ExtResource("1_enemy_res")
 enemy_name = "Basic Robot"
 scene = ExtResource("1_0cejv")
+health = 5.0
 magical_defense = 0.2
-attack_damage = 5.0
-is_field_enemy = true
-field_spawn_min_depth = 35.0
-field_spawn_interval = 15.0
-field_spawn_chance = 0.4
-max_field_spawns = 3.0
-aggro_range = 6.0
-wander_radius = 4.0
+attack_damage = 1.0

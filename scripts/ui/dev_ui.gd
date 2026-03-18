@@ -11,19 +11,8 @@ func _ready() -> void:
 	_populate_waves()
 
 func _setup_visuals() -> void:
-	# Ensure the panel has a background
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.1, 0.1, 0.1, 0.8)
-	style.border_width_left = 2
-	style.border_width_top = 2
-	style.border_width_right = 2
-	style.border_width_bottom = 2
-	style.border_color = Color(0.3, 0.3, 0.35)
-	style.corner_radius_top_left = 8
-	style.corner_radius_top_right = 8
-	style.corner_radius_bottom_right = 8
-	style.corner_radius_bottom_left = 8
-	add_theme_stylebox_override("panel", style)
+	# Removed dark background to integrate directly into the white glass window.
+	add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 
 func _build_ui() -> void:
 	# 1. Clear old children
@@ -47,6 +36,7 @@ func _build_ui() -> void:
 	var lbl = Label.new()
 	lbl.text = "Wave Control"
 	lbl.add_theme_font_size_override("font_size", 16)
+	lbl.add_theme_color_override("font_color", Color(0.2, 0.2, 0.2)) # Update to dark font for light BG
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	layout.add_child(lbl)
 	
@@ -57,6 +47,14 @@ func _build_ui() -> void:
 	wave_select.tooltip_text = "Select a wave configuration"
 	layout.add_child(wave_select)
 	
+	var btn_style = StyleBoxFlat.new()
+	btn_style.bg_color = Color(0.95, 0.95, 0.95)
+	btn_style.corner_radius_top_left = 4; btn_style.corner_radius_top_right = 4
+	btn_style.corner_radius_bottom_left = 4; btn_style.corner_radius_bottom_right = 4
+	btn_style.border_width_left = 1; btn_style.border_width_right = 1
+	btn_style.border_width_top = 1; btn_style.border_width_bottom = 1
+	btn_style.border_color = Color(0.8, 0.8, 0.8)
+
 	# 5. Controls
 	var hbox = HBoxContainer.new()
 	hbox.add_theme_constant_override("separation", 10)
@@ -66,6 +64,8 @@ func _build_ui() -> void:
 	btn_start.text = "Start Wave"
 	btn_start.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	btn_start.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn_start.add_theme_stylebox_override("normal", btn_style)
+	btn_start.add_theme_color_override("font_color", Color(0.2, 0.2, 0.2))
 	btn_start.pressed.connect(_on_spawn_wave_button_pressed)
 	hbox.add_child(btn_start)
 	
@@ -73,6 +73,8 @@ func _build_ui() -> void:
 	btn_stop.text = "Stop"
 	btn_stop.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	btn_stop.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn_stop.add_theme_stylebox_override("normal", btn_style)
+	btn_stop.add_theme_color_override("font_color", Color(0.2, 0.2, 0.2))
 	btn_stop.pressed.connect(_on_stop_wave_button_pressed)
 	hbox.add_child(btn_stop)
 	
@@ -80,6 +82,8 @@ func _build_ui() -> void:
 	var btn_reload = Button.new()
 	btn_reload.text = "Reload Config"
 	btn_reload.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn_reload.add_theme_stylebox_override("normal", btn_style)
+	btn_reload.add_theme_color_override("font_color", Color(0.2, 0.2, 0.2))
 	btn_reload.pressed.connect(_on_reload_pressed)
 	layout.add_child(btn_reload)
 

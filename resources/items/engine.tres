@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://cse8q3dobutyw"]
+
+[ext_resource type="Resource" uid="uid://dxgrgiah56yli" path="res://resources/elements/chem.tres" id="1_emm6b"]
+[ext_resource type="Texture2D" uid="uid://c67ckaas7ji5n" path="res://assets/items/brass_ingot.png" id="2_nr0bk"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="3_adwo7"]
+
+[resource]
+script = ExtResource("3_adwo7")
+item_name = "Engine"
+icon = ExtResource("2_nr0bk")
+stack_size = 20.0
+damage = 10.0
+element = ExtResource("1_emm6b")

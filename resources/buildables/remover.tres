@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="BuildableResource" format=3 uid="uid://btvj4lygqvnqe"]
+
+[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="1_o6bhm"]
+[ext_resource type="Script" uid="uid://qpm1dylmnjld" path="res://scripts/resources/buildable_resource.gd" id="2_4vydr"]
+
+[resource]
+script = ExtResource("2_4vydr")
+buildable_name = "Remover"
+description = "Removes buildings."
+icon = ExtResource("1_o6bhm")

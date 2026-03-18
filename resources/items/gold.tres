@@ -13,5 +13,3 @@ element = ExtResource("1_0mcx4")
 element_units = 2
 is_ore = true
 ore_block_name = "Gold Ore"
-min_depth = 10
-rarity = 0.05

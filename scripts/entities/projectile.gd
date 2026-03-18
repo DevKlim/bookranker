@@ -8,6 +8,7 @@ var _velocity: Vector3 = Vector3.ZERO
 var _damage: float = 0.0
 var _element: Resource = null
 var _source_attacker: Node = null
+var _attack_resource: AttackResource = null
 var _element_units: int = 1
 var _ignore_element_cd: bool = false
 var lane_id: int = -1
@@ -54,7 +55,7 @@ func _physics_process(delta: float) -> void:
 		if lifetime <= 0: queue_free()
 		return
 
-	position += _velocity * delta
+	global_position += _velocity * delta
 	lifetime -= delta
 	if lifetime <= 0:
 		queue_free()
@@ -70,6 +71,7 @@ func initialize(start_pos: Vector3, dir: Vector3, p_speed: float, dmg: float, p_
 	lane_id = p_lane
 	_element = p_elem
 	_source_attacker = extra_params.get("source", null)
+	_attack_resource = extra_params.get("attack_resource", null)
 	
 	# Parse explicit unit/CD data
 	_element_units = extra_params.get("element_units", 1)
@@ -98,7 +100,6 @@ func initialize(start_pos: Vector3, dir: Vector3, p_speed: float, dmg: float, p_
 		var shader = Shader.new()
 		shader.code = OUTLINE_SHADER_CODE
 		var mat = ShaderMaterial.new()
-		mat.shader = shader
 		mat.set_shader_parameter("texture_albedo", tex)
 		mat.resource_local_to_scene = true
 		sprite.material_override = mat
@@ -121,16 +122,24 @@ func _on_body_entered(body: Node3D) -> void:
 	
 	if self.lane_id == -1 or e_lane == self.lane_id or e_lane == -1:
 		
-		if _element:
-			# Pass new unit and cooldown parameters to ElementManager
-			ElementManager.apply_element(body, _element, _source_attacker, _damage, _element_units, _ignore_element_cd)
-		
-		if body.has_method("take_damage"):
-			body.take_damage(_damage, _element, _source_attacker)
-		elif body.has_node("HealthComponent"):
-			body.get_node("HealthComponent").take_damage(_damage, _element, _source_attacker)
+		var handled = false
+		if _attack_resource and is_instance_valid(_source_attacker) and _source_attacker.has_node("AttackerComponent"):
+			# Delegate damage/AoE logic to the attacker component
+			var attacker = _source_attacker.get_node("AttackerComponent")
+			attacker.call("_apply_hit", body, global_position, _damage, _attack_resource, _source_attacker)
+			handled = true
 			
-		# Hook for ElementManager Reactions (e.g. Ripple / Conduct)
-		ElementManager.on_damage_dealt(body, _damage, _source_attacker)
+		if not handled:
+			if _element:
+				# Pass new unit and cooldown parameters to ElementManager
+				ElementManager.apply_element(body, _element, _source_attacker, _damage, _element_units, _ignore_element_cd)
+			
+			if body.has_method("take_damage"):
+				body.take_damage(_damage, _element, _source_attacker)
+			elif body.has_node("HealthComponent"):
+				body.get_node("HealthComponent").take_damage(_damage, _element, _source_attacker)
+				
+			# Hook for ElementManager Reactions (e.g. Ripple / Conduct)
+			ElementManager.on_damage_dealt(body, _damage, _source_attacker)
 		
 		queue_free()

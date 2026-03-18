@@ -1,0 +1,8 @@
+[
+    {
+        "id": "wire", "name": "Wire", "description": "Transmits power.",
+        "visuals": { "texture": "res://assets/wires/wire_line.png" },
+        "grid": { "layer": "wire" },
+        "logic": { "power_cost": 0.0 }
+    }
+]

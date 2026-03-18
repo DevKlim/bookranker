@@ -1,16 +1,17 @@
 class_name AttackerComponent
 extends Node
 
-## A component that handles attacking logic using AttackResources.
-
 signal attack_started(target, attack_res)
 signal attacked(target, damage)
 
 @export var basic_attack: AttackResource
-@export var available_attacks: Array[AttackResource] = []
+@export var available_attacks: Array[AttackResource] =[]
+@export var show_debug_hitboxes: bool = true
 
 var attack_timer: Timer 
 var current_target: Node3D = null
+var current_target_pos: Vector3 = Vector3.INF
+var current_target_dir: Vector3 = Vector3.ZERO
 var current_attack: AttackResource = null
 
 func _ready() -> void:
@@ -20,7 +21,6 @@ func _ready() -> void:
 	attack_timer.timeout.connect(_on_attack_timer_timeout)
 	add_child(attack_timer)
 
-## Legacy initialization for backward compatibility or simple setup
 func initialize(damage: float, p_attack_speed: float, element: ElementResource) -> void:
 	if not basic_attack:
 		basic_attack = AttackResource.new()
@@ -30,8 +30,31 @@ func initialize(damage: float, p_attack_speed: float, element: ElementResource) 
 
 func start_attacking(target: Node3D, specific_attack: AttackResource = null) -> void:
 	if not is_instance_valid(target): return
-	
 	current_target = target
+	current_target_pos = target.global_position
+	current_target_dir = Vector3.ZERO
+	current_attack = specific_attack if specific_attack else basic_attack
+	
+	if not current_attack: return
+	
+	if attack_timer.is_stopped():
+		_perform_attack()
+
+func start_attacking_position(target_pos: Vector3, specific_attack: AttackResource = null) -> void:
+	current_target = null
+	current_target_pos = target_pos
+	current_target_dir = Vector3.ZERO
+	current_attack = specific_attack if specific_attack else basic_attack
+	
+	if not current_attack: return
+	
+	if attack_timer.is_stopped():
+		_perform_attack()
+
+func start_attacking_direction(dir: Vector3, specific_attack: AttackResource = null) -> void:
+	current_target = null
+	current_target_pos = Vector3.INF
+	current_target_dir = dir
 	current_attack = specific_attack if specific_attack else basic_attack
 	
 	if not current_attack: return
@@ -41,14 +64,26 @@ func start_attacking(target: Node3D, specific_attack: AttackResource = null) -> 
 
 func stop_attacking() -> void:
 	current_target = null
+	current_target_pos = Vector3.INF
+	current_target_dir = Vector3.ZERO
 	attack_timer.stop()
 
 func _on_attack_timer_timeout() -> void:
-	if is_instance_valid(current_target):
+	var target_valid = is_instance_valid(current_target)
+	if target_valid or current_target_pos != Vector3.INF or current_target_dir != Vector3.ZERO:
+		if target_valid:
+			current_target_pos = current_target.global_position
 		_perform_attack()
+	else:
+		stop_attacking()
 
 func _perform_attack() -> void:
-	if not is_instance_valid(current_target) or not current_attack:
+	if not current_attack:
+		stop_attacking()
+		return
+		
+	var target_valid = is_instance_valid(current_target)
+	if not target_valid and current_target_pos == Vector3.INF and current_target_dir == Vector3.ZERO:
 		stop_attacking()
 		return
 		
@@ -56,15 +91,13 @@ func _perform_attack() -> void:
 	var final_damage = _calculate_damage(source, current_attack)
 	
 	emit_signal("attack_started", current_target, current_attack)
-	_spawn_visuals(source, current_target)
+	_spawn_visuals(source, current_target, current_target_pos)
 
-	# projectile handling
 	if current_attack.spawn_projectile:
 		_spawn_projectile(source, final_damage)
 	else:
-		_apply_hit(current_target, final_damage, current_attack, source)
+		_apply_hit(current_target, current_target_pos, final_damage, current_attack, source)
 
-	# Handle Chaining
 	if current_attack.chain_next:
 		var next = current_attack.chain_next
 		var delay = current_attack.chain_delay
@@ -73,45 +106,76 @@ func _perform_attack() -> void:
 			_perform_attack()
 		)
 	else:
-		# Reset to basic attack for next cycle if we were chaining
 		if basic_attack and current_attack != basic_attack:
 			current_attack = basic_attack
 			
-	# Cooldown
 	var cd = current_attack.cooldown
-	# Apply attack speed modifiers from source
-	if source.has_node("ElementalComponent"):
-		var spd_mult = source.get_node("ElementalComponent").get_stat_modifier("attack_speed_mult")
-		cd /= max(0.1, (1.0 + spd_mult))
+	var spd_mult = 0.0
+	
+	# Try to fetch global speed stat from BaseBuilding logic
+	if source.has_method("get_stat"):
+		spd_mult += source.get_stat("attack_speed_mult", 0.0)
+	else:
+		if source.has_node("ElementalComponent"):
+			var ec = source.get_node("ElementalComponent")
+			if ec.has_method("get_stat_modifier"):
+				spd_mult += ec.get_stat_modifier("attack_speed_mult")
+				
+		var s_spd_mult = source.get("attack_speed_mult")
+		if s_spd_mult != null:
+			spd_mult += float(s_spd_mult)
+		
+	cd /= max(0.1, (1.0 + spd_mult))
 	
 	attack_timer.start(cd)
 
 func _calculate_damage(source: Node, atk: AttackResource) -> float:
 	var dmg = atk.base_damage
-	
-	# Scaling
 	var stat_val = 0.0
+	
+	# Safely extract scaling stats utilizing BaseBuilding's integrated stat system
 	if atk.scaling_stat != "":
-		if atk.scaling_stat in source:
-			stat_val = source.get(atk.scaling_stat)
-		elif source.get("stats") and atk.scaling_stat in source.stats:
-			stat_val = source.stats.get(atk.scaling_stat)
+		if source.has_method("get_stat"):
+			stat_val = source.get_stat(atk.scaling_stat, 0.0)
+		else:
+			var s_val = source.get(atk.scaling_stat)
+			if s_val != null:
+				stat_val = float(s_val)
+			else:
+				var stats_dict = source.get("stats")
+				if stats_dict != null and stats_dict is Dictionary and stats_dict.has(atk.scaling_stat):
+					stat_val = float(stats_dict.get(atk.scaling_stat))
 			
 	dmg += (stat_val * atk.scaling_factor)
 	
-	# Global Modifiers
-	if source.has_node("ElementalComponent"):
-		var d_mult = source.get_node("ElementalComponent").get_stat_modifier("damage_mult")
-		dmg *= (1.0 + d_mult)
+	var d_mult = 0.0
+	if source.has_method("get_stat"):
+		d_mult = source.get_stat("damage_mult", 0.0)
+	else:
+		if source.has_node("ElementalComponent"):
+			var ec = source.get_node("ElementalComponent")
+			if ec.has_method("get_stat_modifier"):
+				d_mult += ec.get_stat_modifier("damage_mult")
+				
+		var s_d_mult = source.get("damage_mult")
+		if s_d_mult != null:
+			d_mult += float(s_d_mult)
+		
+	dmg *= (1.0 + d_mult)
+		
+	if is_instance_valid(GameManager):
+		if GameManager.has_method("get_global_stat"):
+			dmg += GameManager.get_global_stat("global_flat_damage", 0.0)
 		
 	return dmg
 
-func _spawn_visuals(source: Node3D, target: Node3D) -> void:
+func _spawn_visuals(source: Node3D, target: Node3D, t_pos: Vector3) -> void:
 	if not current_attack.visual_scene: return
 	
 	var vis = current_attack.visual_scene.instantiate()
+	var target_valid = is_instance_valid(target)
+	var final_t_pos = target.global_position if target_valid else t_pos
 	
-	# Attachment Logic
 	if current_attack.attach_visual_to_source and current_attack.visual_spawn_point == 0:
 		source.add_child(vis)
 		vis.position = current_attack.visual_offset
@@ -119,49 +183,108 @@ func _spawn_visuals(source: Node3D, target: Node3D) -> void:
 		get_tree().root.add_child(vis)
 		var pos = source.global_position
 		match current_attack.visual_spawn_point:
-			0: pos = source.global_position # Attacker
-			1: pos = target.global_position # Target
-			2: pos = source.global_position.lerp(target.global_position, 0.5) # Midpoint
+			0: pos = source.global_position
+			1: pos = final_t_pos
+			2: pos = source.global_position.lerp(final_t_pos, 0.5)
 		vis.global_position = pos + current_attack.visual_offset
 	
-	# Orientation: Look at target
 	if current_attack.visual_spawn_point == 0:
-		# If attached, we trust the parent's rotation or local transform, 
-		# otherwise we look_at in world space.
-		if not current_attack.attach_visual_to_source:
-			vis.look_at(Vector3(target.global_position.x, vis.global_position.y, target.global_position.z), Vector3.UP)
+		if not current_attack.attach_visual_to_source and final_t_pos != Vector3.INF:
+			vis.look_at(Vector3(final_t_pos.x, vis.global_position.y, final_t_pos.z), Vector3.UP)
 		
 	if current_attack.visual_duration > 0 and not vis.has_method("_on_finished"):
 		get_tree().create_timer(current_attack.visual_duration).timeout.connect(func(): if is_instance_valid(vis): vis.queue_free())
 
 func _spawn_projectile(source: Node, damage: float) -> void:
-	if not current_attack.projectile_scene: return
-	
-	var proj = current_attack.projectile_scene.instantiate()
+	var proj = null
+	if current_attack.projectile_scene:
+		proj = current_attack.projectile_scene.instantiate()
+	else:
+		var default_proj = load("res://scenes/entities/projectile.tscn")
+		if default_proj:
+			proj = default_proj.instantiate()
+		else:
+			return
+			
 	get_tree().root.add_child(proj)
 	
-	var dir = (current_target.global_position - source.global_position).normalized()
+	var target_valid = is_instance_valid(current_target)
+	var dest = current_target.global_position if target_valid else current_target_pos
+	
+	var dir = Vector3.FORWARD
+	if current_target_dir != Vector3.ZERO:
+		dir = current_target_dir.normalized()
+	elif dest != Vector3.INF:
+		dir = (dest - source.global_position).normalized()
+	
 	var start_pos = source.global_position + Vector3(0, 0.5, 0)
+	if source.has_node("ProjectileOrigin"):
+		start_pos = source.get_node("ProjectileOrigin").global_position
+	elif source.has_node("Rotatable/ProjectileOrigin"):
+		start_pos = source.get_node("Rotatable/ProjectileOrigin").global_position
 	
 	var params = {
 		"source": source,
 		"element_units": current_attack.element_units,
-		"ignore_element_cd": current_attack.ignore_element_cd
+		"ignore_element_cd": current_attack.ignore_element_cd,
+		"attack_resource": current_attack
 	}
 	
+	var tex = current_attack.projectile_texture if "projectile_texture" in current_attack else null
+	
 	if proj.has_method("initialize"):
-		proj.initialize(start_pos, dir, current_attack.projectile_speed, damage, -1, current_attack.element, null, current_attack.projectile_color, false, params)
+		proj.initialize(start_pos, dir, current_attack.projectile_speed, damage, -1, current_attack.element, tex, current_attack.projectile_color, false, params)
 
-func _apply_hit(target: Node, damage: float, atk: AttackResource, source: Node) -> void:
-	# AoE Handling: If is_aoe is true, find all entities in target tile
-	var targets_to_hit = [target]
+func _apply_hit(target: Node, t_pos: Vector3, damage: float, atk: AttackResource, source: Node) -> void:
+	var targets_to_hit =[]
+	var center_pos = target.global_position if is_instance_valid(target) else t_pos
+	if center_pos == Vector3.INF: return # Can't apply hitbox without location
 	
 	if atk.is_aoe:
-		var tile = LaneManager.world_to_tile(target.global_position)
-		var enemies = LaneManager.get_enemies_at(tile)
-		for e in enemies:
-			if e != target and is_instance_valid(e):
-				targets_to_hit.append(e)
+		var center_tile = LaneManager.world_to_tile(center_pos)
+		var is_source_ally = source.is_in_group("allies") or source.is_in_group("player") or source.is_in_group("core") or source.is_in_group("buildings")
+		
+		for w in range(-atk.range_width, atk.range_width + 1):
+			var tile = center_tile + Vector2i(0, w)
+			
+			if is_source_ally:
+				var enemies = LaneManager.get_enemies_at(tile)
+				for e in enemies:
+					if e != target and is_instance_valid(e) and not targets_to_hit.has(e):
+						targets_to_hit.append(e)
+			else:
+				var building = LaneManager.get_entity_at(tile, "building")
+				if building and building != target and is_instance_valid(building) and not building.is_in_group("clutter") and not targets_to_hit.has(building):
+					targets_to_hit.append(building)
+				
+				var all_allies = get_tree().get_nodes_in_group("allies")
+				for a in all_allies:
+					if a != target and is_instance_valid(a) and not targets_to_hit.has(a):
+						if LaneManager.world_to_tile(a.global_position) == tile:
+							targets_to_hit.append(a)
+		if is_instance_valid(target) and not targets_to_hit.has(target):
+			targets_to_hit.append(target)
+	elif atk.hitbox_extents != Vector3.ZERO:
+		var space_state = source.get_world_3d().direct_space_state
+		var query = PhysicsShapeQueryParameters3D.new()
+		var shape = BoxShape3D.new()
+		shape.size = atk.hitbox_extents
+		query.shape = shape
+		query.transform = Transform3D(Basis(), center_pos + Vector3(0, atk.hitbox_extents.y / 2.0, 0))
+		query.collision_mask = 2 if (source.is_in_group("allies") or source.is_in_group("player")) else 5
+		var results = space_state.intersect_shape(query)
+		for res in results:
+			var col = res.collider
+			if is_instance_valid(col) and not targets_to_hit.has(col) and col != source:
+				targets_to_hit.append(col)
+		if is_instance_valid(target) and not targets_to_hit.has(target):
+			targets_to_hit.append(target)
+	else:
+		if is_instance_valid(target):
+			targets_to_hit.append(target)
+							
+	if show_debug_hitboxes:
+		_spawn_debug_hitbox(center_pos, atk)
 	
 	for t in targets_to_hit:
 		if not is_instance_valid(t): continue
@@ -173,5 +296,47 @@ func _apply_hit(target: Node, damage: float, atk: AttackResource, source: Node) 
 			t.take_damage(damage, atk.element, source)
 		elif t.has_node("HealthComponent"):
 			t.get_node("HealthComponent").take_damage(damage, atk.element, source)
+			
+		if "active_weapon_item" in source and source.active_weapon_item:
+			var artifact = source.active_weapon_item.get_artifact_instance()
+			if artifact and artifact.has_method("on_attack"):
+				artifact.on_attack(source, t, source.active_weapon_item, damage)
 		
 		emit_signal("attacked", t, damage)
+
+func _spawn_debug_hitbox(target_pos: Vector3, atk: AttackResource) -> void:
+	if not Engine.has_singleton("LaneManager") and not get_tree().root.has_node("LaneManager"): return
+	var mesh_inst = MeshInstance3D.new()
+	var box = BoxMesh.new()
+	
+	if atk.is_aoe:
+		var s = LaneManager.GRID_SCALE if "GRID_SCALE" in LaneManager else 2.0
+		var width = (atk.range_width * 2 + 1) * s
+		box.size = Vector3(s, 1.0, width)
+	elif atk.hitbox_extents != Vector3.ZERO:
+		box.size = atk.hitbox_extents
+	else:
+		box.size = Vector3(0.5, 0.5, 0.5)
+		
+	mesh_inst.mesh = box
+	
+	var mat = StandardMaterial3D.new()
+	mat.albedo_color = Color(1.0, 0.2, 0.2, 0.5)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mesh_inst.material_override = mat
+	
+	get_tree().root.add_child(mesh_inst)
+	
+	if atk.is_aoe:
+		var tile = LaneManager.world_to_tile(target_pos)
+		var tile_center = LaneManager.tile_to_world(tile)
+		tile_center.y = target_pos.y + 0.5
+		mesh_inst.global_position = tile_center
+	else:
+		var offset_y = (atk.hitbox_extents.y / 2.0) if atk.hitbox_extents != Vector3.ZERO else 0.5
+		mesh_inst.global_position = target_pos + Vector3(0, offset_y, 0)
+		
+	var tween = create_tween()
+	tween.tween_property(mat, "albedo_color:a", 0.0, 0.3)
+	tween.tween_callback(mesh_inst.queue_free)

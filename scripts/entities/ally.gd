@@ -22,12 +22,14 @@ const SLOT_WEAPON = 1
 const SLOT_ARMOR = 2
 const SLOT_ARTIFACT = 3
 
+var active_weapon_item: ItemResource = null
+
 # Visuals & State
 var selection_container: Node3D
 var _vis_tween: Tween
 var _tint_tween: Tween
-var _tint_materials: Array[StandardMaterial3D] = []
-var _tint_sprites: Array[Node] = []
+var _tint_materials: Array[StandardMaterial3D] =[]
+var _tint_sprites: Array[Node] =[]
 var progress_bar: Node3D 
 
 # Interaction
@@ -40,12 +42,22 @@ var interaction_duration: float = 2.0
 var centering_target: Vector3 = Vector3.ZERO
 var is_centering: bool = false
 
-# Attack State
-var _scan_timer: float = 0.0
+var facing_direction: Vector3 = Vector3(1, 0, 0)
+
+# Dynamic Combat Stats
+var attack_damage: float = 0.0
+var lux_stat: float = 0.0
+var attack_speed_mult: float = 0.0
+var damage_mult: float = 0.0
+
+# Respawn configuration
+var respawns_count: int = 0
+var respawns_unlimited: bool = false
+var respawns_cooldown: float = 5.0
 
 func _ready() -> void:
 	collision_layer = 4 
-	collision_mask = 1 
+	collision_mask = 0 # No collision with buildings/clutter (phases through them)
 	add_to_group("allies")
 	
 	health_component = get_node_or_null("HealthComponent")
@@ -55,6 +67,9 @@ func _ready() -> void:
 		attacker_component = AttackerComponent.new()
 		attacker_component.name = "AttackerComponent"
 		add_child(attacker_component)
+		
+	if not attacker_component.attack_started.is_connected(_on_attack_started):
+		attacker_component.attack_started.connect(_on_attack_started)
 		
 	if not inventory_component:
 		inventory_component = get_node_or_null("InventoryComponent")
@@ -79,9 +94,11 @@ func _ready() -> void:
 	_setup_progress_bar()
 	_cache_visual_materials(self)
 	_recalculate_stats()
+	
+	if is_instance_valid(GameManager):
+		GameManager.run_data_changed.connect(_recalculate_stats)
 
 func _input(event: InputEvent) -> void:
-	# Only handle mode switching if this ally is selected
 	if not is_instance_valid(selection_container) or not selection_container.visible: return
 	
 	if event.is_action_pressed("switch"):
@@ -93,14 +110,11 @@ func _cycle_mode() -> void:
 		AllyMode.TOOL: current_mode = AllyMode.ATTACK
 		AllyMode.ATTACK: current_mode = AllyMode.IDLE
 	
-	# Validate Attack Mode
 	if current_mode == AllyMode.ATTACK:
-		if not attacker_component or not attacker_component.basic_attack:
-			# Cannot enter attack mode without an attack
+		if not attacker_component or not attacker_component.basic_attack or not active_weapon_item:
 			current_mode = AllyMode.IDLE
-			_show_notification("No Attack Configured", Color.RED)
+			_show_notification("No Weapon Equipped", Color.RED)
 	
-	# Cleanup previous state
 	if current_mode != AllyMode.ATTACK:
 		if attacker_component: attacker_component.stop_attacking()
 		
@@ -117,16 +131,22 @@ func _show_mode_notification() -> void:
 		AllyMode.ATTACK: col = Color.RED
 		AllyMode.IDLE: col = Color.GRAY
 	
-	_show_notification("%s Mode: %s" % [display_name, mode_name], col)
+	_show_notification("%s Mode: %s" %[display_name, mode_name], col)
 
 func _show_notification(text: String, col: Color) -> void:
 	var ui = get_node_or_null("/root/Main/GameUI")
 	if ui: ui.show_notification(text, col)
 
 func _process(delta: float) -> void:
+	if velocity.length_squared() > 0.01:
+		var dir = velocity.normalized()
+		dir.y = 0
+		if dir.length_squared() > 0:
+			facing_direction = dir.normalized()
+
 	match current_mode:
 		AllyMode.TOOL:
-			_process_auto_mine()
+			_process_auto_mine(delta)
 		AllyMode.ATTACK:
 			_process_attack_mode(delta)
 		AllyMode.IDLE:
@@ -136,36 +156,45 @@ func _process(delta: float) -> void:
 	elif is_centering: _process_centering()
 	_update_bar_visual()
 
-func _process_attack_mode(delta: float) -> void:
-	_scan_timer -= delta
-	if _scan_timer <= 0:
-		_scan_timer = 0.5
-		_scan_for_enemies()
-
-func _scan_for_enemies() -> void:
+func _process_attack_mode(_delta: float) -> void:
 	if not attacker_component or not attacker_component.basic_attack: return
-	
+	if not active_weapon_item: return
+		
 	var atk = attacker_component.basic_attack
-	var range_rad = max(1.0, float(atk.max_range) * LaneManager.GRID_SCALE)
 	
-	# Simple Scan
-	var enemies = get_tree().get_nodes_in_group("enemies")
-	var best_target = null
-	var min_dist = INF
+	# Continuously compute the tile strictly in front of the entity rather than scalar offsets
+	var current_tile = LaneManager.world_to_tile(global_position)
 	
-	for e in enemies:
-		if not is_instance_valid(e): continue
-		var d = global_position.distance_to(e.global_position)
-		if d <= range_rad and d < min_dist:
-			min_dist = d
-			best_target = e
-	
-	if best_target:
-		attacker_component.start_attacking(best_target)
-		# Face target
-		look_at(Vector3(best_target.global_position.x, global_position.y, best_target.global_position.z), Vector3.UP)
+	# Snap raw facing direction to a cardinal direction vector
+	var dir_x = 0
+	var dir_z = 0
+	if abs(facing_direction.x) > abs(facing_direction.z):
+		dir_x = sign(facing_direction.x)
 	else:
-		attacker_component.stop_attacking()
+		dir_z = sign(facing_direction.z)
+		
+	var range_val = atk.max_range
+	if range_val == 0: range_val = 1
+	
+	var target_tile = current_tile + Vector2i(dir_x * range_val, dir_z * range_val)
+	var target_pos = LaneManager.tile_to_world(target_tile)
+	target_pos.y = global_position.y
+	
+	# Updates the attacker position constantly so it hits the correct updated tile when timer reaches 0
+	attacker_component.start_attacking_position(target_pos)
+
+func _on_attack_started(target: Node3D, _attack_res: AttackResource) -> void:
+	if current_mode == AllyMode.ATTACK and not is_instance_valid(target):
+		var current_tile = LaneManager.world_to_tile(global_position)
+		var target_tile = LaneManager.world_to_tile(attacker_component.current_target_pos)
+		var dir_x = 0
+		var dir_z = 0
+		if abs(facing_direction.x) > abs(facing_direction.z):
+			dir_x = sign(facing_direction.x)
+		else:
+			dir_z = sign(facing_direction.z)
+			
+		print("[Attack Trace] Fired! Ally Tile: ", current_tile, " | Facing: Vector2i(", dir_x, ", ", dir_z, ") | Target Tile: ", target_tile, " | World Target: ", attacker_component.current_target_pos)
 
 func _cache_visual_materials(node: Node) -> void:
 	if node.name == "SelectionVisuals" or node.name == "ProgressBar": return
@@ -201,20 +230,27 @@ func _apply_tint_ratio(ratio: float, base: Color, dmg: Color) -> void:
 	for m in _tint_materials:
 		if is_instance_valid(m): m.albedo_color = final
 
-func _process_auto_mine() -> void:
+func _process_auto_mine(_delta: float) -> void:
 	if not ToolManager.instance: return
 	if ToolManager.instance.active_miners.has(self): return
 	var tool_item = _get_item_in_slot(SLOT_TOOL)
 	if not tool_item: return
+	
 	var tile = LaneManager.world_to_tile(global_position)
 	var entity = LaneManager.get_entity_at(tile, "building")
+	
 	if entity is ClutterObject:
 		ToolManager.instance.request_mining(self, tool_item)
+		if move_component: move_component.stop_moving()
 		return
+		
 	var world_pos = LaneManager.tile_to_world(tile)
 	var ore = LaneManager.get_ore_at_world_pos(world_pos)
+	
 	if ore:
 		ToolManager.instance.request_mining(self, tool_item)
+		if move_component: move_component.stop_moving()
+		return
 
 func _get_item_in_slot(slot_idx: int) -> ItemResource:
 	if not inventory_component: return null
@@ -223,20 +259,13 @@ func _get_item_in_slot(slot_idx: int) -> ItemResource:
 		if s and s.item: return s.item
 	return null
 
-## Called when the user presses 'Use' (F).
-## Executes the primary action for the current mode.
 func activate_mode() -> void:
 	match current_mode:
 		AllyMode.TOOL:
-			# Manual mine request (redundant if auto-mine is on, but confirms action)
-			_process_auto_mine()
-		
+			_process_auto_mine(0.0)
 		AllyMode.ATTACK:
-			# Force a scan and attack attempt immediately
-			_scan_for_enemies()
-			
+			pass
 		AllyMode.IDLE:
-			# Idle interactions (handled by Main raycast usually, but we can put logic here)
 			pass
 
 func _setup_progress_bar() -> void:
@@ -268,6 +297,11 @@ func _update_bar_visual() -> void:
 func _apply_stats_from_resource() -> void:
 	if not stats: return
 	display_name = stats.ally_name
+	
+	respawns_count = stats.respawns_count
+	respawns_unlimited = stats.respawns_unlimited
+	respawns_cooldown = stats.respawns_cooldown
+	
 	if health_component:
 		health_component.max_health = stats.health
 		health_component.current_health = stats.health
@@ -285,11 +319,18 @@ func _recalculate_stats(_arg = null) -> void:
 	var base_spd = 5.0
 	var total_def = 0.0
 	
+	attack_damage = 0.0
+	lux_stat = 0.0
+	attack_speed_mult = 0.0
+	damage_mult = 0.0
+	
 	if stats:
 		base_hp = stats.health
 		base_spd = stats.speed
+		total_def = stats.defense
 	
 	var active_weapon_attack: AttackResource = null
+	active_weapon_item = null
 
 	if inventory_component:
 		for i in range(4):
@@ -304,10 +345,24 @@ func _recalculate_stats(_arg = null) -> void:
 					if it.stats.has("defense"): total_def += it.stats["defense"]
 					if it.stats.has("speed"): base_spd += it.stats["speed"]
 					if it.stats.has("health"): base_hp += it.stats["health"]
+					if it.stats.has("attack_damage"): attack_damage += it.stats["attack_damage"]
+					if it.stats.has("lux_stat"): lux_stat += it.stats["lux_stat"]
 				
-				# Check Weapon Slot for Attack Config
+				if it.modifiers:
+					if it.modifiers.has("attack_speed_mult"): attack_speed_mult += it.modifiers["attack_speed_mult"]
+					if it.modifiers.has("damage_mult"): damage_mult += it.modifiers["damage_mult"]
+					if it.modifiers.has("attack_damage"): attack_damage += it.modifiers["attack_damage"]
+					if it.modifiers.has("lux_stat"): lux_stat += it.modifiers["lux_stat"]
+				
 				if i == SLOT_WEAPON and it.attack_config:
 					active_weapon_attack = it.attack_config
+					active_weapon_item = it
+
+	if is_instance_valid(GameManager):
+		base_hp *= GameManager.get_stat_multiplier("ally_health")
+		base_spd *= GameManager.get_stat_multiplier("ally_speed")
+		attack_speed_mult += GameManager.get_global_stat("ally_attack_speed_mult", 0.0)
+		damage_mult += GameManager.get_global_stat("ally_damage_mult", 0.0)
 
 	if health_component:
 		health_component.max_health = base_hp
@@ -322,10 +377,8 @@ func _recalculate_stats(_arg = null) -> void:
 		if active_weapon_attack:
 			attacker_component.basic_attack = active_weapon_attack
 		else:
-			# Reset to default punch
 			attacker_component.initialize(2.0, 1.0, null)
 			
-	# Update mode if we lost weapon while attacking
 	if current_mode == AllyMode.ATTACK and (not attacker_component or not attacker_component.basic_attack):
 		current_mode = AllyMode.IDLE
 		if attacker_component: attacker_component.stop_attacking()
@@ -396,8 +449,8 @@ func set_interaction(target: Node, type: String, data: Dictionary = {}) -> void:
 func _find_adjacent_center(target_pos: Vector3) -> Vector3:
 	var t_tile = LaneManager.world_to_tile(target_pos)
 	var my_tile = LaneManager.world_to_tile(global_position)
-	var candidates = []
-	var neighbor_offsets = [Vector2i(0,1), Vector2i(0,-1), Vector2i(1,0), Vector2i(-1,0)]
+	var candidates =[]
+	var neighbor_offsets =[Vector2i(0,1), Vector2i(0,-1), Vector2i(1,0), Vector2i(-1,0)]
 	for n in neighbor_offsets:
 		var check = t_tile + n
 		if LaneManager.is_valid_tile(check):
@@ -470,7 +523,6 @@ func _equip_or_add_item(item: Resource, count: int) -> void:
 		inventory_component.add_item(item, count)
 
 func use_equipped_tool() -> void:
-	# Deprecated wrapper for older calls, redirects to new logic
 	activate_mode()
 
 func receive_item(item: Resource, _from_node: Node3D = null, _extra_data: Dictionary = {}) -> bool:
@@ -478,4 +530,43 @@ func receive_item(item: Resource, _from_node: Node3D = null, _extra_data: Dictio
 	return inventory_component.add_item(item) == 0
 
 func _on_died(_node) -> void:
-	queue_free()
+	if respawns_unlimited or respawns_count > 0:
+		if not respawns_unlimited:
+			respawns_count -= 1
+		
+		visible = false
+		collision_layer = 0
+		set_process(false)
+		set_physics_process(false)
+		
+		if current_mode != AllyMode.IDLE:
+			current_mode = AllyMode.IDLE
+		if attacker_component: attacker_component.stop_attacking()
+		if move_component: move_component.stop_moving()
+		if ToolManager.instance and ToolManager.instance.active_miners.has(self):
+			ToolManager.instance.active_miners.erase(self)
+		
+		get_tree().create_timer(respawns_cooldown).timeout.connect(_respawn)
+	else:
+		queue_free()
+
+func _respawn() -> void:
+	var respawn_pos = LaneManager.get_nearby_valid_ally_spawn_pos(global_position)
+	global_position = respawn_pos
+	
+	if move_component:
+		move_component.target_position = respawn_pos
+	
+	# For Player specifically to cancel mouse movement tasks
+	if "target_pos" in self:
+		self.set("target_pos", respawn_pos)
+	if "is_moving" in self:
+		self.set("is_moving", false)
+	
+	if health_component:
+		health_component.current_health = health_component.max_health
+	
+	visible = true
+	collision_layer = 4
+	set_process(true)
+	set_physics_process(true)
