@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://gvqddjpsd7er"]
+
+[ext_resource type="Script" uid="uid://dj7657xb6odwr" path="res://scripts/resources/attack_resource.gd" id="1_klv6h"]
+
+[resource]
+script = ExtResource("1_klv6h")
+id = "dull_pencil_stab"
+cooldown = 2.0
+base_damage = 1.0
+min_range = 1

@@ -1,5 +1,4 @@
-[
-    { "id": "coal", "name": "Coal", "texture": "res://assets/ores/coal.png", "item_data": { "damage": 2.0, "element": "igni", "element_units": 1, "stack": 100 } },
+[    { "id": "coal", "name": "Coal", "texture": "res://assets/ores/coal.png", "item_data": { "damage": 2.0, "element": "igni", "element_units": 1, "stack": 100 } },
     { "id": "iron", "name": "Iron Ore", "texture": "res://assets/ores/iron.png", "item_data": { "damage": 3.0, "element": "magne", "element_units": 1, "stack": 50 } },
     { "id": "copper", "name": "Copper Ore", "texture": "res://assets/ores/copper.png", "item_data": { "damage": 3.0, "element": "volt", "element_units": 1, "stack": 50 } },
     { "id": "gold", "name": "Gold Ore", "texture": "res://assets/ores/gold.png", "item_data": { "damage": 4.0, "element": "magne", "element_units": 2, "stack": 50 } },
@@ -44,5 +43,55 @@
         "tool_data": { "type": "drill", "time": 3.0, "offset":[0, 0.5, 0] },
         "equipment_type": "tool"
     },
-    { "id": "byt", "name": "Byt", "texture": "res://icon.svg", "item_data": { "stack": 9999 } }
+    { "id": "byt", "name": "Byt", "texture": "res://icon.svg", "item_data": { "stack": 9999 } },
+
+    { "id": "marble", "name": "Marble", "texture": "res://icon.svg", "item_data": { "damage": 1.0, "element": "tera", "stack": 100 } },
+    { "id": "graphite", "name": "Graphite", "texture": "res://icon.svg", "item_data": { "damage": 2.0, "element": "tera", "stack": 100 } },
+    { "id": "ink", "name": "Ink", "texture": "res://icon.svg", "item_data": { "damage": 1.0, "element": "slime", "stack": 100 } },
+    { "id": "ignichalk", "name": "Igni Chalk", "texture": "res://icon.svg", "item_data": { "damage": 2.0, "element": "igni", "stack": 50 } },
+    { "id": "aquachalk", "name": "Aqua Chalk", "texture": "res://icon.svg", "item_data": { "damage": 2.0, "element": "aqua", "stack": 50 } },
+    { "id": "aerochalk", "name": "Aero Chalk", "texture": "res://icon.svg", "item_data": { "damage": 2.0, "element": "aero", "stack": 50 } },
+    { "id": "luxchalk", "name": "Lux Chalk", "texture": "res://icon.svg", "item_data": { "damage": 5.0, "element": "lux", "stack": 20 } },
+    
+    { "id": "cardboard", "name": "Cardboard", "texture": "res://icon.svg", "item_data": { "damage": 1.0, "stack": 50 } },
+    { "id": "paper", "name": "Paper", "texture": "res://icon.svg", "item_data": { "damage": 0.0, "stack": 200 } },
+    { "id": "whiteboard", "name": "Whiteboard", "texture": "res://icon.svg", "item_data": { "damage": 5.0, "stack": 10 } },
+    
+    { "id": "stamp_plane", "name": "Plane Stamp", "texture": "res://icon.svg", "item_data": { "stack": 1 } },
+    { "id": "stamp_crane", "name": "Crane Stamp", "texture": "res://icon.svg", "item_data": { "stack": 1 } },
+    { "id": "stamp_swan", "name": "Swan Stamp", "texture": "res://icon.svg", "item_data": { "stack": 1 } },
+    { "id": "stamp_lotus", "name": "Lotus Stamp", "texture": "res://icon.svg", "item_data": { "stack": 1 } },
+    { "id": "stamp_shuriken", "name": "Shuriken Stamp", "texture": "res://icon.svg", "item_data": { "stack": 1 } },
+
+    { "id": "planefold", "name": "Plane Fold", "texture": "res://icon.svg", "item_data": { "damage": 10.0, "element": "aero", "stack": 50 }, "equipment_type": "weapon", "attack_config": "projectile_shot" },
+    { "id": "cranefold", "name": "Crane Fold", "texture": "res://icon.svg", "item_data": { "damage": 15.0, "element": "aero", "stack": 50 }, "equipment_type": "weapon", "attack_config": "projectile_shot" },
+    { "id": "crumpledfold", "name": "Crumpled Fold", "texture": "res://icon.svg", "item_data": { "damage": 5.0, "element": "tera", "stack": 50 }, "equipment_type": "weapon", "attack_config": "projectile_shot" },
+    { "id": "swanfold", "name": "Swan Fold", "texture": "res://icon.svg", "item_data": { "damage": 12.0, "element": "aqua", "stack": 50 }, "equipment_type": "weapon", "attack_config": "projectile_shot" },
+    { "id": "lotusfold", "name": "Lotus Fold", "texture": "res://icon.svg", "item_data": { "damage": 20.0, "element": "aqua", "stack": 50 }, "equipment_type": "weapon", "attack_config": "projectile_shot" },
+    { "id": "shurikenfold", "name": "Shuriken Fold", "texture": "res://icon.svg", "item_data": { "damage": 8.0, "element": "aero", "stack": 50 }, "equipment_type": "weapon", "attack_config": "projectile_shot" },
+
+    { 
+        "id": "picasso", "name": "Picasso", "texture": "res://icon.svg", 
+        "item_data": { "damage": 1.0, "stack": 1, "element": "slime" },
+        "equipment_type": "weapon",
+        "attack_config": "picasso_shot"
+    },
+    { 
+        "id": "yardstick", "name": "Yardstick", "texture": "res://icon.svg", 
+        "item_data": { "damage": 3.0, "stack": 1 },
+        "equipment_type": "weapon",
+        "attack_config": "yardstick_swing"
+    },
+    { 
+        "id": "dull_pencil", "name": "Dull Pencil", "texture": "res://icon.svg", 
+        "item_data": { "damage": 1.0, "stack": 1 },
+        "equipment_type": "weapon",
+        "attack_config": "dull_pencil_stab"
+    },
+    { 
+        "id": "sharp_pencil", "name": "Sharp Pencil", "texture": "res://icon.svg", 
+        "item_data": { "damage": 2.0, "stack": 1 },
+        "equipment_type": "weapon",
+        "attack_config": "sharp_pencil_stab"
+    }
 ]

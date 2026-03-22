@@ -3,11 +3,11 @@
   "name": "Back to Basics",
   "scene_id": "b2b",
   "day_duration": 120.0,
-  "day_phases":[120, 240, 120, 120, 120, 240, 240],
+  "day_phases":[120, 240, 120, 120, 120, 240, 240, 240],
   "starting_currency": 4,
   "starting_items":[
     {"id": "hand_drill", "count": 1},
-    {"id": "stone", "count": 10}
+    {"id": "marble", "count": 10}
   ],
   "terrain_layers":[ { "depth": 100, "block": "Marble" } ],
   "random_events":[
@@ -15,18 +15,20 @@
     { "type": "scrap_drop", "chance": 0.1 }
   ],
   "ores":[
+    {"block_id": 11, "min_depth": 0, "max_depth": 100, "rarity": 0.15, "guaranteed": 5},
     {"block_id": 12, "min_depth": 0, "max_depth": 100, "rarity": 0.15, "guaranteed": 5},
     {"block_id": 13, "min_depth": 10, "max_depth": 100, "rarity": 0.1, "guaranteed": 3},
     {"block_id": 14, "min_depth": 15, "max_depth": 100, "rarity": 0.08, "guaranteed": 2},
-    {"block_id": 15, "min_depth": 10, "max_depth": 100, "rarity": 0.02, "guaranteed": 2},
-    {"block_id": 16, "min_depth": 10, "max_depth": 100, "rarity": 0.02, "guaranteed": 2}
+    {"block_id": 15, "min_depth": 15, "max_depth": 100, "rarity": 0.08, "guaranteed": 2},
+    {"block_id": 16, "min_depth": 10, "max_depth": 100, "rarity": 0.02, "guaranteed": 2},
+    {"block_id": 17, "min_depth": 10, "max_depth": 100, "rarity": 0.02, "guaranteed": 2}
   ],
   "clutter":[
     {"id": "rock", "min_depth": 0, "max_depth": 15, "rarity": 0.02, "guaranteed": 4}
   ],
   "field_enemies":[
     {
-      "id": "roaming_scrap",
+      "id": "roomdog",
       "is_field_enemy": true,
       "min_depth": 15,
       "max_depth": 50,
@@ -42,48 +44,54 @@
     {
       "id": "wave_1",
       "groups":[
-        {"enemy_id": "basic_robot", "count": 3, "interval": 2.0}
+        {"enemy_id": "roomdog", "count": 3, "interval": 2.0}
       ]
     },
     {
       "id": "wave_2",
       "groups":[
-        {"enemy_id": "basic_robot", "count": 5, "interval": 1.5},
-        {"enemy_id": "fast_robot", "count": 2, "interval": 1.0}
+        {"enemy_id": "roomdog", "count": 5, "interval": 1.5},
+        {"enemy_id": "proller", "count": 2, "interval": 1.0}
       ]
     },
     {
       "id": "wave_3",
       "groups":[
-        {"enemy_id": "basic_robot", "count": 5, "interval": 1.5},
-        {"enemy_id": "fast_robot", "count": 2, "interval": 1.0}
+        {"enemy_id": "inkhog", "count": 6, "interval": 0.5},
+        {"enemy_id": "ecaker", "count": 1, "interval": 1.0}
       ]
     },
     {
       "id": "wave_4",
       "groups":[
-        {"enemy_id": "basic_robot", "count": 5, "interval": 1.5},
-        {"enemy_id": "fast_robot", "count": 2, "interval": 1.0}
+        {"enemy_id": "roomdog", "count": 6, "interval": 1.5},
+        {"enemy_id": "proller", "count": 3, "interval": 1.0}
       ]
     },
     {
       "id": "wave_5",
       "groups":[
-        {"enemy_id": "basic_robot", "count": 5, "interval": 1.5},
-        {"enemy_id": "fast_robot", "count": 2, "interval": 1.0}
+        {"enemy_id": "inkhog", "count": 9, "interval": 0.5},
+        {"enemy_id": "ecaker", "count": 2, "interval": 2.0}
       ]
     },
     {
       "id": "wave_6",
       "groups":[
-        {"enemy_id": "basic_robot", "count": 5, "interval": 1.5},
-        {"enemy_id": "fast_robot", "count": 2, "interval": 1.0}
+        {"enemy_id": "proller", "count": 5, "interval": 1.5},
+        {"enemy_id": "ecaker", "count": 2, "interval": 1.0}
       ]
     },
     {
       "id": "wave_7",
       "groups":[
-        {"enemy_id": "boss_scrap", "count": 1, "interval": 1.5, "is_boss": true, "spawn_lane": "center"}
+        {"enemy_id": "enormous_ecaker", "count": 1, "interval": 1.5, "is_boss": true, "spawn_lane": "center"}
+      ]
+    },
+    {
+      "id": "wave_8",
+      "groups":[
+        {"enemy_id": "inkage", "count": 1, "interval": 1.5, "is_boss": true, "spawn_lane": "center"}
       ]
     }
   ]

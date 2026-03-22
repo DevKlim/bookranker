@@ -88,15 +88,43 @@ func _perform_attack() -> void:
 		return
 		
 	var source = get_parent()
+	var ammo_item: ItemResource = null
+	
+	# Ammo override
+	if source is Node3D and source.has_node("InventoryComponent"):
+		var inv = source.get_node("InventoryComponent")
+		if inv.can_receive and not inv.can_output and inv.has_item():
+			var first_item = inv.get_first_item()
+			if first_item is ItemResource:
+				ammo_item = first_item
+				inv.remove_item(ammo_item, 1)
+		elif current_attack.id == "fan_blow":
+			# Fan cannot blow without ammo to propel
+			stop_attacking()
+			return
+			
+	var base_attack = current_attack
+	if ammo_item and ammo_item.attack_config:
+		current_attack = ammo_item.attack_config
+
 	var final_damage = _calculate_damage(source, current_attack)
 	
 	emit_signal("attack_started", current_target, current_attack)
 	_spawn_visuals(source, current_target, current_target_pos)
 
-	if current_attack.spawn_projectile:
-		_spawn_projectile(source, final_damage)
+	if current_attack.spawn_projectile or ammo_item != null:
+		var proj_damage = final_damage
+		if ammo_item and ammo_item.damage > 0:
+			proj_damage += ammo_item.damage
+		_spawn_projectile(source, proj_damage, current_attack, ammo_item)
 	else:
 		_apply_hit(current_target, current_target_pos, final_damage, current_attack, source)
+
+	# Apply base attack's hit if it was overridden and was meant to be an AOE/hit 
+	# Example: The Box Fan applies Aero AOE but still fires the overridden fold ammo logic forwards!
+	if base_attack != current_attack and not base_attack.spawn_projectile:
+		var base_dmg = _calculate_damage(source, base_attack)
+		_apply_hit(current_target, current_target_pos, base_dmg, base_attack, source)
 
 	if current_attack.chain_next:
 		var next = current_attack.chain_next
@@ -106,8 +134,7 @@ func _perform_attack() -> void:
 			_perform_attack()
 		)
 	else:
-		if basic_attack and current_attack != basic_attack:
-			current_attack = basic_attack
+		current_attack = basic_attack
 			
 	var cd = current_attack.cooldown
 	var spd_mult = 0.0
@@ -124,7 +151,13 @@ func _perform_attack() -> void:
 		var s_spd_mult = source.get("attack_speed_mult")
 		if s_spd_mult != null:
 			spd_mult += float(s_spd_mult)
-		
+			
+	# Apply dynamic artifact overrides (e.g., Picasso charge time)
+	if "active_weapon_item" in source and source.active_weapon_item:
+		var artifact = source.active_weapon_item.get_artifact_instance()
+		if artifact and artifact.has_method("modify_cooldown"):
+			cd = artifact.modify_cooldown(cd, source, current_attack)
+	
 	cd /= max(0.1, (1.0 + spd_mult))
 	
 	attack_timer.start(cd)
@@ -166,6 +199,12 @@ func _calculate_damage(source: Node, atk: AttackResource) -> float:
 	if is_instance_valid(GameManager):
 		if GameManager.has_method("get_global_stat"):
 			dmg += GameManager.get_global_stat("global_flat_damage", 0.0)
+			
+	# Hook for dynamic overrides (e.g. Picasso variable damage)
+	if "active_weapon_item" in source and source.active_weapon_item:
+		var artifact = source.active_weapon_item.get_artifact_instance()
+		if artifact and artifact.has_method("modify_damage"):
+			dmg = artifact.modify_damage(dmg, source, atk)
 		
 	return dmg
 
@@ -195,10 +234,14 @@ func _spawn_visuals(source: Node3D, target: Node3D, t_pos: Vector3) -> void:
 	if current_attack.visual_duration > 0 and not vis.has_method("_on_finished"):
 		get_tree().create_timer(current_attack.visual_duration).timeout.connect(func(): if is_instance_valid(vis): vis.queue_free())
 
-func _spawn_projectile(source: Node, damage: float) -> void:
+func _spawn_projectile(source: Node, damage: float, atk: AttackResource, ammo_item: ItemResource = null) -> void:
 	var proj = null
-	if current_attack.projectile_scene:
-		proj = current_attack.projectile_scene.instantiate()
+	
+	# Prefer projectile scenes specific to the Ammo Item (e.g., customized Folds)
+	if ammo_item and ammo_item.projectile_scene:
+		proj = ammo_item.projectile_scene.instantiate()
+	elif atk and atk.projectile_scene:
+		proj = atk.projectile_scene.instantiate()
 	else:
 		var default_proj = load("res://scenes/entities/projectile.tscn")
 		if default_proj:
@@ -223,17 +266,34 @@ func _spawn_projectile(source: Node, damage: float) -> void:
 	elif source.has_node("Rotatable/ProjectileOrigin"):
 		start_pos = source.get_node("Rotatable/ProjectileOrigin").global_position
 	
+	var tex = atk.get("projectile_texture") if atk != null else null
+	var col = atk.projectile_color if atk != null else Color.WHITE
+	var elem = atk.element if atk != null else null
+	var units = atk.element_units if atk != null else 1
+	var ignore_cd = atk.ignore_element_cd if atk != null else false
+	
 	var params = {
 		"source": source,
-		"element_units": current_attack.element_units,
-		"ignore_element_cd": current_attack.ignore_element_cd,
-		"attack_resource": current_attack
+		"element_units": units,
+		"ignore_element_cd": ignore_cd,
+		"attack_resource": atk
 	}
 	
-	var tex = current_attack.projectile_texture if "projectile_texture" in current_attack else null
+	if ammo_item:
+		if ammo_item.icon and tex == null: tex = ammo_item.icon
+		if ammo_item.element: elem = ammo_item.element
+		col = ammo_item.color
+		params["element_units"] = ammo_item.element_units
+		params["ignore_element_cd"] = ammo_item.ignore_element_cooldown
+		
+		# Transfer item modifiers directly to the projectile params (e.g., piercing, sea_borne)
+		for k in ammo_item.modifiers.keys():
+			params[k] = ammo_item.modifiers[k]
+
+	var atk_speed = atk.projectile_speed if atk != null else 100.0
 	
 	if proj.has_method("initialize"):
-		proj.initialize(start_pos, dir, current_attack.projectile_speed, damage, -1, current_attack.element, tex, current_attack.projectile_color, false, params)
+		proj.initialize(start_pos, dir, atk_speed, damage, -1, elem, tex, col, false, params)
 
 func _apply_hit(target: Node, t_pos: Vector3, damage: float, atk: AttackResource, source: Node) -> void:
 	var targets_to_hit =[]

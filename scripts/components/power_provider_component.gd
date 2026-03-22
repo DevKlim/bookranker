@@ -3,10 +3,8 @@ extends Node
 
 ## A component for entities that generate power for the grid.
 
-
 ## Signal emitted when the power output of this provider changes.
 signal power_output_changed(new_output)
-
 
 ## The amount of power this entity generates.
 @export var power_generation: float = 10.0:
@@ -15,3 +13,12 @@ signal power_output_changed(new_output)
 		if power_generation != value:
 			power_generation = value
 			emit_signal("power_output_changed", power_generation)
+
+func _ready() -> void:
+	if Engine.is_editor_hint(): return
+	call_deferred("_register")
+
+func _register() -> void:
+	if get_parent().has_meta("is_preview"): return
+	if is_instance_valid(PowerGridManager):
+		PowerGridManager.register_provider(self)

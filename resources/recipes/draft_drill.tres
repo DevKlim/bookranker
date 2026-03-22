@@ -2,6 +2,7 @@
 
 [ext_resource type="Resource" uid="uid://6eqk5mgdwpgy" path="res://resources/items/gear.tres" id="1_obi60"]
 [ext_resource type="Resource" uid="uid://f2yu5yfckp4d" path="res://resources/items/stone.tres" id="1_xpl46"]
+[ext_resource type="Resource" uid="uid://cqfbvwuayxlk" path="res://resources/items/drill_bit.tres" id="2_an31a"]
 [ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="2_w2658"]
 [ext_resource type="Resource" uid="uid://biw6jmu3536df" path="res://resources/items/lux.tres" id="3_an31a"]
 [ext_resource type="Resource" uid="uid://dr3dix5bbggvi" path="res://resources/buildables/drill.tres" id="4_8op4q"]
@@ -13,6 +14,9 @@ recipe_name = "Drill"
 inputs = [{
 "count": 12,
 "resource": ExtResource("1_xpl46")
+}, {
+"count": 1,
+"resource": ExtResource("2_an31a")
 }, {
 "count": 3,
 "resource": ExtResource("1_obi60")

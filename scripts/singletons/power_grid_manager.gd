@@ -6,7 +6,7 @@ extends Node
 signal grid_updated(total_power, total_demand, net_power)
 
 var providers: Array[PowerProviderComponent] = []
-var consumers: Array[PowerConsumerComponent] = []
+var consumers: Array[PowerConsumerComponent] =[]
 
 var total_power_generation: float = 0.0
 var total_power_demand: float = 0.0
@@ -34,7 +34,7 @@ func _process_grid_update() -> void:
 			total_power_generation += provider.power_generation
 
 	# 2. Check Connections
-	var eligible_consumers: Array[PowerConsumerComponent] = []
+	var eligible_consumers: Array[PowerConsumerComponent] =[]
 	var _disconnected_count = 0
 	
 	for consumer in consumers:
@@ -45,11 +45,12 @@ func _process_grid_update() -> void:
 		if consumer.requires_wire_connection:
 			var parent = consumer.get_parent()
 			if parent and parent is Node3D:
-				# Skip if parent hasn't been placed fully (e.g. at 0,0,0 if not intended)
-				# But (0,0) is a valid tile, so we trust standard placement flow.
-				
 				var wire_found = false
+				
+				# Get exact tile location (prioritizing the GridComponent)
 				var origin_coord = lane_manager.world_to_tile(parent.global_position)
+				var gc = parent.get_node_or_null("GridComponent")
+				if gc: origin_coord = gc.tile_coord
 				
 				# Check Multi-block footprints
 				if parent.has_method("get_occupied_cells"):

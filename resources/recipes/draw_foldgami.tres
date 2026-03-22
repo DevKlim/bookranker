@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://b6hpeygkymqpg"]
+
+[ext_resource type="Resource" uid="uid://coghxhqspfcp0" path="res://resources/items/graphite.tres" id="1_c2g34"]
+[ext_resource type="Resource" uid="uid://nrrfcqc3xn8e" path="res://resources/items/ink.tres" id="2_nqgxh"]
+[ext_resource type="Resource" uid="uid://dg7s0va0yd8uy" path="res://resources/buildables/foldgami.tres" id="3_f6ara"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="4_1a7uk"]
+
+[resource]
+script = ExtResource("4_1a7uk")
+category = "chalkboard"
+recipe_name = "Foldgami"
+inputs = [{
+"count": 3,
+"resource": ExtResource("1_c2g34")
+}, {
+"count": 1,
+"resource": ExtResource("2_nqgxh")
+}]
+outputs = [{
+"count": 1,
+"resource": ExtResource("3_f6ara")
+}]

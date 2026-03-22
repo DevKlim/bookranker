@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="EnemyResource" format=3 uid="uid://7anutyl55aya"]
+
+[ext_resource type="PackedScene" uid="uid://tw1g4f7f0fjn" path="res://scenes/enemies/roomdog.tscn" id="1_lohbc"]
+[ext_resource type="Script" uid="uid://bykln6bau3775" path="res://scripts/resources/enemy_resource.gd" id="2_xnpbs"]
+
+[resource]
+script = ExtResource("2_xnpbs")
+enemy_name = "Roomdog"
+scene = ExtResource("1_lohbc")
+health = 10.0
+magical_defense = 0.2
+attack_damage = 2.0

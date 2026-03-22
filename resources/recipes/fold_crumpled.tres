@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://bvyrhvpgd408h"]
+
+[ext_resource type="Resource" uid="uid://d1jxdol00rp3u" path="res://resources/items/paper.tres" id="1_a58qj"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="2_jong5"]
+
+[resource]
+script = ExtResource("2_jong5")
+category = "foldgami"
+recipe_name = "Crumpled Fold"
+craft_time = 0.5
+inputs = [{
+"count": 1,
+"resource": ExtResource("1_a58qj")
+}]

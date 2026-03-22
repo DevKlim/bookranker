@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://dcindfn4c0ohg"]
+
+[ext_resource type="Resource" uid="uid://d1jxdol00rp3u" path="res://resources/items/paper.tres" id="1_4tayr"]
+[ext_resource type="Resource" uid="uid://dt25u32oxnfc6" path="res://resources/items/stamp_swan.tres" id="2_vh4f1"]
+[ext_resource type="Resource" uid="uid://dom6dpbqvf46m" path="res://resources/items/aquachalk.tres" id="3_w0gop"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="4_rdk5e"]
+
+[resource]
+script = ExtResource("4_rdk5e")
+category = "foldgami"
+recipe_name = "Swan Fold"
+craft_time = 1.0
+inputs = [{
+"count": 1,
+"resource": ExtResource("1_4tayr")
+}, {
+"count": 1,
+"resource": ExtResource("2_vh4f1")
+}, {
+"count": 1,
+"resource": ExtResource("3_w0gop")
+}]

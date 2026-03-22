@@ -55,7 +55,32 @@ func _physics_process(delta: float) -> void:
 		if lifetime <= 0: queue_free()
 		return
 
-	global_position += _velocity * delta
+	# Grid checks for Liquid stream momentum
+	var current_speed_mult = 1.0
+	var is_on_water = false
+	var is_on_ink = false
+	
+	if Engine.has_singleton("LaneManager"):
+		var current_tile = LaneManager.world_to_tile(global_position)
+		var wire = LaneManager.get_entity_at(current_tile, "wire")
+		
+		if is_instance_valid(wire):
+			var wire_name = wire.get("display_name")
+			if wire_name == "Slipstream":
+				is_on_water = true
+				if get_meta("ground_borne", false) or get_meta("sea_borne", false):
+					current_speed_mult = 2.0
+			elif wire_name == "Tarstream":
+				is_on_ink = true
+				if get_meta("ground_borne", false) or get_meta("sea_borne", false):
+					current_speed_mult = 0.5
+				
+	if get_meta("sea_borne", false) and not is_on_water and not is_on_ink:
+		# Swan/Lotus Folds instantly vanish outside of water trails
+		queue_free()
+		return
+
+	global_position += (_velocity * current_speed_mult) * delta
 	lifetime -= delta
 	if lifetime <= 0:
 		queue_free()
@@ -72,6 +97,10 @@ func initialize(start_pos: Vector3, dir: Vector3, p_speed: float, dmg: float, p_
 	_element = p_elem
 	_source_attacker = extra_params.get("source", null)
 	_attack_resource = extra_params.get("attack_resource", null)
+	
+	if extra_params.size() > 0:
+		for k in extra_params.keys():
+			set_meta(k, extra_params[k])
 	
 	# Parse explicit unit/CD data
 	_element_units = extra_params.get("element_units", 1)
@@ -97,12 +126,14 @@ func initialize(start_pos: Vector3, dir: Vector3, p_speed: float, dmg: float, p_
 		if typeof(s) == TYPE_FLOAT or typeof(s) == TYPE_INT:
 			sprite.scale = default_scale * float(s)
 
-		var shader = Shader.new()
-		shader.code = OUTLINE_SHADER_CODE
-		var mat = ShaderMaterial.new()
-		mat.set_shader_parameter("texture_albedo", tex)
-		mat.resource_local_to_scene = true
-		sprite.material_override = mat
+		if tex:
+			var shader = Shader.new()
+			shader.code = OUTLINE_SHADER_CODE
+			var mat = ShaderMaterial.new()
+			mat.shader = shader 
+			mat.set_shader_parameter("texture_albedo", tex)
+			mat.resource_local_to_scene = true
+			sprite.material_override = mat
 
 	if not body_entered.is_connected(_on_body_entered):
 		body_entered.connect(_on_body_entered)
@@ -142,4 +173,5 @@ func _on_body_entered(body: Node3D) -> void:
 			# Hook for ElementManager Reactions (e.g. Ripple / Conduct)
 			ElementManager.on_damage_dealt(body, _damage, _source_attacker)
 		
-		queue_free()
+		if not get_meta("piercing", false):
+			queue_free()

@@ -22,13 +22,42 @@ Types of unlockables:
 ## Mods
 
 ### Path Not Taken
-- Rarity: Rare.
-- Type: Core
+- Rarity: TPU (Rare).
+- Type: Core (HDD)
 - Unlock: Must completely cover the starting area with wires or buildings.
 - Get: Shop.
-- Cost: 8b
-- Sell: 4b
-- Effect: Start with an additional lane. (if originally 5 lanes, add another lane)
+- Cost: 8b | Sell: 4b
+- Effect: Start with an additional lane. (If originally 5 lanes, adds a 6th lane).
+
+### Gumball
+- Rarity: GPU (Uncommon).
+- Type: Core (HDD)
+- Unlock: Defeat a boss while the Slime reaction is active on it.
+- Get: Shop / Drops.
+- Cost: 6b | Sell: 3b
+- Effect: Anyone that has the Slime reaction applied will be instantly stunned.
+
+### Crayon Cuisine
+- Rarity: CPU (Common).
+- Type: Core (HDD)
+- Unlock: Craft 50 items using elemental pellets.
+- Get: Shop / Drops.
+- Cost: 4b | Sell: 2b
+- Effect: All elemental pellets in recipes will require half as much (rounded down).
+
+### Coolant
+- Type: Building (Disk)
+- Unlock: Base.
+- Get: Shop / Drops.
+- Cost: 3b | Sell: 1b
+- Effect: Ensures the building stays cool and lowers temperature by 1. Directly counters the Overheat mod.
+
+### Overheat
+- Type: Building (Disk)
+- Unlock: Base.
+- Get: Chance of dropping by killing enemy with Igni (1/50 chance).
+- Cost: 2b | Sell: 1b
+- Effect: Increases damage output by 1.2x, but increases temperature by 1. Requires active cooling or healing.
 
 ### Byt Miner
 - Rarity: Uncommon.
@@ -66,13 +95,6 @@ Types of unlockables:
 - Sell: 2b
 - Effect: Add 120 Shield HP to the Core.
 
-### Overheat
-- Type: Building
-- Unlock: Base.
-- Get: Chance of dropping by killing enemy with Igni (1/50 chance).
-- Cost: 2b
-- Sell: 1b
-- Effect: Increases Damage by 2%, but building takes 1 HP damage per second. Requires active repair or healing
 
 ### Battery
 - Type: Building
@@ -90,13 +112,6 @@ Types of unlockables:
 - Sell: 1b
 - Effect: Regenerative shield of 10 HP
 
-### Coolant
-- Type: Building
-- Unlock: Base(no need to unlock, started off unlocked).
-- Get: Chance of dropping by killing enemy with Aqua (1/50 chance).
-- Cost: 2b
-- Sell: 1b
-- Effect: Passive healing of 1HP/sec. Reduces Fire Rate by 2%.
 
 ### Harden
 - Type: Building
@@ -129,7 +144,6 @@ Types of unlockables:
 - Cost: 2b
 - Sell: 1b
 - Effect: Turns Building to scale with Magic Attack.
-
 
 ## Allies
 

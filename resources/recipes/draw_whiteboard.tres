@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://hjn4wqwengef"]
+
+[ext_resource type="Resource" uid="uid://nrrfcqc3xn8e" path="res://resources/items/ink.tres" id="1_8ccis"]
+[ext_resource type="Resource" uid="uid://coghxhqspfcp0" path="res://resources/items/graphite.tres" id="2_vs8gj"]
+[ext_resource type="Resource" uid="uid://b8qpnslwvjs35" path="res://resources/items/whiteboard.tres" id="3_0r18r"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="4_t0ax3"]
+
+[resource]
+script = ExtResource("4_t0ax3")
+category = "chalkboard"
+recipe_name = "Whiteboard"
+craft_time = 1.0
+inputs = [{
+"count": 2,
+"resource": ExtResource("1_8ccis")
+}, {
+"count": 2,
+"resource": ExtResource("2_vs8gj")
+}]
+outputs = [{
+"count": 1,
+"resource": ExtResource("3_0r18r")
+}]

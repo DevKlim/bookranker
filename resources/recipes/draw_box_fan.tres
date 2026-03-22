@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://cnb8360xanvu4"]
+
+[ext_resource type="Resource" uid="uid://coghxhqspfcp0" path="res://resources/items/graphite.tres" id="1_v01xy"]
+[ext_resource type="Resource" uid="uid://fnimcv81cy5p" path="res://resources/items/cardboard.tres" id="2_wnj78"]
+[ext_resource type="Resource" uid="uid://cgonrnui0f147" path="res://resources/items/aerochalk.tres" id="3_xr03o"]
+[ext_resource type="Resource" uid="uid://cuotenf3y88vd" path="res://resources/buildables/box_fan.tres" id="4_2r7p6"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="5_6siur"]
+
+[resource]
+script = ExtResource("5_6siur")
+category = "chalkboard"
+recipe_name = "Box Fan"
+inputs = [{
+"count": 3,
+"resource": ExtResource("1_v01xy")
+}, {
+"count": 2,
+"resource": ExtResource("2_wnj78")
+}, {
+"count": 2,
+"resource": ExtResource("3_xr03o")
+}]
+outputs = [{
+"count": 1,
+"resource": ExtResource("4_2r7p6")
+}]

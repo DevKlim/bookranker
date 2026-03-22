@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="BuildableResource" format=3 uid="uid://dllpdr1snbxxq"]
+
+[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="1_xlxx2"]
+[ext_resource type="Script" uid="uid://qpm1dylmnjld" path="res://scripts/resources/buildable_resource.gd" id="2_4lsk8"]
+[ext_resource type="PackedScene" uid="uid://bslq8b4ypbq24" path="res://scenes/buildables/slipslide.tscn" id="2_7tvc2"]
+
+[resource]
+script = ExtResource("2_4lsk8")
+buildable_name = "Slipslide"
+description = "Places a slide where exported items glide."
+icon = ExtResource("1_xlxx2")
+has_input = false
+has_output = false
+default_input_mask = 1
+default_output_mask = 4
+scene = ExtResource("2_7tvc2")

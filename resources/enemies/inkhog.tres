@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="EnemyResource" format=3 uid="uid://dowacobus3y7i"]
+
+[ext_resource type="Script" uid="uid://bykln6bau3775" path="res://scripts/resources/enemy_resource.gd" id="1_oshv5"]
+[ext_resource type="PackedScene" uid="uid://baidjj46oajtj" path="res://scenes/enemies/inkhog.tscn" id="1_xv762"]
+
+[resource]
+script = ExtResource("1_oshv5")
+enemy_name = "Inkhog"
+scene = ExtResource("1_xv762")
+health = 3.0
+speed = 60.0
+attack_damage = 1.0
+attack_speed = 1.5

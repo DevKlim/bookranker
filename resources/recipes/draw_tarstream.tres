@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://bo80eufma0d3d"]
+
+[ext_resource type="Resource" uid="uid://nrrfcqc3xn8e" path="res://resources/items/ink.tres" id="1_wbrx0"]
+[ext_resource type="Resource" uid="uid://dom6dpbqvf46m" path="res://resources/items/aquachalk.tres" id="2_slpot"]
+[ext_resource type="Resource" uid="uid://dymdmdwhni6ua" path="res://resources/buildables/tarstream.tres" id="3_y0qhn"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="4_hhghh"]
+
+[resource]
+script = ExtResource("4_hhghh")
+category = "chalkboard"
+recipe_name = "Tarstream"
+craft_time = 0.5
+inputs = [{
+"count": 1,
+"resource": ExtResource("1_wbrx0")
+}, {
+"count": 1,
+"resource": ExtResource("2_slpot")
+}]
+outputs = [{
+"count": 1,
+"resource": ExtResource("3_y0qhn")
+}]

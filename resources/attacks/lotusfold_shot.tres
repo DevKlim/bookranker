@@ -1,0 +1,6 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://lotusfolduid"][ext_resource type="Script" path="res://scripts/resources/attack_resource.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "lotusfold_shot"
+spawn_projectile = true
+projectile_speed = 200.0

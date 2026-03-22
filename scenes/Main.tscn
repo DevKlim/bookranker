@@ -76,9 +76,9 @@ metadata/_custom_type_script = "uid://cgqs7pvpbdrdo"
 
 [node name="DataImporter" type="Node" parent="." unique_id=477849547]
 script = ExtResource("7_nxtc6")
-target_category = "Attacks"
+target_category = "Enemies"
 overwrite_existing = true
-target_item_id = "turret_shoot"
+target_item_id = "All"
 
 [node name="GridMap" parent="." unique_id=786906317 instance=ExtResource("5_tbgi4")]
 

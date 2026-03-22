@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://bi6wesocdmum4"]
+
+[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="1_2yes2"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="2_xkvgn"]
+
+[resource]
+script = ExtResource("2_xkvgn")
+item_name = "Plane Stamp"
+icon = ExtResource("1_2yes2")
+stack_size = 1

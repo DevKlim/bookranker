@@ -18,6 +18,8 @@ Base Zero uses a **Component-Based Architecture** in Godot 4.x. Entities (Buildi
 *   **`ElementalComponent`**: The heart of the status system.
     *   *Logic*: Tracks active elements, calculates Stat Modifiers (speed, attack speed, etc.), and displays visuals.
 *   **`TargetAcquirerComponent`**: Finds targets (Enemies) within a radius using PhysicsQueries.
+*   **`StreamComponent`**: Manages surface modifiers (Slipstream/Tarstream) on tiles, affecting entity speed and allowing sea-borne projectiles/conveyed items to traverse.
+*   **`WindComponent`**: Used by fans/blowers. Applies a directional physics force and the Aero element to entities/projectiles within a collision shape.
 
 ---
 
@@ -39,7 +41,7 @@ Elements are no longer just "types". They are active status effects that interac
 *   `defense_flat`: Flat reduction of incoming damage.
 *   `lux_flat`: Added magic damage.
 *   `efficiency`: Power consumption divisor.
-
+*   `temperature`: Abstract stat tracked by Mod Chips. High values degrade building HP over time unless offset by Coolants.
 ---
 
 ## Data Pipeline & Importer Schema

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://c8j7svdsvir42"]
+
+[ext_resource type="Script" uid="uid://dj7657xb6odwr" path="res://scripts/resources/attack_resource.gd" id="1_8nx1q"]
+
+[resource]
+script = ExtResource("1_8nx1q")
+id = "yardstick_swing"
+base_damage = 3.0
+min_range = 1
+max_range = 2
+is_aoe = true
+visual_duration = 0.4

@@ -45,9 +45,9 @@ Direct interactions between the 5 base primitives (Igni, Volt, Magne, Aqua, Tera
 *   **Tier:** 1.5
 *   **Tags:** [C] [M] [CANCEL]
 *   **Mechanic:**
-    *   **[C] Cloud:** Removes Igni and Aqua. Creates a visual smoke puff. No damage.
-    *   **[M] Vent:** Building pauses for 2 seconds (cooling down), then repairs 10 HP.
-*   **Formations:** None (Resets State)
+    *   **[C] Vapor:** Creates a puff of steam. No extra damage, reaction stays on unit.
+    *   **[M] Pressure:** Building builds up steam, increasing fire rate temporarily but risks overheating.
+*   **Formations:** +Aero -> Fog
 
 ### Conduct (Volt + Magne)
 *   **Tier:** 1.5
@@ -116,8 +116,17 @@ Modifiers that spread or alter the state of primitives.
 *   **Tier:** 2.0
 *   **Tags:** [C] [M]
 *   **Mechanic:**
-    *   **[C] Spread:** The primitive element spreads to 1 enemy behind the target. Aero is consumed, Igni duration refreshed.
+    *   **[C] Spread:** Applies the non-aero element to the target behind the original hit. Aero is consumed.
     *   **[M] Bellows:** Increases generic Crafting Speed by 20% due to higher heat.
+
+### Fog (Steam + Aero)
+*   **Tier:** 2.0
+*   **Tags:** [C] [M]
+*   **Mechanic:**
+    *   **[C] Lost:** Confuses the enemy, making it randomly walk in a random direction for each step during the reaction duration. Reaction stays on the unit.
+    *   **[M] Obscure:** Building becomes untargetable by ranged enemy attacks.
+*   **Formations:** +Aqua -> Rain
+
 
 
 ### Pollute (Chem + Any Primitive)
@@ -165,6 +174,20 @@ Lux is the Apex Catalyst.
     *   **[C] Melt:** Incoming Igni/Volt damage is multiplied by 1.25x. If Plasma exists on the unit previously, incoming damage is instead multiplied by 1.5x
     *   **[M] Cutter:** Mining speed becomes instantaneous. Yield reduced by 50% (Vaporized).
 
+### Slime (??? + ???)
+*   **Source:** Applied intrinsically by **Ink-based** weapons and environments (e.g., Tarstream, Picasso weapon, or Origami folds infused with Ink Deposits).
+*   **Tier:** 4.0 Reaction
+*   **Tags:** [C] [M]
+*   **Mechanic:**
+    *   **[C] Sticky:** A highly viscous substance that stays on the enemy for a long duration, vastly reducing their movement speed (Speed -60%). Makes them highly vulnerable to being stunned by specific Core Mods (like *Gumball*).
+    *   **[M] Gunked:** Building stops functioning but catches leaked items on the grid, holding them in place until cleaned.
+
+### Rain (Fog + Aqua)
+*   **Tier:** 3.0
+*   **Tags:** [C] [M]
+*   **Mechanic:**
+    *   **[C] Downpour:** Creates a rain cloud on that tile that applies Aqua to anyone on that tile every 2 seconds.
+    *   **[M] Wash:** Continuously cleanses negative modifiers and heat from the building.
 
 ### Chloro (Mortar + Light + Chem)
 *   **Tier:** 4.0

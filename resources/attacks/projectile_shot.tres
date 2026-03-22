@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://cbih706mvma8p"]
+
+[ext_resource type="Script" uid="uid://dj7657xb6odwr" path="res://scripts/resources/attack_resource.gd" id="1_y0t8i"]
+
+[resource]
+script = ExtResource("1_y0t8i")
+id = "projectile_shot"
+base_damage = 5.0
+spawn_projectile = true
+projectile_speed = 200.0

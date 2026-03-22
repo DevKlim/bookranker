@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="BuildableResource" load_steps=4 format=3 uid="uid://wireresource001"]
+[gd_resource type="Resource" script_class="BuildableResource" format=3 uid="uid://d3ahm3olcu8po"]
 
-[ext_resource type="Texture2D" uid="uid://wireicon001" path="res://assets/wires/wire_line.png" id="1_icon"]
+[ext_resource type="Texture2D" uid="uid://og683qupfssw" path="res://assets/wires/wire_line.png" id="1_icon"]
 [ext_resource type="PackedScene" uid="uid://bc2xlxaqk4xfm" path="res://scenes/wiring/wire.tscn" id="2_scene"]
 [ext_resource type="Script" uid="uid://qpm1dylmnjld" path="res://scripts/resources/buildable_resource.gd" id="3_script"]
 
@@ -10,11 +10,6 @@ buildable_name = "Wire"
 description = "Transfers power between machines. Auto-connects to neighbors."
 icon = ExtResource("1_icon")
 layer = 0
-width = 1
-height = 1
 has_input = false
 has_output = false
-display_offset = Vector2(0, 0)
 scene = ExtResource("2_scene")
-tile_source_id = 0
-tile_atlas_coords = Vector2i(0, 0)

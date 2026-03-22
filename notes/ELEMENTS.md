@@ -9,9 +9,9 @@ To maintain balance and optimization with 1000+ enemies, all new elements must a
 ### The "Dual-State" Rule (Combat vs. Structure)
 Every Element/Reaction must have two distinct effects defined in the code/manifest:
 1.  **Combat (On-Hit):** Applied to **Enemies** via Projectiles. This is usually temporary.
-2.  **Structural (Mod Chip):** Applied to **Buildings** by inserting the Element item into a "Mod Slot". This persists until removed.
+2.  **Structural (Mod Chip):** Applied to **Buildings** by inserting the Element item into a "Mod Slot" (Disks). This persists until removed.
     *   **Theme:** Science (Efficiency/Automation) vs. Magic (Power/Chaos).
-    *   **Risk:** Powerful Mods should have drawbacks (e.g., "Igni" adds damage but slowly burns the building).
+    *   **Risk:** Powerful Mods should have drawbacks (e.g., "Igni" adds damage but increases the `temperature` stat, slowly burning the building).
 
 ### The Primitive Matrix Rule
 To ensure strategic building placement (synergy vs. anti-synergy), the 5 base primitives (**Igni, Volt, Magne, Aqua, Tera**) follow strict interaction rules.
@@ -31,7 +31,7 @@ The fundamental building blocks.
 ### Igni (Fire / Heat)
 *   **Type:** Energy / Chaos
 *   **Combat:** None.
-*   **Mod Chip (Overheat):** Increases Damage by 2%, but building takes 1 HP damage per second. Requires active repair or healing.
+*   **Mod Chip (Overheat):** Increases Damage by 1.2x, but increases the building's `temperature` stat by 1. Requires active cooling fans or it takes continuous damage.
 
 ### Volt (Electricity / Energy)
 *   **Type:** Energy / Tech

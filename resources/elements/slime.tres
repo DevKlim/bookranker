@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://d1teqcnshs1sy"]
+
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_hm2d4"]
+
+[resource]
+script = ExtResource("1_hm2d4")
+element_name = "Slime"
+color = Color(0, 0, 0, 1)
+duration = 10.0
+application_cooldown = 0.2
+stat_modifiers = {
+"speed_mult": -0.6
+}

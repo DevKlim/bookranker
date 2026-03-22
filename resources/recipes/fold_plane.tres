@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://6taj02tlkiuo"]
+
+[ext_resource type="Resource" uid="uid://d1jxdol00rp3u" path="res://resources/items/paper.tres" id="1_6d7ej"]
+[ext_resource type="Resource" uid="uid://bi6wesocdmum4" path="res://resources/items/stamp_plane.tres" id="2_1n0mj"]
+[ext_resource type="Resource" uid="uid://cgonrnui0f147" path="res://resources/items/aerochalk.tres" id="3_kp0vh"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="4_e1aq2"]
+
+[resource]
+script = ExtResource("4_e1aq2")
+category = "foldgami"
+recipe_name = "Plane Fold"
+craft_time = 1.0
+inputs = [{
+"count": 1,
+"resource": ExtResource("1_6d7ej")
+}, {
+"count": 1,
+"resource": ExtResource("2_1n0mj")
+}, {
+"count": 1,
+"resource": ExtResource("3_kp0vh")
+}]

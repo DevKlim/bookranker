@@ -163,3 +163,25 @@ To handle high enemy counts, wide-area reactions (like **Conduct**) use a multi-
 
 1. Upon starting a new level, the shop will only offer core mods.
 2. After initial shops, remaining shops will contain all kinds of mods in the pool.
+
+## 10. The Origami Factory (Manufacturing Mechanics)
+
+In the "Back to Basics" level, players manufacture their own projectiles dynamically using an assembly line:
+1. **Paper Generation:** A `Printer` consumes energy and raw materials to constantly produce `Paper`.
+2. **Folding & Infusion:** The `Foldgami` machine acts as the primary assembler. It requires `Paper`, a `Stamp` (dictating the projectile type), and an **Elemental Chalk** or **Ink** (dictating the elemental property).
+    *   *Element Infusion:* If an `Ignichalk` is used, the fold deals Igni (Fire) damage. If an `Aquachalk` is used, it deals Aqua damage. 
+    *   *Ink Infusion:* If `Ink` is used, the fold deals physical damage but applies the **Slime** status reaction to the enemy on hit.
+3. **Propulsion:** Finished folds do not fire themselves! A `Box Fan` must be placed behind the `Foldgami` to blow the output forward into the enemy lanes.
+
+### Projectile Traversal (Streams)
+Folds have specific traversal rules based on their design:
+*   **Air-Borne (Planes, Shurikens, Cranes):** Travel over standard tiles by air and deal direct impact damage. Cranes possess piercing properties.
+*   **Ground-Borne (Crumpled):** Roll across the floor. They collide with the first enemy they hit and disappear.
+*   **Sea-Borne (Swans, Lotus):** Cannot travel on dry land. They require fluid paths to be placed down the lane.
+    *   **Slipstream (Water):** Fast travel. Deals 1 instance of damage.
+    *   **Tarstream (Ink):** Slow travel. Enables multi-hit properties due to the stickiness. **Walking on a Tarstream naturally applies the Slime reaction to enemies.**
+
+## 11. The Number Cruncher (RNG Mechanic)
+To introduce unpredictability and high-ceiling synergies, an RNG Number (1-9) is periodically generated during the level. 
+*   **Condition:** If any instance of damage dealt to an enemy exactly matches this active number, the damage is immediately **doubled**.
+*   **Synergy:** Weapons like the `Picasso`, which deals highly variable damage based on user inventory consumption, perfectly synergize to snipe the active multiplier.

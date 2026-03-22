@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://cy2ldrplfakst"]
+
+[ext_resource type="Resource" uid="uid://dom6dpbqvf46m" path="res://resources/items/aquachalk.tres" id="1_u625y"]
+[ext_resource type="Resource" uid="uid://0sub713031ay" path="res://resources/buildables/slipstream.tres" id="2_51kmk"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="3_h3227"]
+
+[resource]
+script = ExtResource("3_h3227")
+category = "chalkboard"
+recipe_name = "Slipstream"
+craft_time = 0.5
+inputs = [{
+"count": 1,
+"resource": ExtResource("1_u625y")
+}]
+outputs = [{
+"count": 1,
+"resource": ExtResource("2_51kmk")
+}]

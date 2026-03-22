@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://cvfqt51nxu84c"]
+
+[ext_resource type="Resource" uid="uid://d1jxdol00rp3u" path="res://resources/items/paper.tres" id="1_7e6j3"]
+[ext_resource type="Resource" uid="uid://cgonrnui0f147" path="res://resources/items/aerochalk.tres" id="2_2q4g3"]
+[ext_resource type="Resource" uid="uid://bi6wesocdmum4" path="res://resources/items/stamp_plane.tres" id="3_jk4u5"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="4_q7jk0"]
+
+[resource]
+script = ExtResource("4_q7jk0")
+category = "chalkboard"
+recipe_name = "Plane Stamp"
+craft_time = 1.0
+inputs = [{
+"count": 1,
+"resource": ExtResource("1_7e6j3")
+}, {
+"count": 1,
+"resource": ExtResource("2_2q4g3")
+}]
+outputs = [{
+"count": 1,
+"resource": ExtResource("3_jk4u5")
+}]

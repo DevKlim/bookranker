@@ -93,6 +93,7 @@ func _ready() -> void:
 	_setup_selection_visuals()
 	_setup_progress_bar()
 	_cache_visual_materials(self)
+	_apply_retro_glow(self)
 	_recalculate_stats()
 	
 	if is_instance_valid(GameManager):
@@ -212,6 +213,43 @@ func _cache_visual_materials(node: Node) -> void:
 					_tint_materials.append(unique_mat)
 	for child in node.get_children():
 		_cache_visual_materials(child)
+
+func _apply_retro_glow(node: Node) -> void:
+	if not is_instance_valid(node): return
+	if node.name == "SelectionVisuals" or node.name == "ProgressBar": return
+	
+	if node is MeshInstance3D:
+		var glow_mat = ShaderMaterial.new()
+		glow_mat.shader = load("res://shaders/retro_glow.gdshader")
+		if glow_mat.shader:
+			glow_mat.set_shader_parameter("glow_color", Color(0.1, 0.8, 1.0, 0.8)) # Cyan/Blue Nostalgic Glow
+			glow_mat.set_shader_parameter("fresnel_power", 2.0)
+			glow_mat.set_shader_parameter("edge_intensity", 1.5)
+			node.material_overlay = glow_mat
+			
+	elif node is Sprite3D or node is AnimatedSprite3D:
+		var sprite_mat = ShaderMaterial.new()
+		sprite_mat.shader = load("res://shaders/sprite_retro_glow.gdshader")
+		if sprite_mat.shader:
+			sprite_mat.set_shader_parameter("glow_color", Color(0.1, 0.8, 1.0, 0.8))
+			sprite_mat.set_shader_parameter("width", 2.0)
+			
+			if node.material_override:
+				var base_tex = null
+				if node.material_override is StandardMaterial3D:
+					base_tex = node.material_override.albedo_texture
+				sprite_mat.set_shader_parameter("texture_albedo", base_tex)
+			else:
+				if "texture" in node and node.get("texture"):
+					sprite_mat.set_shader_parameter("texture_albedo", node.texture)
+				elif "sprite_frames" in node and node is AnimatedSprite3D:
+					if node.sprite_frames and node.animation:
+						sprite_mat.set_shader_parameter("texture_albedo", node.sprite_frames.get_frame_texture(node.animation, node.frame))
+			
+			node.material_override = sprite_mat
+
+	for child in node.get_children():
+		_apply_retro_glow(child)
 
 func _on_health_changed(new_val, old_val) -> void:
 	if new_val < old_val: _flash_damage()

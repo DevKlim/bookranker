@@ -1,0 +1,6 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://ci86ua0b3svj"][ext_resource type="Script" path="res://scripts/resources/attack_resource.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "crumpledfold_shot"
+spawn_projectile = true
+projectile_speed = 150.0

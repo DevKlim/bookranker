@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://boxfanuid"][ext_resource type="Script" path="res://scripts/entities/turret.gd" id="1"][sub_resource type="BoxShape3D" id="1"]
+size = Vector3(1, 1, 1)[node name="Box Fan" type="StaticBody3D"]
+script = ExtResource("1")
+display_name = "Box Fan"
+default_input_mask = 1
+default_output_mask = 0[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("1")

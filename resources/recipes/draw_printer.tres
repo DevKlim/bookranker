@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://caik3hdgve4bi"]
+
+[ext_resource type="Resource" uid="uid://coghxhqspfcp0" path="res://resources/items/graphite.tres" id="1_ugp4v"]
+[ext_resource type="Resource" uid="uid://nrrfcqc3xn8e" path="res://resources/items/ink.tres" id="2_2uk3t"]
+[ext_resource type="Resource" uid="uid://c86j7cnj47x0p" path="res://resources/buildables/printer.tres" id="3_nranj"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="4_nacyj"]
+
+[resource]
+script = ExtResource("4_nacyj")
+category = "chalkboard"
+recipe_name = "Printer"
+craft_time = 3.0
+inputs = [{
+"count": 5,
+"resource": ExtResource("1_ugp4v")
+}, {
+"count": 3,
+"resource": ExtResource("2_2uk3t")
+}]
+outputs = [{
+"count": 1,
+"resource": ExtResource("3_nranj")
+}]

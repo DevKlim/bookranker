@@ -1,0 +1,28 @@
+[gd_scene format=3 uid="uid://cto2xcr41eymd"]
+
+[ext_resource type="Script" uid="uid://3a177xn5yowf" path="res://scripts/entities/buildings/stream_transport.gd" id="1"]
+
+[sub_resource type="BoxShape3D" id="1"]
+size = Vector3(1, 0.1, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_cvjwy"]
+size = Vector3(1, 0.1, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_7h7cf"]
+transparency = 1
+albedo_color = Color(1.6364455e-06, 0.6595852, 0.82151556, 1)
+
+[node name="Slipstream" type="StaticBody3D" unique_id=1567428293]
+script = ExtResource("1")
+display_name = "Slipstream"
+default_input_mask = 1
+default_output_mask = 4
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1219158396]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
+shape = SubResource("1")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1025445755]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
+mesh = SubResource("BoxMesh_cvjwy")
+surface_material_override/0 = SubResource("StandardMaterial3D_7h7cf")

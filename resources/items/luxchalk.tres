@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://blhc64oe47vne"]
+
+[ext_resource type="Resource" uid="uid://d1jprly6kp5qt" path="res://resources/elements/lux.tres" id="1_84sbx"]
+[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="2_4wm85"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="3_b42qf"]
+
+[resource]
+script = ExtResource("3_b42qf")
+item_name = "Lux Chalk"
+icon = ExtResource("2_4wm85")
+stack_size = 20
+damage = 5.0
+element = ExtResource("1_84sbx")
+is_ore = true
+ore_block_name = "Lux Chalk Deposit"

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://bpt5l5lkyhqmg"]
+
+[ext_resource type="Resource" uid="uid://d1jxdol00rp3u" path="res://resources/items/paper.tres" id="1_potq4"]
+[ext_resource type="Resource" uid="uid://5onmnrnh651b" path="res://resources/items/stamp_lotus.tres" id="2_q2ex2"]
+[ext_resource type="Resource" uid="uid://dom6dpbqvf46m" path="res://resources/items/aquachalk.tres" id="3_yckxd"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="4_la0kf"]
+
+[resource]
+script = ExtResource("4_la0kf")
+category = "foldgami"
+recipe_name = "Lotus Fold"
+craft_time = 1.0
+inputs = [{
+"count": 1,
+"resource": ExtResource("1_potq4")
+}, {
+"count": 1,
+"resource": ExtResource("2_q2ex2")
+}, {
+"count": 1,
+"resource": ExtResource("3_yckxd")
+}]

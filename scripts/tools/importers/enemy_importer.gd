@@ -23,6 +23,11 @@ func import_enemies(list: Array) -> void:
 		
 		res.enemy_name = str(entry.get("name", "Enemy"))
 		
+		if entry.has("tags") and entry["tags"] is Array:
+			var t_arr: Array[String] = []
+			for t in entry["tags"]: t_arr.append(str(t))
+			res.tags = t_arr
+		
 		if new_scene_path != "":
 			res.scene = ResourceLoader.load(new_scene_path, "", ResourceLoader.CACHE_MODE_REPLACE)
 		elif entry.has("template") and ResourceLoader.exists(entry["template"]):

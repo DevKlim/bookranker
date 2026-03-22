@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://uhr6n4rchuqx"]
+
+[ext_resource type="Resource" uid="uid://dom6dpbqvf46m" path="res://resources/items/aquachalk.tres" id="1_5ttm6"]
+[ext_resource type="Resource" uid="uid://d1jxdol00rp3u" path="res://resources/items/paper.tres" id="2_flfej"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="3_yd2tn"]
+
+[resource]
+script = ExtResource("3_yd2tn")
+recipe_name = "Print Paper"
+inputs = [{
+"count": 1,
+"resource": ExtResource("1_5ttm6")
+}]
+outputs = [{
+"count": 2,
+"resource": ExtResource("2_flfej")
+}]

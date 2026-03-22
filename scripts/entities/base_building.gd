@@ -62,6 +62,7 @@ var stats: Dictionary = {}
 var _tint_tween: Tween
 var _tint_materials: Array[StandardMaterial3D] =[]
 var _tint_sprites: Array[Node] =[]
+var _output_timer: float = 0.0
 
 func _get_main_sprite() -> AnimatedSprite3D:
 	return get_node_or_null("AnimatedSprite3D")
@@ -90,6 +91,15 @@ func _ready() -> void:
 	_cache_visual_materials(self)
 	
 	_on_power_status_changed(false)
+
+func _physics_process(delta: float) -> void:
+	if not is_active: return
+	
+	if has_output and inventory_component:
+		_output_timer -= delta
+		if _output_timer <= 0:
+			_output_timer = 0.5
+			try_output_from_inventory(inventory_component)
 
 func _cache_visual_materials(node: Node) -> void:
 	if node is Sprite3D or node is AnimatedSprite3D:

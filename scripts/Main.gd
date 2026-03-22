@@ -36,8 +36,22 @@ var current_layer_mode: LayerMode = LayerMode.ALL
 var camera_controller
 var build_controller
 var selection_controller
+var level_mechanics: Node
 
 func _ready() -> void:
+	# Add Sega Curved World Effect Manager
+	if not has_node("WorldCurver"):
+		var wc = load("res://scripts/singletons/world_curver.gd").new()
+		wc.name = "WorldCurver"
+		add_child(wc)
+
+	# Load specific level mechanics
+	var mech_path = "res://scripts/levels/level_1_mechanics.gd"
+	if ResourceLoader.exists(mech_path):
+		level_mechanics = load(mech_path).new()
+		level_mechanics.name = "LevelMechanics"
+		add_child(level_mechanics)
+	
 	if not has_node("ToolManager"):
 		var tm = ToolManager.new()
 		tm.name = "ToolManager"
@@ -276,7 +290,13 @@ func handle_debug_display(terrain_ray: Dictionary, sel_ray: Dictionary, world_po
 				entity_info += "\n[Entity: %s]" % col.name
 		
 		var mode_name = LayerMode.keys()[current_layer_mode]
-		var debug_str = "Layer Mode: %s\nTile(X,Z): %d, %d\nOre: %s%s" %[mode_name, cell.x, cell.z, ore_info, entity_info]
+		
+		# Incorporate level-specific debug information
+		var extra_debug = ""
+		if is_instance_valid(level_mechanics) and level_mechanics.has_method("get_debug_text"):
+			extra_debug = level_mechanics.get_debug_text()
+			
+		var debug_str = "Layer Mode: %s\nTile(X,Z): %d, %d\nOre: %s%s%s" %[mode_name, cell.x, cell.z, ore_info, entity_info, extra_debug]
 		if game_ui: game_ui.set_debug_text(debug_str)
 
 func _on_equipped_item_changed(item: ItemResource) -> void:

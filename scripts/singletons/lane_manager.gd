@@ -41,7 +41,7 @@ var active_ore_deposits: Dictionary = {} # tile (Vector2i) -> remaining_count (i
 var enemies_by_lane: Dictionary = {}
 var enemy_spatial_map: Dictionary = {}
 
-var num_lanes: int = 5
+var num_lanes: int = 9
 # Increased length to support field enemies spawning deeper in the map
 const LANE_LENGTH = 100
 

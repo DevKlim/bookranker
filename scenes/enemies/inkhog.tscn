@@ -1,0 +1,36 @@
+[gd_scene format=3 uid="uid://baidjj46oajtj"]
+
+[ext_resource type="Script" uid="uid://87pk5o5eu28v" path="res://scripts/entities/enemy.gd" id="1_ke53v"]
+[ext_resource type="Script" uid="uid://duudv3f6u8n6m" path="res://scripts/components/health_component.gd" id="2_hr05s"]
+[ext_resource type="Script" uid="uid://bw7f6w3g67r4d" path="res://scripts/components/attacker_component.gd" id="3_isqwo"]
+[ext_resource type="Script" uid="uid://c6lfioqpkvor7" path="res://scripts/components/move_component.gd" id="4_kfmv6"]
+[ext_resource type="Script" uid="uid://dg4gfri6lu5o2" path="res://scripts/components/elemental_component.gd" id="5_ynble"]
+[ext_resource type="PackedScene" uid="uid://drrc6w8nsr7qy" path="res://assets/enemies/inkmole/inkmole.gltf" id="6_hr05s"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_i4rma"]
+radius = 0.20507813
+height = 0.56152344
+
+[node name="Inkhog" type="CharacterBody3D" unique_id=312749826]
+script = ExtResource("1_ke53v")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1940259373]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.28076172, 0)
+shape = SubResource("CapsuleShape3D_i4rma")
+
+[node name="HealthComponent" type="Node" parent="." unique_id=1347450907]
+script = ExtResource("2_hr05s")
+max_health = 3.0
+
+[node name="AttackerComponent" type="Node" parent="." unique_id=1985770850]
+script = ExtResource("3_isqwo")
+
+[node name="AttackTimer" type="Timer" parent="AttackerComponent" unique_id=1172349660]
+
+[node name="MoveComponent" type="Node" parent="." unique_id=1133639356]
+script = ExtResource("4_kfmv6")
+
+[node name="ElementalComponent" type="Node" parent="." unique_id=556061767]
+script = ExtResource("5_ynble")
+
+[node name="blockbench_export" parent="." unique_id=237497236 instance=ExtResource("6_hr05s")]

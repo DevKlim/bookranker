@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://dgspw8513yq5j"]
+
+[ext_resource type="Resource" uid="uid://d1jxdol00rp3u" path="res://resources/items/paper.tres" id="1_ql2wb"]
+[ext_resource type="Resource" uid="uid://cgonrnui0f147" path="res://resources/items/aerochalk.tres" id="2_42iqy"]
+[ext_resource type="Resource" uid="uid://fnimcv81cy5p" path="res://resources/items/cardboard.tres" id="3_0rg76"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="4_p6c41"]
+
+[resource]
+script = ExtResource("4_p6c41")
+category = "chalkboard"
+recipe_name = "Cardboard"
+craft_time = 1.0
+inputs = [{
+"count": 2,
+"resource": ExtResource("1_ql2wb")
+}, {
+"count": 1,
+"resource": ExtResource("2_42iqy")
+}]
+outputs = [{
+"count": 1,
+"resource": ExtResource("3_0rg76")
+}]

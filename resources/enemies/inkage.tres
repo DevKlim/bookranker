@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EnemyResource" format=3 uid="uid://51r2q113rwja"]
+
+[ext_resource type="Script" uid="uid://bykln6bau3775" path="res://scripts/resources/enemy_resource.gd" id="1_4gt26"]
+[ext_resource type="PackedScene" uid="uid://bchdmjaw18620" path="res://scenes/enemies/inkage.tscn" id="1_kwdx5"]
+
+[resource]
+script = ExtResource("1_4gt26")
+enemy_name = "Inkage"
+scene = ExtResource("1_kwdx5")
+health = 80.0
+speed = 12.0
+defense = 2.0
+magical_defense = 0.5
+attack_damage = 8.0
+attack_speed = 0.6
+attack_range_depth = 5

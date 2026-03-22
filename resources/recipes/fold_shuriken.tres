@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://3ncwyq3m8jtb"]
+
+[ext_resource type="Resource" uid="uid://d1jxdol00rp3u" path="res://resources/items/paper.tres" id="1_sllyk"]
+[ext_resource type="Resource" uid="uid://8671ectiujx7" path="res://resources/items/stamp_shuriken.tres" id="2_yo5jw"]
+[ext_resource type="Resource" uid="uid://cgonrnui0f147" path="res://resources/items/aerochalk.tres" id="3_40tof"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="4_mftbq"]
+
+[resource]
+script = ExtResource("4_mftbq")
+category = "foldgami"
+recipe_name = "Shuriken Fold"
+craft_time = 1.0
+inputs = [{
+"count": 1,
+"resource": ExtResource("1_sllyk")
+}, {
+"count": 1,
+"resource": ExtResource("2_yo5jw")
+}, {
+"count": 1,
+"resource": ExtResource("3_40tof")
+}]

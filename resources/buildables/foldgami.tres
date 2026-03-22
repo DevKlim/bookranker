@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="BuildableResource" format=3 uid="uid://dg7s0va0yd8uy"]
+
+[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="1_nfs21"]
+[ext_resource type="Script" uid="uid://qpm1dylmnjld" path="res://scripts/resources/buildable_resource.gd" id="2_uuj0v"]
+[ext_resource type="PackedScene" uid="uid://d3ycbus0w1076" path="res://scenes/buildables/foldgami.tscn" id="2_xijhj"]
+
+[resource]
+script = ExtResource("2_uuj0v")
+buildable_name = "Foldgami"
+description = "Ammunition assembler."
+icon = ExtResource("1_nfs21")
+has_input = false
+has_output = false
+default_input_mask = 11
+default_output_mask = 4
+scene = ExtResource("2_xijhj")

@@ -66,6 +66,8 @@ func _on_mine_timer_timeout() -> void:
 	
 	# Mining Logic
 	var tile_coord = LaneManager.world_to_tile(global_position)
+	var gc = get_node_or_null("GridComponent")
+	if gc: tile_coord = gc.tile_coord
 	
 	# Get center of the tile at Y=0 (floor)
 	var floor_pos = LaneManager.tile_to_world(tile_coord)
@@ -76,7 +78,8 @@ func _on_mine_timer_timeout() -> void:
 		if inventory.has_space_for(ore):
 			var remainder = inventory.add_item(ore, 1)
 			if remainder == 0:
-				print("Drill mined: %s at %s" % [ore.item_name, str(tile_coord)])
+				LaneManager.consume_ore_at(tile_coord)
+				print("Drill mined: %s at %s" %[ore.item_name, str(tile_coord)])
 			else:
 				print("Drill inventory full.")
 	else:

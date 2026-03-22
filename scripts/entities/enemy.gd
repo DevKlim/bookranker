@@ -80,6 +80,7 @@ func _ready() -> void:
 		model_container = get_node_or_null("ModelFallback")
 	
 	_cache_visual_materials(model_container)
+	_apply_retro_glow(model_container)
 	
 	health_component = get_node_or_null("HealthComponent")
 	elemental_component = get_node_or_null("ElementalComponent")
@@ -129,6 +130,43 @@ func _cache_visual_materials(node: Node) -> void:
 					_tint_materials.append(unique_mat)
 	for child in node.get_children():
 		_cache_visual_materials(child)
+
+func _apply_retro_glow(node: Node) -> void:
+	if not is_instance_valid(node): return
+	if node.name == "SelectionVisuals" or node.name == "ProgressBar": return
+	
+	if node is MeshInstance3D:
+		var glow_mat = ShaderMaterial.new()
+		glow_mat.shader = load("res://shaders/retro_glow.gdshader")
+		if glow_mat.shader:
+			glow_mat.set_shader_parameter("glow_color", Color(1.0, 0.1, 0.3, 0.8)) # Red/Magenta Retro Glow
+			glow_mat.set_shader_parameter("fresnel_power", 2.0)
+			glow_mat.set_shader_parameter("edge_intensity", 1.5)
+			node.material_overlay = glow_mat
+			
+	elif node is Sprite3D or node is AnimatedSprite3D:
+		var sprite_mat = ShaderMaterial.new()
+		sprite_mat.shader = load("res://shaders/sprite_retro_glow.gdshader")
+		if sprite_mat.shader:
+			sprite_mat.set_shader_parameter("glow_color", Color(1.0, 0.1, 0.3, 0.8))
+			sprite_mat.set_shader_parameter("width", 2.0)
+			
+			if node.material_override:
+				var base_tex = null
+				if node.material_override is StandardMaterial3D:
+					base_tex = node.material_override.albedo_texture
+				sprite_mat.set_shader_parameter("texture_albedo", base_tex)
+			else:
+				if "texture" in node and node.get("texture"):
+					sprite_mat.set_shader_parameter("texture_albedo", node.texture)
+				elif "sprite_frames" in node and node is AnimatedSprite3D:
+					if node.sprite_frames and node.animation:
+						sprite_mat.set_shader_parameter("texture_albedo", node.sprite_frames.get_frame_texture(node.animation, node.frame))
+			
+			node.material_override = sprite_mat
+
+	for child in node.get_children():
+		_apply_retro_glow(child)
 
 func _exit_tree() -> void:
 	if _registered_lane_id != -1:
@@ -280,7 +318,6 @@ func _physics_process(delta: float) -> void:
 	if _debug_timer >= 2.0:
 		_debug_timer = 0.0
 		var tgt_name = current_attack_target.name if is_instance_valid(current_attack_target) else "None"
-		# print("[Enemy Debug] %s | Field: %s | State: %s | Pos: %.1f, %.1f | Target: %s" % [name, is_field_enemy, State.keys()[current_state], global_position.x, global_position.z, tgt_name])
 
 # --- PHYSICS SYSTEM ---
 

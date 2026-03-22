@@ -55,5 +55,7 @@
     { "id": "plasma", "name": "Plasma", "color": "#9400D3", "duration": 5.0, "cooldown": 0.5, "reactions": {}, "effects": { "incoming_damage_mult": 0.25 } },
     { "id": "ray", "name": "Ray", "color": "#FFFFE0", "duration": 5.0, "cooldown": 0.5, "reactions": {}, "effects": {} },
     { "id": "prism", "name": "Prism", "color": "#E6E6FA", "duration": 5.0, "cooldown": 0.5, "reactions": {}, "effects": {} },
-    { "id": "crystal", "name": "Crystal", "color": "#D8BFD8", "duration": 10.0, "cooldown": 0.0, "reactions": {}, "effects": { "luck_stat": 10.0 } }
+    { "id": "crystal", "name": "Crystal", "color": "#D8BFD8", "duration": 10.0, "cooldown": 0.0, "reactions": {}, "effects": { "luck_stat": 10.0 } },
+
+    { "id": "slime", "name": "Slime", "color": "#000000", "duration": 10.0, "cooldown": 0.2, "reactions": {}, "effects": { "speed_mult": -0.6 } }
 ]

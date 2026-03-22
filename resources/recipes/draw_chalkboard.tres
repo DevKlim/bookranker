@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://dnsdwtdchvbpx"]
+
+[ext_resource type="Resource" uid="uid://cde1e6hfb38th" path="res://resources/items/ignichalk.tres" id="1_kklwc"]
+[ext_resource type="Resource" uid="uid://dom6dpbqvf46m" path="res://resources/items/aquachalk.tres" id="2_6m3sk"]
+[ext_resource type="Resource" uid="uid://cgonrnui0f147" path="res://resources/items/aerochalk.tres" id="3_d2757"]
+[ext_resource type="Resource" uid="uid://coghxhqspfcp0" path="res://resources/items/graphite.tres" id="4_ni42i"]
+[ext_resource type="Resource" uid="uid://bufkycpx6nel1" path="res://resources/items/marble.tres" id="5_k03o7"]
+[ext_resource type="Resource" uid="uid://bkdt0h7ocv5u2" path="res://resources/buildables/chalkboard.tres" id="6_lnc1s"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="7_85pan"]
+
+[resource]
+script = ExtResource("7_85pan")
+category = "basic"
+recipe_name = "Chalkboard"
+inputs = [{
+"count": 3,
+"resource": ExtResource("1_kklwc")
+}, {
+"count": 3,
+"resource": ExtResource("2_6m3sk")
+}, {
+"count": 3,
+"resource": ExtResource("3_d2757")
+}, {
+"count": 3,
+"resource": ExtResource("4_ni42i")
+}, {
+"count": 3,
+"resource": ExtResource("5_k03o7")
+}]
+outputs = [{
+"count": 1,
+"resource": ExtResource("6_lnc1s")
+}]

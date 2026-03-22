@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="EnemyResource" format=3 uid="uid://5gv2v1f6lfxw"]
+
+[ext_resource type="PackedScene" uid="uid://culro48yx1g8y" path="res://scenes/enemies/proller.tscn" id="1_adxy4"]
+[ext_resource type="Script" uid="uid://bykln6bau3775" path="res://scripts/resources/enemy_resource.gd" id="2_3yixk"]
+
+[resource]
+script = ExtResource("2_3yixk")
+enemy_name = "Proller"
+scene = ExtResource("1_adxy4")
+health = 15.0
+speed = 25.0
+attack_damage = 3.0
+attack_speed = 0.8

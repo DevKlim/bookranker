@@ -55,22 +55,30 @@ func _process(delta: float) -> void:
 
 func _try_start_craft() -> void:
 	if not current_recipe: return
-	if not output_inventory.has_space_for(current_recipe.output_item): return
+	
+	var out_res = current_recipe.outputs[0].resource if current_recipe.outputs.size() > 0 else null
+	if out_res and not output_inventory.has_space_for(out_res): return
 		
+	var in_res = current_recipe.inputs[0].resource if current_recipe.inputs.size() > 0 else null
+	var in_count = current_recipe.inputs[0].count if current_recipe.inputs.size() > 0 else 1
+	
 	var has_ingredients = false
 	var slot = input_inventory.slots[0] if input_inventory.slots.size() > 0 else null
 	
-	if slot != null and slot.item == current_recipe.input_item:
-		if slot.count >= current_recipe.input_count:
+	if slot != null and slot.item == in_res:
+		if slot.count >= in_count:
 			has_ingredients = true
 	
 	if has_ingredients:
-		if input_inventory.remove_item(current_recipe.input_item, current_recipe.input_count):
+		if input_inventory.remove_item(in_res, in_count):
 			crafter.start_craft(current_recipe)
 
 func _complete_craft() -> void:
 	if current_recipe:
-		output_inventory.add_item(current_recipe.output_item, current_recipe.output_count)
+		var out_res = current_recipe.outputs[0].resource if current_recipe.outputs.size() > 0 else null
+		var out_count = current_recipe.outputs[0].count if current_recipe.outputs.size() > 0 else 1
+		if out_res:
+			output_inventory.add_item(out_res, out_count)
 		crafter.stop_craft()
 
 func set_recipe(recipe: RecipeResource) -> void:
@@ -86,19 +94,26 @@ func set_recipe(recipe: RecipeResource) -> void:
 	
 	if current_recipe:
 		print("Asourcer: Recipe set to %s" % current_recipe.recipe_name)
+		var in_res = current_recipe.inputs[0].resource if current_recipe.inputs.size() > 0 else null
+		var in_count = current_recipe.inputs[0].count if current_recipe.inputs.size() > 0 else 1
+		
 		var item_stack_size = 50
-		if current_recipe.input_item:
-			item_stack_size = current_recipe.input_item.stack_size
+		if in_res and "stack_size" in in_res:
+			item_stack_size = in_res.stack_size
 		
 		var slots_needed = 1
 		if item_stack_size > 0:
-			slots_needed = ceil(float(current_recipe.input_count) / float(item_stack_size))
+			slots_needed = ceil(float(in_count) / float(item_stack_size))
 		
 		input_inventory.max_slots = int(max(1, slots_needed))
 		input_inventory.slots.resize(input_inventory.max_slots)
 		for i in range(input_inventory.max_slots):
 			input_inventory.slots[i] = null
-		input_inventory.allowed_items = [current_recipe.input_item]
+			
+		if in_res:
+			input_inventory.allowed_items = [in_res]
+		else:
+			input_inventory.allowed_items =[]
 	
 	emit_signal("recipe_changed")
 
@@ -106,15 +121,17 @@ func clear_recipe() -> void:
 	current_recipe = null
 	if crafter: crafter.stop_craft()
 	input_inventory.max_slots = 0
-	input_inventory.allowed_items = []
+	input_inventory.allowed_items =[]
 	input_inventory.slots.resize(0)
 	print("Asourcer: Recipe cleared.")
 	emit_signal("recipe_changed")
 
 func receive_item(item: Resource, _from_node: Node3D = null, _extra_data: Dictionary = {}) -> bool:
 	if not has_input or not current_recipe: return false
-	if item != current_recipe.input_item:
-		if item.resource_path != current_recipe.input_item.resource_path:
+	var in_res = current_recipe.inputs[0].resource if current_recipe.inputs.size() > 0 else null
+	
+	if item != in_res:
+		if in_res and item.resource_path != in_res.resource_path:
 			return false
 	if input_inventory.add_item(item) == 0:
 		return true
@@ -124,22 +141,25 @@ func requires_recipe_selection() -> bool:
 	return true
 
 func get_processing_icon() -> Texture2D:
-	if current_recipe and current_recipe.output_item:
-		return current_recipe.output_item.icon
+	if current_recipe:
+		var out_res = current_recipe.outputs[0].resource if current_recipe.outputs.size() > 0 else null
+		if out_res and "icon" in out_res:
+			return out_res.icon
 	return null
 
 func get_recipes() -> Array[RecipeResource]:
-	var all_recipes = []
+	var all_recipes =[]
 	if GameManager.has_method("get_available_recipes"):
 		all_recipes = GameManager.get_available_recipes()
 	else:
 		printerr("Asourcer: GameManager not found.")
-		return []
+		return[]
 	
-	var filtered: Array[RecipeResource] = []
+	var filtered: Array[RecipeResource] =[]
 	for r in all_recipes:
 		if r.category == "assembly":
 			filtered.append(r)
 	
-	print("Asourcer: Found %d valid recipes (assembly) out of %d total." % [filtered.size(), all_recipes.size()])
+	print("Asourcer: Found %d valid recipes (assembly) out of %d total." %[filtered.size(), all_recipes.size()])
 	return filtered
+

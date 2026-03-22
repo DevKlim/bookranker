@@ -267,4 +267,3 @@ func _create_direction_indicator() -> Node3D:
 	var mesh = MeshInstance3D.new(); mesh.mesh = prism; mesh.material_override = mat; mesh.rotation.x = deg_to_rad(-90)
 	container.add_child(mesh)
 	return container
-

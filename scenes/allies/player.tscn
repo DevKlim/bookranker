@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://c6lfioqpkvor7" path="res://scripts/components/move_component.gd" id="3_ebyhe"]
 [ext_resource type="Script" uid="uid://dad3f8h2j4k5l" path="res://scripts/components/inventory_component.gd" id="4_utbb3"]
 [ext_resource type="Script" uid="uid://dg4gfri6lu5o2" path="res://scripts/components/elemental_component.gd" id="5_msu75"]
+[ext_resource type="PackedScene" uid="uid://cckbksnacumu7" path="res://assets/allies/vyre/vyre.glb" id="6_s5oq4"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_s5oq4"]
 radius = 0.3
@@ -36,4 +37,8 @@ script = ExtResource("5_msu75")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1393033807]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+visible = false
 mesh = SubResource("CapsuleMesh_w6dnk")
+
+[node name="vyre" parent="." unique_id=1161124611 instance=ExtResource("6_s5oq4")]
+transform = Transform3D(-2, 0, 1.7484555e-07, 0, 2, 0, -1.7484555e-07, 0, -2, 0, 1, 0)

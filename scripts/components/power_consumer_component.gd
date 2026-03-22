@@ -3,10 +3,8 @@ extends Node
 
 ## A component for entities that consume power from the grid.
 
-
 ## Signal emitted when the power requirement changes.
 signal power_demand_changed(new_demand)
-
 
 ## The amount of power this entity requires to operate.
 @export var power_consumption: float = 5.0:
@@ -22,6 +20,14 @@ signal power_demand_changed(new_demand)
 ## Tracks whether this component is currently receiving power from the grid.
 var has_power: bool = false
 
+func _ready() -> void:
+	if Engine.is_editor_hint(): return
+	call_deferred("_register")
+
+func _register() -> void:
+	if get_parent().has_meta("is_preview"): return
+	if is_instance_valid(PowerGridManager):
+		PowerGridManager.register_consumer(self)
 
 ## Called by the PowerGridManager to update the power status of the parent entity.
 func set_power_status(is_powered: bool) -> void:

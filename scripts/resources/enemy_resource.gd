@@ -15,6 +15,7 @@ enum FieldMovement {
 
 @export var enemy_name: String = "Enemy"
 @export var scene: PackedScene
+@export var tags: Array[String] =[]
 
 @export_group("Stats")
 @export var health: float = 50.0

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://okowhrwdec65"]
+
+[ext_resource type="Resource" uid="uid://nrrfcqc3xn8e" path="res://resources/items/ink.tres" id="1_fiy45"]
+[ext_resource type="Resource" uid="uid://coghxhqspfcp0" path="res://resources/items/graphite.tres" id="2_xtit1"]
+[ext_resource type="Resource" uid="uid://gx1tg2l0t01y" path="res://resources/items/yardstick.tres" id="3_re4iy"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="4_qwjrg"]
+
+[resource]
+script = ExtResource("4_qwjrg")
+category = "chalkboard"
+recipe_name = "Yardstick"
+inputs = [{
+"count": 3,
+"resource": ExtResource("1_fiy45")
+}, {
+"count": 3,
+"resource": ExtResource("2_xtit1")
+}]
+outputs = [{
+"count": 1,
+"resource": ExtResource("3_re4iy")
+}]

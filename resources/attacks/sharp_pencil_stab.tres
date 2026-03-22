@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://cyygfsa2koo6x"]
+
+[ext_resource type="Script" uid="uid://dj7657xb6odwr" path="res://scripts/resources/attack_resource.gd" id="1_vwewu"]
+
+[resource]
+script = ExtResource("1_vwewu")
+id = "sharp_pencil_stab"
+base_damage = 2.0
+min_range = 1

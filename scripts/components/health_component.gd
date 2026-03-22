@@ -39,22 +39,50 @@ func _ready() -> void:
 
 ## Standard Damage: Triggers reactions/Conduct checks
 func take_damage(amount: float, _element: Resource = null, source: Node = null) -> float:
-	var damage_taken = _calculate_mitigation(amount)
+	var final_amount = amount
+	var is_crunched = false
+	
+	# Allow the current Level Mechanics to intercept and modify damage
+	var main_level = get_tree().current_scene
+	if main_level and "level_mechanics" in main_level and is_instance_valid(main_level.level_mechanics):
+		if main_level.level_mechanics.has_method("process_damage"):
+			var result = main_level.level_mechanics.process_damage(amount, get_parent(), source)
+			final_amount = result.get("amount", amount)
+			is_crunched = result.get("crunched", false)
+
+	var damage_taken = _calculate_mitigation(final_amount)
 	_apply_damage(damage_taken)
 	
 	# Trigger generic on-damage logic (Conduct, Ripple, etc.)
 	if damage_taken > 0:
 		ElementManager.on_damage_dealt(get_parent(), damage_taken, source)
-		_spawn_damage_number(damage_taken, _element)
+		if is_crunched:
+			_spawn_crunch_text(damage_taken)
+		else:
+			_spawn_damage_number(damage_taken, _element)
 		
 	return damage_taken
 
 ## Special Damage: Used by Conduct/Reaction effects to prevent infinite loops.
-func take_damage_no_conduct(amount: float, _source: Node = null) -> float:
-	var damage_taken = _calculate_mitigation(amount)
+func take_damage_no_conduct(amount: float, source: Node = null) -> float:
+	var final_amount = amount
+	var is_crunched = false
+	
+	# Allow the current Level Mechanics to intercept and modify damage
+	var main_level = get_tree().current_scene
+	if main_level and "level_mechanics" in main_level and is_instance_valid(main_level.level_mechanics):
+		if main_level.level_mechanics.has_method("process_damage"):
+			var result = main_level.level_mechanics.process_damage(amount, get_parent(), source)
+			final_amount = result.get("amount", amount)
+			is_crunched = result.get("crunched", false)
+
+	var damage_taken = _calculate_mitigation(final_amount)
 	_apply_damage(damage_taken)
 	if damage_taken > 0:
-		_spawn_damage_number(damage_taken, null)
+		if is_crunched:
+			_spawn_crunch_text(damage_taken)
+		else:
+			_spawn_damage_number(damage_taken, null)
 	return damage_taken
 
 func _calculate_mitigation(amount: float) -> float:
@@ -125,5 +153,32 @@ func _spawn_damage_number(amount: float, element: Resource) -> void:
 	
 	var tween = label.create_tween()
 	tween.tween_property(label, "global_position:y", pos.y + 1.0, 1.0)
+	tween.parallel().tween_property(label, "modulate:a", 0.0, 1.0)
+	tween.tween_callback(label.queue_free)
+
+func _spawn_crunch_text(amount: float) -> void:
+	if amount < 0.5: return
+	var label = Label3D.new()
+	label.text = str(round(amount)) + " CRUNCH!"
+	label.pixel_size = 0.03
+	label.modulate = Color.GOLD
+	label.outline_modulate = Color.BLACK
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.no_depth_test = true
+	label.sorting_offset = amount + 100 
+	label.render_priority = 100
+	
+	var root = get_tree().current_scene
+	if root:
+		root.add_child(label)
+	else:
+		get_parent().add_child(label)
+		
+	var pos = get_parent().global_position + Vector3(0, 2.0, 0)
+	pos += Vector3(randf_range(-0.5, 0.5), randf_range(0.0, 0.5), randf_range(-0.5, 0.5))
+	label.global_position = pos
+	
+	var tween = label.create_tween()
+	tween.tween_property(label, "global_position:y", pos.y + 1.5, 1.0)
 	tween.parallel().tween_property(label, "modulate:a", 0.0, 1.0)
 	tween.tween_callback(label.queue_free)

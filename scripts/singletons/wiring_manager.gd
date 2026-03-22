@@ -8,6 +8,9 @@ signal network_updated
 # Dictionary storing { Vector2i(x, z): WireInstance }
 var _wires: Dictionary = {}
 
+# Keep track of logically powered tiles internally for stability
+var _powered_tiles: Dictionary = {}
+
 const POWER_SOURCE_COORD = Vector2i(0, 2)
 
 func _ready() -> void:
@@ -30,29 +33,26 @@ func get_wire_instance(coord: Vector2i) -> Node:
 	return _wires.get(coord, null)
 
 func is_powered(coord: Vector2i) -> bool:
-	var w = _wires.get(coord, null)
-	if is_instance_valid(w) and "is_powered" in w:
-		return w.is_powered
-	
 	if coord == POWER_SOURCE_COORD:
 		return true
-		
-	return false
+	return _powered_tiles.get(coord, false)
 
 func update_network() -> void:
 	# 1. Reset
+	_powered_tiles.clear()
 	for wire_instance in _wires.values():
 		if is_instance_valid(wire_instance) and wire_instance.has_method("set_powered"):
 			wire_instance.set_powered(false)
 
 	# 2. BFS from Source
-	var queue: Array[Vector2i] = []
+	var queue: Array[Vector2i] =[]
 	var visited: Dictionary = {}
 
 	if has_wire(POWER_SOURCE_COORD):
 		queue.append(POWER_SOURCE_COORD)
 		visited[POWER_SOURCE_COORD] = true
-		if is_instance_valid(_wires[POWER_SOURCE_COORD]):
+		_powered_tiles[POWER_SOURCE_COORD] = true
+		if is_instance_valid(_wires[POWER_SOURCE_COORD]) and _wires[POWER_SOURCE_COORD].has_method("set_powered"):
 			_wires[POWER_SOURCE_COORD].set_powered(true)
 	
 	while not queue.is_empty():
@@ -62,7 +62,8 @@ func update_network() -> void:
 		for n in neighbors:
 			if has_wire(n) and not visited.has(n):
 				visited[n] = true
-				if is_instance_valid(_wires[n]):
+				_powered_tiles[n] = true
+				if is_instance_valid(_wires[n]) and _wires[n].has_method("set_powered"):
 					_wires[n].set_powered(true)
 				queue.push_back(n)
 
@@ -77,7 +78,7 @@ func _update_single_wire_visual(coord: Vector2i) -> void:
 	if not is_instance_valid(wire_instance): return
 	if not wire_instance.has_method("set_connections"): return
 
-	var connections: Array[int] = []
+	var connections: Array[int] =[]
 	# 1: Left (-X), 2: Down (+Z), 3: Right (+X), 4: Up (-Z)
 	if has_wire(coord + Vector2i(-1, 0)): connections.append(1)
 	if has_wire(coord + Vector2i(0, 1)):  connections.append(2)
@@ -87,7 +88,7 @@ func _update_single_wire_visual(coord: Vector2i) -> void:
 	wire_instance.set_connections(connections)
 
 func _get_neighbors(coord: Vector2i) -> Array[Vector2i]:
-	return [
+	return[
 		coord + Vector2i(1, 0),
 		coord + Vector2i(-1, 0),
 		coord + Vector2i(0, 1),
@@ -108,7 +109,7 @@ func get_network_stats(start_coord: Vector2i) -> Dictionary:
 		"total_demand": 0.0,
 		"net_power": 0.0,
 		"status": "Inactive",
-		"connected_coords": []
+		"connected_coords":[]
 	}
 	
 	var queue: Array[Vector2i] = [start_coord]
