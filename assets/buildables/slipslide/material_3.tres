@@ -1,0 +1,11 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://d1or6mx6iv6vy"]
+
+[ext_resource type="Texture2D" uid="uid://crcmc3v4mvqxs" path="res://assets/buildables/slipslide/slipslide_3.png" id="1_w6grs"]
+
+[resource]
+resource_name = "material_3"
+transparency = 1
+cull_mode = 2
+albedo_texture = ExtResource("1_w6grs")
+texture_filter = 0
+texture_repeat = false

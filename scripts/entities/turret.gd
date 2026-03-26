@@ -9,7 +9,7 @@ var ammo_visual: Sprite3D
 @export var infinite_ammo: bool = false # Default false so it requires ammo to fire
 
 var _is_firing: bool = false
-var _current_ammo: ItemResource = null
+var _current_ammo: Resource = null
 
 func _init() -> void:
 	has_output = false
@@ -72,9 +72,13 @@ func _update_ammo_visual() -> void:
 	if not is_instance_valid(ammo_visual) or not inventory_component: return
 	var item = inventory_component.get_first_item()
 	if item:
-		ammo_visual.texture = item.icon
+		if "icon" in item:
+			ammo_visual.texture = item.get("icon")
 		ammo_visual.visible = true
-		ammo_visual.modulate = item.color
+		if "color" in item:
+			ammo_visual.modulate = item.get("color")
+		else:
+			ammo_visual.modulate = Color.WHITE
 	else:
 		ammo_visual.visible = false
 
@@ -99,9 +103,9 @@ func _start_firing() -> void:
 		# Duplicate so we can modify it per ammo safely without altering the base resource globally
 		attack = attack.duplicate()
 		if _current_ammo:
-			attack.base_damage += _current_ammo.damage # Inherit weapon/ammo damage
+			if "damage" in _current_ammo: attack.base_damage += float(_current_ammo.get("damage"))
 			
-			var final_elem = _current_ammo.element
+			var final_elem = _current_ammo.get("element") if "element" in _current_ammo else null
 			if final_elem == null and attacker.basic_attack and attacker.basic_attack.element != null:
 				final_elem = attacker.basic_attack.element
 				
@@ -109,34 +113,51 @@ func _start_firing() -> void:
 			
 			# Modifiers
 			var extra_units = int(get_stat("element_units_flat", 0.0))
-			attack.element_units = _current_ammo.element_units + extra_units
-			attack.ignore_element_cd = _current_ammo.ignore_element_cooldown
+			if "element_units" in _current_ammo:
+				attack.element_units = int(_current_ammo.get("element_units")) + extra_units
+			else:
+				attack.element_units = 1 + extra_units
 			
-			if _current_ammo.projectile_scene:
-				attack.projectile_scene = _current_ammo.projectile_scene
+			if "ignore_element_cooldown" in _current_ammo:
+				attack.ignore_element_cd = bool(_current_ammo.get("ignore_element_cooldown"))
 			
-			if _current_ammo.icon:
-				attack.projectile_texture = _current_ammo.icon
+			if "projectile_scene" in _current_ammo and _current_ammo.get("projectile_scene"):
+				attack.projectile_scene = _current_ammo.get("projectile_scene")
+			
+			if "icon" in _current_ammo and _current_ammo.get("icon"):
+				attack.projectile_texture = _current_ammo.get("icon")
 			else:
 				attack.projectile_texture = load("res://icon.svg") # Fallback to prevent blank
 				
-			attack.projectile_color = _current_ammo.color
+			if "color" in _current_ammo:
+				attack.projectile_color = _current_ammo.get("color")
 	else:
 		# Final failsafe
 		attack = AttackResource.new()
 		if _current_ammo:
-			attack.base_damage = _current_ammo.damage
-			attack.element = _current_ammo.element
+			if "damage" in _current_ammo: attack.base_damage = float(_current_ammo.get("damage"))
+			if "element" in _current_ammo: attack.element = _current_ammo.get("element")
+			
 			var extra_units = int(get_stat("element_units_flat", 0.0))
-			attack.element_units = _current_ammo.element_units + extra_units
-			attack.ignore_element_cd = _current_ammo.ignore_element_cooldown
-			if _current_ammo.projectile_scene:
-				attack.projectile_scene = _current_ammo.projectile_scene
-			if _current_ammo.icon:
-				attack.projectile_texture = _current_ammo.icon
+			if "element_units" in _current_ammo:
+				attack.element_units = int(_current_ammo.get("element_units")) + extra_units
+			else:
+				attack.element_units = 1 + extra_units
+				
+			if "ignore_element_cooldown" in _current_ammo:
+				attack.ignore_element_cd = bool(_current_ammo.get("ignore_element_cooldown"))
+				
+			if "projectile_scene" in _current_ammo and _current_ammo.get("projectile_scene"):
+				attack.projectile_scene = _current_ammo.get("projectile_scene")
+			
+			if "icon" in _current_ammo and _current_ammo.get("icon"):
+				attack.projectile_texture = _current_ammo.get("icon")
 			else:
 				attack.projectile_texture = load("res://icon.svg")
-			attack.projectile_color = _current_ammo.color
+				
+			if "color" in _current_ammo:
+				attack.projectile_color = _current_ammo.get("color")
+				
 		attack.spawn_projectile = true
 		attack.cooldown = 1.0 # default attack speed
 		attack.projectile_speed = 200.0
@@ -161,19 +182,9 @@ func _on_attack_started(_target, _attack_res) -> void:
 		s.play("shoot_up")
 		get_tree().create_timer(0.2).timeout.connect(func(): if is_instance_valid(s) and s.animation == "shoot_up": s.play("idle_up"))
 
-	# Defer ammo consumption to avoid interrupting the attack sequence
-	if not infinite_ammo and inventory_component and _current_ammo:
-		call_deferred("_consume_ammo", _current_ammo)
-
-func _consume_ammo(ammo: ItemResource) -> void:
-	if is_instance_valid(inventory_component):
-		inventory_component.remove_item(ammo, 1)
-
 func receive_item(item: Resource, _from_node: Node3D = null, _extra_data: Dictionary = {}) -> bool:
-	var i = item as ItemResource
-	if not i: return false
 	if not inventory_component: return false
 	# Inventory signal handles state update
-	return inventory_component.add_item(i) == 0
+	return inventory_component.add_item(item) == 0
 
 func requires_recipe_selection() -> bool: return false

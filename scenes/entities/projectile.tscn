@@ -1,19 +1,15 @@
-[gd_scene load_steps=4 format=3 uid="uid://1uckad6v513s"]
-
-[ext_resource type="Script" path="res://scripts/entities/projectile.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="2_icon"]
-
-[sub_resource type="SphereShape3D" id="SphereShape3D_1"]
-radius = 0.25
-
-[node name="Projectile" type="Area3D"]
+[gd_scene load_steps=4 format=3 uid="uid://bgprojc3ctil5"][ext_resource type="Script" path="res://scripts/entities/projectile.gd" id="1_proj"][sub_resource type="SphereShape3D" id="SphereShape3D_proj"]
+radius = 0.5[node name="Projectile" type="Area3D"]
 collision_layer = 4
 collision_mask = 2
-script = ExtResource("1_script")
+monitoring = true
+monitorable = true
+script = ExtResource("1_proj")[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_proj")
 
 [node name="Sprite3D" type="Sprite3D" parent="."]
+pixel_size = 0.04
 billboard = 1
-texture = ExtResource("2_icon")
+double_sided = true
+texture_filter = 0
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
-shape = SubResource("SphereShape3D_1")

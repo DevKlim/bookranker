@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://c2g12usav4dgf"]
+
+[ext_resource type="Script" uid="uid://cr3cyflj1bs58" path="res://scripts/tools/icon_generator.gd" id="1_7evvi"]
+
+[node name="IconGen" type="Node3D" unique_id=500568755]
+script = ExtResource("1_7evvi")
+target_building_id = "foldgami"
+target_building_id = "foldgami"

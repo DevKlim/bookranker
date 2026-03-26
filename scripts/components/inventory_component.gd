@@ -23,6 +23,7 @@ var slots: Array =[]
 var slot_restrictions: Dictionary = {}
 
 var custom_filter: Callable
+var slot_filter: Callable # Takes (item: Resource, index: int) -> bool for strict grid positioning
 
 func _ready():
 	# Initial resize based on inspector value
@@ -57,6 +58,9 @@ func is_allowed_in_slot(item: Resource, index: int) -> bool:
 		if not (item is ItemResource): return false # Buildables can't be equipment
 		if item.equipment_type != slot_restrictions[index]:
 			return false
+			
+	if slot_filter.is_valid():
+		if not slot_filter.call(item, index): return false
 	
 	return true
 

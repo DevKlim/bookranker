@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://fnimcv81cy5p"]
 
-[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="1_8k1lf"]
+[ext_resource type="Texture2D" uid="uid://db4678i4k7xve" path="res://assets/icons/cardboard.png" id="1_8k1lf"]
 [ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="2_2ul54"]
 
 [resource]

@@ -8,5 +8,5 @@
 script = ExtResource("3_65732")
 item_name = "Aqua Pellet"
 icon = ExtResource("2_0lu77")
-damage = 2.0
+damage = 1.0
 element = ExtResource("1_0lu77")

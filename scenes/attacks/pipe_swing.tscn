@@ -1,12 +1,14 @@
-[gd_scene load_steps=5 format=3 uid="uid://d3yq1wbhxj3n"]
+[gd_scene load_steps=6 format=3 uid="uid://d3yq1wbhxj3n"][ext_resource type="Script" path="res://scripts/entities/attack_visual.gd" id="1_atkvis"]
 
-[ext_resource type="Script" path="res://scripts/entities/attack_visual.gd" id="1_attackvis"]
-[ext_resource type="Texture2D" path="res://assets/items/meshes/bent_pipe_0.png" id="2_tex"]
-
-[sub_resource type="Animation" id="Animation_swing"]
+[sub_resource type="BoxMesh" id="BoxMesh_swing"]
+size = Vector3(2, 0.1, 0.4)[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_swing"]
+transparency = 1
+albedo_color = Color(0.9, 0.9, 0.9, 0.8)
+emission_enabled = true
+emission = Color(0.8, 0.8, 0.8, 1)
+emission_energy_multiplier = 1.5[sub_resource type="Animation" id="Animation_swing"]
 resource_name = "default"
 length = 0.4
-step = 0.05
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -14,42 +16,39 @@ tracks/0/path = NodePath("Pivot:rotation")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.1, 0.4),
-"transitions": PackedFloat32Array(0.5, 1, 1),
+"times": PackedFloat32Array(0, 0.4),
+"transitions": PackedFloat32Array(0.3, 1),
 "update": 0,
-"values": [Vector3(0, 1.0472, 0), Vector3(0, -1.5708, 0), Vector3(0, -2.0, 0)]
+"values":[Vector3(0, -1.5708, 0), Vector3(0, 1.5708, 0)]
 }
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
-tracks/1/path = NodePath("Pivot/Sprite3D:modulate")
+tracks/1/path = NodePath("Pivot/MeshInstance3D:surface_material_override/0:albedo_color")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.3, 0.4),
+"times": PackedFloat32Array(0, 0.2, 0.4),
 "transitions": PackedFloat32Array(1, 1, 1),
 "update": 0,
-"values": [Color(1, 1, 1, 1), Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
+"values":[Color(0.9, 0.9, 0.9, 0), Color(0.9, 0.9, 0.9, 0.8), Color(0.9, 0.9, 0.9, 0)]
 }
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_swing"]
 _data = {
 "default": SubResource("Animation_swing")
-}
+}[node name="PipeSwing" type="Node3D"]
+script = ExtResource("1_atkvis")
+animation_name = "default"[node name="Pivot" type="Node3D" parent="."]
+transform = Transform3D(0.000796274, 0, -1, 0, 1, 0, 1, 0, 0.000796274, 0, 0, 0)
 
-[node name="PipeSwing" type="Node3D"]
-script = ExtResource("1_attackvis")
-
-[node name="Pivot" type="Marker3D" parent="."]
-transform = Transform3D(0.499998, 0, 0.866027, 0, 1, 0, -0.866027, 0, 0.499998, 0, 0, 0)
-
-[node name="Sprite3D" type="Sprite3D" parent="Pivot"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1)
-pixel_size = 0.04
-axis = 1
-texture = ExtResource("2_tex")
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Pivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0)
+mesh = SubResource("BoxMesh_swing")
+surface_material_override/0 = SubResource("StandardMaterial3D_swing")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
 libraries = {
 "": SubResource("AnimationLibrary_swing")
 }
+

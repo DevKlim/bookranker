@@ -19,6 +19,7 @@ var shop_menu: ShopMenu
 var currency_label: Label
 var core_hp_label: Label
 var timer_label: Label
+var respawns_label: Label
 var _core_ref: Node
 
 # Context Menu
@@ -34,6 +35,7 @@ var hotbar_window: PanelContainer
 var bottom_left_content: Control
 
 var global_theme: Theme
+var active_respawns: Array =[]
 
 const DEV_UI_SCRIPT = preload("res://scripts/ui/dev_ui.gd")
 const PAUSE_MENU_SCENE = preload("res://scenes/ui/pause_menu.tscn")
@@ -461,8 +463,17 @@ func _setup_bottom_left_ui() -> void:
 	core_hp_label.text = "Core HP: ---"
 	vbox.add_child(core_hp_label)
 	
+	respawns_label = Label.new()
+	respawns_label.add_theme_font_size_override("font_size", 18)
+	respawns_label.add_theme_color_override("font_color", Color(0.8, 0.2, 0.2))
+	respawns_label.text = ""
+	vbox.add_child(respawns_label)
+	
 	bottom_left_content = vbox
 	_update_currency_ui()
+
+func register_ally_respawn(a_name: String, time: float) -> void:
+	active_respawns.append({"name": a_name, "time": time})
 
 func _update_currency_ui() -> void:
 	if currency_label:
@@ -523,7 +534,7 @@ func _setup_dev_ui() -> void:
 	dev_ui_panel.set_script(DEV_UI_SCRIPT)
 	dev_ui_panel.custom_minimum_size = Vector2(220, 180)
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	var backdrop = get_node_or_null("UIBackdrop")
 	if backdrop:
 		var any_open = is_any_menu_open() or is_pause_menu_open()
@@ -535,6 +546,19 @@ func _process(_delta: float) -> void:
 	if is_instance_valid(_core_ref) and core_hp_label:
 		if _core_ref.health_component:
 			core_hp_label.text = "Core HP: %d / %d" %[_core_ref.health_component.current_health, _core_ref.health_component.max_health]
+			
+	if active_respawns.size() > 0:
+		var respawn_text = ""
+		for i in range(active_respawns.size() - 1, -1, -1):
+			active_respawns[i].time -= delta
+			if active_respawns[i].time <= 0:
+				active_respawns.remove_at(i)
+			else:
+				respawn_text += "Respawning %s: %.1fs\n" %[active_respawns[i].name, active_respawns[i].time]
+		if respawns_label:
+			respawns_label.text = respawn_text
+	elif respawns_label and respawns_label.text != "":
+		respawns_label.text = ""
 
 func _setup_context_menu() -> void:
 	context_menu_panel = PanelContainer.new()
@@ -569,6 +593,9 @@ func _setup_context_menu() -> void:
 func show_context_menu(screen_pos: Vector2, options: Array) -> void:
 	hide_context_menu()
 	if options.is_empty(): return
+	
+	if BuildManager.is_building: BuildManager.exit_build_mode()
+	if PlayerManager.equipped_item: PlayerManager.set_equipped_item(null)
 	
 	for child in context_menu_vbox.get_children(): child.queue_free()
 	
@@ -623,6 +650,9 @@ func _setup_notification_label() -> void:
 	notification_label.add_theme_color_override("font_shadow_color", Color.BLACK)
 	notification_label.add_theme_constant_override("shadow_offset_x", 1)
 	notification_label.add_theme_constant_override("shadow_offset_y", 1)
+	var font = load("res://assets/fonts/v2-fs-tahoma-8px.otf")
+	if font:
+		notification_label.add_theme_font_override("font", font)
 	notification_label.add_theme_font_size_override("font_size", 24)
 	notification_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	notification_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -697,6 +727,28 @@ func show_network_stats(stats: Dictionary) -> void:
 func hide_network_stats() -> void:
 	network_stats_panel.visible = false
 
+func _spawn_world_drop_text(world_pos: Vector3, text: String, color: Color) -> void:
+	var label = Label3D.new()
+	label.text = text
+	label.pixel_size = 0.02
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.no_depth_test = true
+	label.render_priority = 100
+	label.modulate = color
+	
+	var font = load("res://assets/fonts/v2-fs-tahoma-8px.otf")
+	if font: label.font = font
+	
+	var root = get_tree().current_scene
+	if root:
+		root.add_child(label)
+		label.global_position = world_pos + Vector3(0, 1.5, 0)
+		
+		var tween = label.create_tween()
+		tween.tween_property(label, "global_position:y", label.global_position.y + 1.0, 1.0)
+		tween.parallel().tween_property(label, "modulate:a", 0.0, 1.0)
+		tween.tween_callback(label.queue_free)
+
 func handle_world_drop(screen_pos: Vector2, data: Dictionary) -> void:
 	var cam = get_viewport().get_camera_3d()
 	if not cam: return
@@ -712,16 +764,24 @@ func handle_world_drop(screen_pos: Vector2, data: Dictionary) -> void:
 		var item = data.item
 		var source_inv = data.inventory
 		var count_to_add = data.count
+		var spawn_pos = target.global_position
 		
 		if not source_inv.slots[data.slot_index] or source_inv.slots[data.slot_index].item != item: return
 
 		if target.has_method("receive_item"):
 			if target.receive_item(item):
 				source_inv.remove_item(item, 1) 
+				var taken = 1
 				if count_to_add > 1:
 					for i in range(count_to_add - 1):
 						if not target.receive_item(item): break
 						source_inv.remove_item(item, 1)
+						taken += 1
+				
+				var i_name = "Item"
+				if "item_name" in item: i_name = item.item_name
+				elif "buildable_name" in item: i_name = item.buildable_name
+				_spawn_world_drop_text(spawn_pos, "-%d %s" %[taken, i_name], Color.GREEN)
 				return
 
 		var inv_comp = target.get("inventory_component")
@@ -732,7 +792,10 @@ func handle_world_drop(screen_pos: Vector2, data: Dictionary) -> void:
 			var taken = count_to_add - remainder
 			if taken > 0:
 				source_inv.remove_item(item, taken)
-				show_notification("Dropped %d %s" %[taken, item.item_name], Color.GREEN)
+				var i_name = "Item"
+				if "item_name" in item: i_name = item.item_name
+				elif "buildable_name" in item: i_name = item.buildable_name
+				_spawn_world_drop_text(spawn_pos, "-%d %s" %[taken, i_name], Color.GREEN)
 
 func _initialize_recipe_database() -> void:
 	var path = "res://resources/recipes/"
@@ -759,6 +822,8 @@ func toggle_player_menu() -> void:
 	else:
 		close_inventory()
 		player_menu.show()
+		if BuildManager.is_building: BuildManager.exit_build_mode()
+		if PlayerManager.equipped_item: PlayerManager.set_equipped_item(null)
 
 func set_debug_text(text: String) -> void:
 	if debug_coords_label: debug_coords_label.text = text
@@ -767,6 +832,8 @@ func open_inventory(inventory: InventoryComponent, title: String = "Storage", co
 	if inventory_gui:
 		if player_menu: player_menu.hide()
 		inventory_gui.open(inventory, title, context)
+		if BuildManager.is_building: BuildManager.exit_build_mode()
+		if PlayerManager.equipped_item: PlayerManager.set_equipped_item(null)
 
 func close_inventory() -> void:
 	if inventory_gui: inventory_gui.close()
@@ -774,7 +841,7 @@ func close_inventory() -> void:
 func set_inventory_screen_position(_screen_pos: Vector2) -> void: pass 
 
 func get_ui_rects() -> Array[Rect2]:
-	var rects: Array[Rect2] =[]
+	var rects: Array[Rect2] = []
 	if hotbar: rects.append(hotbar.get_global_rect())
 	if dev_ui_panel: rects.append(dev_ui_panel.get_global_rect())
 	if inventory_gui and inventory_gui.visible: rects.append(inventory_gui.get_global_rect())

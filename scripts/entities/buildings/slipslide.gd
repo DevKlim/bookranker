@@ -39,15 +39,22 @@ func _create_visual():
 	sprite.texture = stored_item.icon
 	if "color" in stored_item:
 		sprite.modulate = stored_item.color
-	sprite.pixel_size = 0.03
+		
+	# Downsize buildings to prevent cropping
+	if stored_item is BuildableResource:
+		sprite.pixel_size = 0.00375
+	else:
+		sprite.pixel_size = 0.03
+		
 	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	visual_node.add_child(sprite)
+	add_child(visual_node)
 	_update_visual()
 
 func _try_pass_item():
 	var neighbor = get_neighbor(output_direction)
 	var valid_stream = false
-	if neighbor and (neighbor.display_name == "Slipstream" or neighbor.display_name == "Tarstream"):
+	if is_instance_valid(neighbor) and (neighbor.display_name == "Slipstream" or neighbor.display_name == "Tarstream"):
 		valid_stream = true
 		
 	if valid_stream and neighbor.has_method("receive_item"):

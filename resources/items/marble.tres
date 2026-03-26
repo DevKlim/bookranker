@@ -1,13 +1,13 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://bufkycpx6nel1"]
 
 [ext_resource type="Resource" uid="uid://7j4j8iomabs5" path="res://resources/elements/tera.tres" id="1_6awoa"]
-[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="2_61cv5"]
+[ext_resource type="Texture2D" uid="uid://dvcqml3ks0ubw" path="res://assets/icons/marble.png" id="2_6awoa"]
 [ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="3_s56ic"]
 
 [resource]
 script = ExtResource("3_s56ic")
 item_name = "Marble"
-icon = ExtResource("2_61cv5")
+icon = ExtResource("2_6awoa")
 stack_size = 100
 damage = 1.0
 element = ExtResource("1_6awoa")

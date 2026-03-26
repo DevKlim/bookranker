@@ -171,7 +171,7 @@ In the "Back to Basics" level, players manufacture their own projectiles dynamic
 2. **Folding & Infusion:** The `Foldgami` machine acts as the primary assembler. It requires `Paper`, a `Stamp` (dictating the projectile type), and an **Elemental Chalk** or **Ink** (dictating the elemental property).
     *   *Element Infusion:* If an `Ignichalk` is used, the fold deals Igni (Fire) damage. If an `Aquachalk` is used, it deals Aqua damage. 
     *   *Ink Infusion:* If `Ink` is used, the fold deals physical damage but applies the **Slime** status reaction to the enemy on hit.
-3. **Propulsion:** Finished folds do not fire themselves! A `Box Fan` must be placed behind the `Foldgami` to blow the output forward into the enemy lanes.
+3. **Propulsion:** Finished folds fire by themselves forward. If there is a building in front with a valid input, it will instead deposit into that building's inventory(input). A `Box Fan` can be placed behind the `Foldgami` which applies aero to buildings and enemies in front of it. If aero is applied to foldgami, it will blow the output forward faster into the enemy lanes.
 
 ### Projectile Traversal (Streams)
 Folds have specific traversal rules based on their design:

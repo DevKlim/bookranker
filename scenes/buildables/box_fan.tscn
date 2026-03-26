@@ -1,8 +1,20 @@
-[gd_scene format=3 uid="uid://boxfanuid"][ext_resource type="Script" path="res://scripts/entities/turret.gd" id="1"][sub_resource type="BoxShape3D" id="1"]
-size = Vector3(1, 1, 1)[node name="Box Fan" type="StaticBody3D"]
+[gd_scene format=3 uid="uid://1ej6l2wvwoka"]
+
+[ext_resource type="Script" uid="uid://ctw2ritm8shpv" path="res://scripts/entities/turret.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://du55yu7jvv6ax" path="res://assets/buildables/box_fan/box_fan.gltf" id="2_ag70k"]
+
+[sub_resource type="BoxShape3D" id="1"]
+
+[node name="Box Fan" type="StaticBody3D" unique_id=1251197310]
 script = ExtResource("1")
 display_name = "Box Fan"
 default_input_mask = 1
-default_output_mask = 0[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+default_output_mask = 0
+has_output = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=144724122]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
 shape = SubResource("1")
+
+[node name="blockbench_export" parent="." unique_id=1775648040 instance=ExtResource("2_ag70k")]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0)

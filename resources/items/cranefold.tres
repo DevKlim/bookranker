@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://mnorqtuv1oqc"]
+
+[ext_resource type="Resource" uid="uid://cbih706mvma8p" path="res://resources/attacks/projectile_shot.tres" id="1_0ik7j"]
+[ext_resource type="Resource" uid="uid://bocnm61fjtt88" path="res://resources/elements/aero.tres" id="2_tx85n"]
+[ext_resource type="Texture2D" uid="uid://bhdnrf6kjc61g" path="res://assets/blocks/crane_fold.png" id="3_0ik7j"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="4_rm6kj"]
+
+[resource]
+script = ExtResource("4_rm6kj")
+item_name = "Crane Fold"
+icon = ExtResource("3_0ik7j")
+equipment_type = 2
+attack_config = ExtResource("1_0ik7j")
+damage = 15.0
+element = ExtResource("2_tx85n")

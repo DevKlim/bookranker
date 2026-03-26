@@ -1,13 +1,11 @@
 [gd_resource type="Resource" script_class="BuildableResource" format=3 uid="uid://cuotenf3y88vd"]
 
-[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="1_7g6hq"]
 [ext_resource type="Script" uid="uid://qpm1dylmnjld" path="res://scripts/resources/buildable_resource.gd" id="2_xvxly"]
 
 [resource]
 script = ExtResource("2_xvxly")
 buildable_name = "Box Fan"
 description = "Blows the folded creations towards enemies."
-icon = ExtResource("1_7g6hq")
 has_input = false
 has_output = false
 default_input_mask = 1

@@ -1,26 +1,14 @@
-[gd_resource type="Resource" script_class="AttackResource" format=3][ext_resource type="Script" path="res://scripts/resources/attack_resource.gd" id="1"][ext_resource type="Resource" path="res://resources/elements/aero.tres" id="2"]
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://cciktsuowfcor"]
+
+[ext_resource type="Script" uid="uid://dj7657xb6odwr" path="res://scripts/resources/attack_resource.gd" id="1"]
+[ext_resource type="Resource" uid="uid://bocnm61fjtt88" path="res://resources/elements/aero.tres" id="2"]
 
 [resource]
 script = ExtResource("1")
 id = "fan_blow"
-cooldown = 1.0
-animation_name = "attack"
 base_damage = 0.0
-scaling_stat = "attack_damage"
-scaling_factor = 1.0
 element = ExtResource("2")
-element_units = 1
-ignore_element_cd = false
-min_range = 0
+min_range = 1
 max_range = 3
-range_width = 1
 is_aoe = true
-hitbox_extents = Vector3(0, 0, 0)
-spawn_projectile = false
-projectile_speed = 10.0
-projectile_color = Color(1, 1, 1, 1)
-visual_spawn_point = 0
-attach_visual_to_source = false
-visual_offset = Vector3(0, 0.5, 0)
-visual_duration = 0.5
-chain_delay = 0.5
+visual_duration = 0.4

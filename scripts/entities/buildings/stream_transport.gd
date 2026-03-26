@@ -9,6 +9,16 @@ var items: Array =[] # { "item": Resource, "progress": float, "visual": Node3D }
 func _ready() -> void:
 	if Engine.is_editor_hint(): return
 	super._ready()
+	
+	# Guarantee an inventory component exists so the count is exposed and updated 
+	# dynamically for other machines or UI reading its contents.
+	if not inventory_component:
+		inventory_component = InventoryComponent.new()
+		inventory_component.name = "InventoryComponent"
+		inventory_component.max_slots = 1
+		inventory_component.slot_capacity = 3
+		add_child(inventory_component)
+		
 	if power_consumer:
 		power_consumer.power_consumption = 0.0
 		power_consumer.requires_wire_connection = false
@@ -63,11 +73,14 @@ func _try_pass_item(entry):
 
 	if handled:
 		if is_instance_valid(entry.visual): entry.visual.queue_free()
+		# Deduct from internal tracked inventory count
+		if inventory_component:
+			inventory_component.remove_item(entry.item, 1)
 		items.remove_at(0)
 
 func receive_item(item: Resource, from_node: Node3D = null, extra_data: Dictionary = {}) -> bool:
 	if not is_active: return false
-	if not item is ItemResource: return false
+	if not (item is ItemResource or item is BuildableResource): return false
 	
 	var initial_progress = 0.0
 	if from_node:
@@ -88,7 +101,13 @@ func receive_item(item: Resource, from_node: Node3D = null, extra_data: Dictiona
 	sprite.texture = item.icon
 	if "color" in item:
 		sprite.modulate = item.color
-	sprite.pixel_size = 0.03
+		
+	# Downsize buildings to prevent cropping
+	if item is BuildableResource:
+		sprite.pixel_size = 0.015
+	else:
+		sprite.pixel_size = 0.03
+		
 	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	container.add_child(sprite)
 	add_child(container)
@@ -98,4 +117,9 @@ func receive_item(item: Resource, from_node: Node3D = null, extra_data: Dictiona
 	container.position = start_local.lerp(end_local, initial_progress)
 	
 	items.append({ "item": item, "progress": initial_progress, "visual": container })
+	
+	# Add to internal tracked inventory count
+	if inventory_component:
+		inventory_component.add_item(item, 1)
+		
 	return true

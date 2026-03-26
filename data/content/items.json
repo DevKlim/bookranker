@@ -48,9 +48,9 @@
     { "id": "marble", "name": "Marble", "texture": "res://icon.svg", "item_data": { "damage": 1.0, "element": "tera", "stack": 100 } },
     { "id": "graphite", "name": "Graphite", "texture": "res://icon.svg", "item_data": { "damage": 2.0, "element": "tera", "stack": 100 } },
     { "id": "ink", "name": "Ink", "texture": "res://icon.svg", "item_data": { "damage": 1.0, "element": "slime", "stack": 100 } },
-    { "id": "ignichalk", "name": "Igni Chalk", "texture": "res://icon.svg", "item_data": { "damage": 2.0, "element": "igni", "stack": 50 } },
-    { "id": "aquachalk", "name": "Aqua Chalk", "texture": "res://icon.svg", "item_data": { "damage": 2.0, "element": "aqua", "stack": 50 } },
-    { "id": "aerochalk", "name": "Aero Chalk", "texture": "res://icon.svg", "item_data": { "damage": 2.0, "element": "aero", "stack": 50 } },
+    { "id": "ignichalk", "name": "Igni Chalk", "texture": "res://assets/items/igni_pellet.png", "item_data": { "damage": 2.0, "element": "igni", "stack": 50 } },
+    { "id": "aquachalk", "name": "Aqua Chalk", "texture": "res://assets/items/aqua_pellet.png", "item_data": { "damage": 2.0, "element": "aqua", "stack": 50 } },
+    { "id": "aerochalk", "name": "Aero Chalk", "texture": "res://assets/items/aero_pellet.png", "item_data": { "damage": 2.0, "element": "aero", "stack": 50 } },
     { "id": "luxchalk", "name": "Lux Chalk", "texture": "res://icon.svg", "item_data": { "damage": 5.0, "element": "lux", "stack": 20 } },
     
     { "id": "cardboard", "name": "Cardboard", "texture": "res://icon.svg", "item_data": { "damage": 1.0, "stack": 50 } },

@@ -13,6 +13,7 @@ var current_target: Node3D = null
 var current_target_pos: Vector3 = Vector3.INF
 var current_target_dir: Vector3 = Vector3.ZERO
 var current_attack: AttackResource = null
+var base_active_attack: AttackResource = null
 
 func _ready() -> void:
 	attack_timer = Timer.new()
@@ -33,7 +34,8 @@ func start_attacking(target: Node3D, specific_attack: AttackResource = null) -> 
 	current_target = target
 	current_target_pos = target.global_position
 	current_target_dir = Vector3.ZERO
-	current_attack = specific_attack if specific_attack else basic_attack
+	base_active_attack = specific_attack if specific_attack else basic_attack
+	current_attack = base_active_attack
 	
 	if not current_attack: return
 	
@@ -44,7 +46,8 @@ func start_attacking_position(target_pos: Vector3, specific_attack: AttackResour
 	current_target = null
 	current_target_pos = target_pos
 	current_target_dir = Vector3.ZERO
-	current_attack = specific_attack if specific_attack else basic_attack
+	base_active_attack = specific_attack if specific_attack else basic_attack
+	current_attack = base_active_attack
 	
 	if not current_attack: return
 	
@@ -55,7 +58,8 @@ func start_attacking_direction(dir: Vector3, specific_attack: AttackResource = n
 	current_target = null
 	current_target_pos = Vector3.INF
 	current_target_dir = dir
-	current_attack = specific_attack if specific_attack else basic_attack
+	base_active_attack = specific_attack if specific_attack else basic_attack
+	current_attack = base_active_attack
 	
 	if not current_attack: return
 	
@@ -88,43 +92,47 @@ func _perform_attack() -> void:
 		return
 		
 	var source = get_parent()
-	var ammo_item: ItemResource = null
+	var ammo_item: Resource = null
 	
-	# Ammo override
+	# Ammo override (Allows buildings/resources to act as ammo if supported)
 	if source is Node3D and source.has_node("InventoryComponent"):
 		var inv = source.get_node("InventoryComponent")
-		if inv.can_receive and not inv.can_output and inv.has_item():
+		var is_ammo_user = ("infinite_ammo" in source) or (inv.can_receive and not inv.can_output)
+		if is_ammo_user and inv.has_item():
 			var first_item = inv.get_first_item()
-			if first_item is ItemResource:
+			if first_item:
 				ammo_item = first_item
-				inv.remove_item(ammo_item, 1)
-		elif current_attack.id == "fan_blow":
-			# Fan cannot blow without ammo to propel
-			stop_attacking()
-			return
+				var infinite = source.get("infinite_ammo") if "infinite_ammo" in source else false
+				if not infinite:
+					inv.remove_item(ammo_item, 1)
+	elif current_attack.id == "fan_blow":
+		# Fan cannot blow without ammo to propel
+		stop_attacking()
+		return
 			
 	var base_attack = current_attack
-	if ammo_item and ammo_item.attack_config:
-		current_attack = ammo_item.attack_config
+	if ammo_item and ammo_item.get("attack_config"):
+		current_attack = ammo_item.get("attack_config")
 
 	var final_damage = _calculate_damage(source, current_attack)
 	
-	emit_signal("attack_started", current_target, current_attack)
-	_spawn_visuals(source, current_target, current_target_pos)
+	var safe_target = current_target if target_valid else null
+	
+	emit_signal("attack_started", safe_target, current_attack)
+	_spawn_visuals(source, safe_target, current_target_pos)
 
 	if current_attack.spawn_projectile or ammo_item != null:
 		var proj_damage = final_damage
-		if ammo_item and ammo_item.damage > 0:
-			proj_damage += ammo_item.damage
+		if ammo_item and "damage" in ammo_item and float(ammo_item.get("damage")) > 0:
+			proj_damage += float(ammo_item.get("damage"))
 		_spawn_projectile(source, proj_damage, current_attack, ammo_item)
 	else:
-		_apply_hit(current_target, current_target_pos, final_damage, current_attack, source)
+		_apply_hit(safe_target, current_target_pos, final_damage, current_attack, source)
 
 	# Apply base attack's hit if it was overridden and was meant to be an AOE/hit 
-	# Example: The Box Fan applies Aero AOE but still fires the overridden fold ammo logic forwards!
 	if base_attack != current_attack and not base_attack.spawn_projectile:
 		var base_dmg = _calculate_damage(source, base_attack)
-		_apply_hit(current_target, current_target_pos, base_dmg, base_attack, source)
+		_apply_hit(safe_target, current_target_pos, base_dmg, base_attack, source)
 
 	if current_attack.chain_next:
 		var next = current_attack.chain_next
@@ -134,7 +142,7 @@ func _perform_attack() -> void:
 			_perform_attack()
 		)
 	else:
-		current_attack = basic_attack
+		current_attack = base_active_attack
 			
 	var cd = current_attack.cooldown
 	var spd_mult = 0.0
@@ -152,7 +160,7 @@ func _perform_attack() -> void:
 		if s_spd_mult != null:
 			spd_mult += float(s_spd_mult)
 			
-	# Apply dynamic artifact overrides (e.g., Picasso charge time)
+	# Apply dynamic artifact overrides
 	if "active_weapon_item" in source and source.active_weapon_item:
 		var artifact = source.active_weapon_item.get_artifact_instance()
 		if artifact and artifact.has_method("modify_cooldown"):
@@ -166,7 +174,6 @@ func _calculate_damage(source: Node, atk: AttackResource) -> float:
 	var dmg = atk.base_damage
 	var stat_val = 0.0
 	
-	# Safely extract scaling stats utilizing BaseBuilding's integrated stat system
 	if atk.scaling_stat != "":
 		if source.has_method("get_stat"):
 			stat_val = source.get_stat(atk.scaling_stat, 0.0)
@@ -200,7 +207,6 @@ func _calculate_damage(source: Node, atk: AttackResource) -> float:
 		if GameManager.has_method("get_global_stat"):
 			dmg += GameManager.get_global_stat("global_flat_damage", 0.0)
 			
-	# Hook for dynamic overrides (e.g. Picasso variable damage)
 	if "active_weapon_item" in source and source.active_weapon_item:
 		var artifact = source.active_weapon_item.get_artifact_instance()
 		if artifact and artifact.has_method("modify_damage"):
@@ -234,12 +240,11 @@ func _spawn_visuals(source: Node3D, target: Node3D, t_pos: Vector3) -> void:
 	if current_attack.visual_duration > 0 and not vis.has_method("_on_finished"):
 		get_tree().create_timer(current_attack.visual_duration).timeout.connect(func(): if is_instance_valid(vis): vis.queue_free())
 
-func _spawn_projectile(source: Node, damage: float, atk: AttackResource, ammo_item: ItemResource = null) -> void:
+func _spawn_projectile(source: Node, damage: float, atk: AttackResource, ammo_item: Resource = null) -> void:
 	var proj = null
 	
-	# Prefer projectile scenes specific to the Ammo Item (e.g., customized Folds)
-	if ammo_item and ammo_item.projectile_scene:
-		proj = ammo_item.projectile_scene.instantiate()
+	if ammo_item and ammo_item.get("projectile_scene"):
+		proj = ammo_item.get("projectile_scene").instantiate()
 	elif atk and atk.projectile_scene:
 		proj = atk.projectile_scene.instantiate()
 	else:
@@ -280,15 +285,16 @@ func _spawn_projectile(source: Node, damage: float, atk: AttackResource, ammo_it
 	}
 	
 	if ammo_item:
-		if ammo_item.icon and tex == null: tex = ammo_item.icon
-		if ammo_item.element: elem = ammo_item.element
-		col = ammo_item.color
-		params["element_units"] = ammo_item.element_units
-		params["ignore_element_cd"] = ammo_item.ignore_element_cooldown
+		if ammo_item.get("icon") and tex == null: tex = ammo_item.get("icon")
+		if ammo_item.get("element"): elem = ammo_item.get("element")
+		if "color" in ammo_item: col = ammo_item.get("color")
+		if "element_units" in ammo_item: params["element_units"] = int(ammo_item.get("element_units"))
+		if "ignore_element_cooldown" in ammo_item: params["ignore_element_cd"] = bool(ammo_item.get("ignore_element_cooldown"))
 		
-		# Transfer item modifiers directly to the projectile params (e.g., piercing, sea_borne)
-		for k in ammo_item.modifiers.keys():
-			params[k] = ammo_item.modifiers[k]
+		var mods = ammo_item.get("modifiers")
+		if mods and typeof(mods) == TYPE_DICTIONARY:
+			for k in mods.keys():
+				params[k] = mods[k]
 
 	var atk_speed = atk.projectile_speed if atk != null else 100.0
 	
@@ -296,9 +302,9 @@ func _spawn_projectile(source: Node, damage: float, atk: AttackResource, ammo_it
 		proj.initialize(start_pos, dir, atk_speed, damage, -1, elem, tex, col, false, params)
 
 func _apply_hit(target: Node, t_pos: Vector3, damage: float, atk: AttackResource, source: Node) -> void:
-	var targets_to_hit =[]
+	var targets_to_hit = []
 	var center_pos = target.global_position if is_instance_valid(target) else t_pos
-	if center_pos == Vector3.INF: return # Can't apply hitbox without location
+	if center_pos == Vector3.INF: return
 	
 	if atk.is_aoe:
 		var center_tile = LaneManager.world_to_tile(center_pos)

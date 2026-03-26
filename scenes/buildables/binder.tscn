@@ -92,7 +92,7 @@ _surfaces = [{
 script = ExtResource("1_0vpe6")
 power_consumption = 0.0
 default_output_mask = 4
-layout_config = Array[Vector2i]([Vector2i(0, 0)])
+layout_config = [Vector2i(0, 0)]
 
 [node name="BlockVisual" type="MeshInstance3D" parent="." unique_id=1337632986]
 mesh = SubResource("ArrayMesh_688ug")

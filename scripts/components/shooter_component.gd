@@ -19,7 +19,7 @@ func _ready() -> void:
 func can_shoot() -> bool:
 	return (Time.get_ticks_msec() - last_shot_time) >= cooldown_ms
 
-func shoot_in_direction(dir: Vector3, lane_id: int, ammo_item: ItemResource, override_pos: Vector3 = Vector3.ZERO) -> bool:
+func shoot_in_direction(dir: Vector3, lane_id: int, ammo_item: Resource, override_pos: Vector3 = Vector3.ZERO) -> bool:
 	if not can_shoot(): return false
 	
 	var dmg = 10.0
@@ -32,17 +32,21 @@ func shoot_in_direction(dir: Vector3, lane_id: int, ammo_item: ItemResource, ove
 	var col = Color.WHITE
 	
 	if ammo_item:
-		dmg = ammo_item.damage
-		elem = ammo_item.element
-		# Use MAX(building units, item units)
-		units = max(base_element_units, ammo_item.element_units)
-		ignore_cd = ammo_item.ignore_element_cooldown
+		if "damage" in ammo_item: dmg = float(ammo_item.get("damage"))
+		if "element" in ammo_item: elem = ammo_item.get("element")
 		
-		if ammo_item.projectile_scene:
-			scene_to_spawn = ammo_item.projectile_scene
-		if ammo_item.icon:
-			tex = ammo_item.icon
-		col = ammo_item.color
+		# Use MAX(building units, item units)
+		var i_units = 1
+		if "element_units" in ammo_item: i_units = int(ammo_item.get("element_units"))
+		units = max(base_element_units, i_units)
+		
+		if "ignore_element_cooldown" in ammo_item: ignore_cd = bool(ammo_item.get("ignore_element_cooldown"))
+		
+		if "projectile_scene" in ammo_item and ammo_item.get("projectile_scene"):
+			scene_to_spawn = ammo_item.get("projectile_scene")
+		if "icon" in ammo_item and ammo_item.get("icon"):
+			tex = ammo_item.get("icon")
+		if "color" in ammo_item: col = ammo_item.get("color")
 		
 		# Apply Elemental Stats from Component (e.g., Building Mods)
 		var parent = get_parent()

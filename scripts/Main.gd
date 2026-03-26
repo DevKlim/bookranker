@@ -28,7 +28,6 @@ const PLAYER_SCENE = preload("res://scenes/allies/player.tscn")
 
 var build_preview_container: Node3D
 var indicator_container: Node3D
-var fog_mesh: MeshInstance3D
 
 enum LayerMode { ALL, BUILDING_ONLY, WIRE_ONLY }
 var current_layer_mode: LayerMode = LayerMode.ALL
@@ -39,13 +38,7 @@ var selection_controller
 var level_mechanics: Node
 
 func _ready() -> void:
-	# Add Sega Curved World Effect Manager
-	if not has_node("WorldCurver"):
-		var wc = load("res://scripts/singletons/world_curver.gd").new()
-		wc.name = "WorldCurver"
-		add_child(wc)
 
-	# Load specific level mechanics
 	var mech_path = "res://scripts/levels/level_1_mechanics.gd"
 	if ResourceLoader.exists(mech_path):
 		level_mechanics = load(mech_path).new()
@@ -85,11 +78,9 @@ func _ready() -> void:
 	indicator_container.name = "IndicatorContainer"
 	add_child(indicator_container)
 	
-	_setup_fog()
 	_update_layer_visibility()
 	_spawn_player()
 	
-	# Initialize controllers
 	camera_controller = load("res://scripts/controllers/camera_controller.gd").new()
 	camera_controller.setup(self)
 	add_child(camera_controller)
@@ -103,26 +94,6 @@ func _ready() -> void:
 	add_child(selection_controller)
 	
 	PlayerManager.equipped_item_changed.connect(_on_equipped_item_changed)
-
-func _setup_fog() -> void:
-	fog_mesh = MeshInstance3D.new()
-	var box = BoxMesh.new()
-	var unexplored_length = LaneManager.LANE_LENGTH - 15
-	box.size = Vector3(unexplored_length * LaneManager.GRID_SCALE, 2.0, LaneManager.num_lanes * LaneManager.GRID_SCALE)
-	
-	var mat = StandardMaterial3D.new()
-	mat.albedo_color = Color(0, 0, 0, 0.85)
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	box.material = mat
-	fog_mesh.mesh = box
-	
-	var start_x = 15 * LaneManager.GRID_SCALE
-	var center_x = start_x + (unexplored_length * LaneManager.GRID_SCALE) / 2.0
-	var center_z = (LaneManager.num_lanes * LaneManager.GRID_SCALE) / 2.0
-	
-	fog_mesh.global_position = Vector3(center_x, 1.0, center_z)
-	add_child(fog_mesh)
 
 func _spawn_player() -> void:
 	player = PLAYER_SCENE.instantiate()
@@ -186,9 +157,10 @@ func get_mouse_raycast(exclude: Array =[], mask: int = 4294967295) -> Dictionary
 func get_plane_intersection() -> Vector3:
 	var mouse_pos = get_viewport().get_mouse_position()
 	var from = camera.project_ray_origin(mouse_pos)
-	var to = from + camera.project_ray_normal(mouse_pos) * 1000.0
+	var dir = camera.project_ray_normal(mouse_pos)
+	
 	var plane = Plane(Vector3.UP, 0)
-	var intersect = plane.intersects_ray(from, to)
+	var intersect = plane.intersects_ray(from, from + dir * 1000.0)
 	return intersect if intersect else Vector3.ZERO
 
 func _input(event: InputEvent) -> void:
@@ -208,7 +180,7 @@ func _input(event: InputEvent) -> void:
 			game_ui.close_all_menus(); handled = true
 		elif BuildManager.is_building:
 			BuildManager.exit_build_mode(); handled = true
-		elif PlayerManager.equipped_item and PlayerManager.equipped_item.is_tool:
+		elif PlayerManager.equipped_item:
 			PlayerManager.set_equipped_item(null); handled = true
 		elif selection_controller.has_selection():
 			selection_controller.deselect_all(); handled = true

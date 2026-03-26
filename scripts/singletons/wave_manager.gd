@@ -74,8 +74,8 @@ func start_wave(index: int) -> void:
 	
 	print("WaveManager: Starting Wave %d..." % (index + 1))
 	
-	if LaneManager.spawners_by_lane.is_empty():
-		printerr("WaveManager: No spawners detected! Cannot spawn enemies.")
+	if LaneManager.spawners_by_lane.is_empty() and LaneManager.num_lanes <= 0:
+		printerr("WaveManager: No spawners or lanes detected! Cannot spawn enemies.")
 		_spawning_done = true
 		return
 
@@ -121,23 +121,30 @@ func _run_wave_sequence(groups: Array) -> void:
 		_spawning_done = true
 
 func _spawn_single_with_lane(res: EnemyResource, spawn_lane: Variant, is_boss: bool) -> void:
-	var lanes = LaneManager.spawners_by_lane.keys()
-	if lanes.is_empty(): return
+	var num_lanes = LaneManager.num_lanes
+	if num_lanes <= 0: return
 	
-	var chosen_lane = lanes[0]
+	var available_lanes = range(num_lanes)
+	var chosen_lane = available_lanes[0]
+	
 	if typeof(spawn_lane) == TYPE_STRING:
 		if spawn_lane == "center":
-			var sorted_lanes = lanes.duplicate()
-			sorted_lanes.sort()
-			chosen_lane = sorted_lanes[sorted_lanes.size() / 2]
+			chosen_lane = num_lanes / 2
 		else:
-			chosen_lane = lanes.pick_random()
+			chosen_lane = available_lanes.pick_random()
 	elif typeof(spawn_lane) == TYPE_FLOAT or typeof(spawn_lane) == TYPE_INT:
 		chosen_lane = int(spawn_lane)
-		if not lanes.has(chosen_lane):
-			chosen_lane = lanes.pick_random()
+		if not available_lanes.has(chosen_lane):
+			chosen_lane = available_lanes.pick_random()
 			
-	var spawn_pos = LaneManager.spawners_by_lane[chosen_lane]
+	var spawn_pos = Vector3.ZERO
+	if LaneManager.spawners_by_lane.has(chosen_lane):
+		spawn_pos = LaneManager.spawners_by_lane[chosen_lane]
+	else:
+		var tile = Vector2i(LaneManager.LANE_LENGTH - 1 + LaneManager.generation_offset.x, chosen_lane + LaneManager.generation_offset.y)
+		spawn_pos = LaneManager.tile_to_world(tile)
+		spawn_pos.y = 0.5
+		
 	_spawn_enemy(res, chosen_lane, spawn_pos, is_boss)
 
 func _spawn_enemy(res: EnemyResource, lane_id: int, spawn_pos: Vector3, is_boss: bool = false) -> void:
@@ -181,3 +188,4 @@ func _get_enemy_resource(id: String) -> EnemyResource:
 			enemy_cache[id] = res
 			return res
 	return null
+

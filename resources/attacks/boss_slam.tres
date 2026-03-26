@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://drivl0dpa6w50"]
+
+[ext_resource type="Script" uid="uid://dj7657xb6odwr" path="res://scripts/resources/attack_resource.gd" id="1_hlghw"]
+
+[resource]
+script = ExtResource("1_hlghw")
+id = "boss_slam"
+cooldown = 3.0
+base_damage = 500.0
+min_range = 1
+is_aoe = true

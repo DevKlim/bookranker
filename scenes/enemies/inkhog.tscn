@@ -9,13 +9,13 @@
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_i4rma"]
 radius = 0.20507813
-height = 0.56152344
+height = 1.4233398
 
 [node name="Inkhog" type="CharacterBody3D" unique_id=312749826]
 script = ExtResource("1_ke53v")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1940259373]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.28076172, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7116699, 0)
 shape = SubResource("CapsuleShape3D_i4rma")
 
 [node name="HealthComponent" type="Node" parent="." unique_id=1347450907]

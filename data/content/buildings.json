@@ -1,28 +1,28 @@
 [    {
         "id": "drill", "name": "Drill", "description": "Extracts resources from the ground.",
         "visuals": { "type": "sprite", "texture": "res://assets/buildables/drill.png", "width": 32, "height": 32, "animations": { "default": { "row": 0, "count": 4, "loop": true } } },
-        "logic": { "power_cost": 10.0, "health": 100.0, "inventory": { "slots": 1, "can_output": true, "can_receive": false }, "io_config": { "output":["back"] }, "processing": true, "stats": { "attack_speed_mult": 0.0, "damage_mult": 0.0, "lux_stat": 0.0, "efficiency": 1.0 } }
+        "logic": { "power_cost": 10.0, "health": 10.0, "inventory": { "slots": 1, "can_output": true, "can_receive": false }, "io_config": { "output":["back"] }, "processing": true, "stats": { "attack_speed_mult": 0.0, "damage_mult": 0.0, "lux_stat": 0.0, "efficiency": 1.0 } }
     },
     {
         "id": "conveyor", "name": "Conveyor", "description": "Moves items.",
         "visuals": { "type": "sprite", "texture": "res://assets/buildables/conveyor.png", "width": 32, "height": 32, "animations": { "default": { "row": 0, "count": 16, "loop": true } } },
-        "logic": { "power_cost": 1.0, "health": 20.0, "inventory": { "slots": 1, "can_output": true, "can_receive": true }, "io_config": { "input": ["back"], "output":["front"] }, "stats": { "attack_speed_mult": 0.0, "damage_mult": 0.0, "lux_stat": 0.0, "efficiency": 1.0 } }
+        "logic": { "power_cost": 1.0, "health": 5.0, "inventory": { "slots": 1, "can_output": true, "can_receive": true }, "io_config": { "input": ["back"], "output":["front"] }, "stats": { "attack_speed_mult": 0.0, "damage_mult": 0.0, "lux_stat": 0.0, "efficiency": 1.0 } }
     },
     {
         "id": "burnace", "name": "Burnace", "description": "Smelts ores into Alloys.",
         "visuals": { "type": "sprite", "texture": "res://assets/buildables/burnace.png", "width": 32, "height": 48, "animations": { "default": { "row": 0, "count": 4, "loop": true } } },
-        "logic": { "power_cost": 20.0, "health": 200.0, "inventory": { "slots": 3, "can_output": true, "can_receive": true }, "io_config": { "input":["left", "right", "back"], "output": ["front"] }, "processing": true, "stats": { "attack_speed_mult": 0.0, "damage_mult": 0.0, "lux_stat": 0.0, "efficiency": 1.0 } }
+        "logic": { "power_cost": 20.0, "health": 20.0, "inventory": { "slots": 3, "can_output": true, "can_receive": true }, "io_config": { "input":["left", "right", "back"], "output": ["front"] }, "processing": true, "stats": { "attack_speed_mult": 0.0, "damage_mult": 0.0, "lux_stat": 0.0, "efficiency": 1.0 } }
     },
     {
         "id": "asourcer", "name": "Asourcer", "description": "Assembles components.",
         "visuals": { "type": "sprite", "texture": "res://assets/buildables/asourcer.png", "width": 48, "height": 48, "animations": { "default": { "row": 0, "count": 4, "loop": true } } },
         "grid": { "width": 2, "height": 2 },
-        "logic": { "power_cost": 30.0, "health": 300.0, "inventory": { "slots": 4, "can_output": true, "can_receive": true }, "io_config": { "input":["all"], "output": ["front"] }, "processing": true, "stats": { "attack_speed_mult": 0.0, "damage_mult": 0.0, "lux_stat": 0.0, "efficiency": 1.0 } }
+        "logic": { "power_cost": 30.0, "health": 20.0, "inventory": { "slots": 4, "can_output": true, "can_receive": true }, "io_config": { "input":["all"], "output": ["front"] }, "processing": true, "stats": { "attack_speed_mult": 0.0, "damage_mult": 0.0, "lux_stat": 0.0, "efficiency": 1.0 } }
     },
     {
         "id": "turret", "name": "Turret", "description": "Defends against enemies.",
         "visuals": { "type": "sprite", "texture": "res://assets/buildables/turret.png", "width": 32, "height": 32, "animations": { "idle_up": { "row": 0, "count": 1 }, "shoot_up": { "row": 0, "count": 3 } } },
-        "logic": { "power_cost": 15.0, "health": 150.0, "inventory": { "slots": 1, "can_output": false, "can_receive": true }, "io_config": { "input":["back", "left", "right"], "output":["none"] }, "attack_config": "projectile_shot", "shooting": true, "targeting": true, "rotates": true, "stats": { "attack_speed_mult": 0.0, "damage_mult": 0.0, "lux_stat": 10.0, "efficiency": 1.0 } }
+        "logic": { "power_cost": 15.0, "health": 20.0, "inventory": { "slots": 1, "can_output": false, "can_receive": true }, "io_config": { "input":["back", "left", "right"], "output":["none"] }, "attack_config": "projectile_shot", "shooting": true, "targeting": true, "rotates": true, "stats": { "attack_speed_mult": 0.0, "damage_mult": 0.0, "lux_stat": 10.0, "efficiency": 1.0 } }
     },
     {
         "id": "remover", "name": "Remover", "description": "Removes buildings.",
@@ -31,43 +31,42 @@
     },
     {
         "id": "chalkboard", "name": "Chalkboard", "description": "Tier 1 Crafter.",
-        "visuals": { "texture": "res://icon.svg", "width": 48, "height": 32 },
-        "grid": { "width": 2, "height": 1 },
+        "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32 },
         "logic": { "power_cost": 0.0, "health": 150.0, "inventory": { "slots": 4, "can_output": true, "can_receive": true }, "io_config": { "input": ["all"], "output": ["front"] }, "processing": true }
     },
     {
-        "id": "binder", "name": "Binder", "description": "High-capacity storage unit.",
+        "id": "cubby", "name": "Cubby", "description": "High-capacity storage unit.",
         "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32 },
         "logic": { "power_cost": 0.0, "health": 100.0, "inventory": { "slots": 10, "capacity": 100, "can_output": true, "can_receive": true }, "io_config": { "input": ["all"], "output": ["front"] } }
     },
     {
         "id": "printer", "name": "Printer", "description": "Generates Paper over time.",
         "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32 },
-        "logic": { "power_cost": 15.0, "health": 80.0, "inventory": { "slots": 2, "can_output": true, "can_receive": true }, "io_config": { "input": ["back"], "output": ["front"] }, "processing": true }
+        "logic": { "power_cost": 15.0, "health": 20.0, "inventory": { "slots": 2, "can_output": true, "can_receive": true }, "io_config": { "input": ["back"], "output": ["front"] }, "processing": true }
     },
     {
         "id": "foldgami", "name": "Foldgami", "description": "Ammunition assembler.",
         "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32 },
-        "logic": { "power_cost": 5.0, "health": 100.0, "inventory": { "slots": 3, "can_output": true, "can_receive": true }, "io_config": { "input": ["left", "right", "back"], "output": ["front"] }, "processing": true }
+        "logic": { "power_cost": 5.0, "health": 20.0, "inventory": { "slots": 3, "can_output": true, "can_receive": true }, "io_config": { "input": ["left", "right", "back"], "output": ["front"] }, "processing": true }
     },
     {
         "id": "box_fan", "name": "Box Fan", "description": "Blows the folded creations towards enemies.",
         "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32 },
-        "logic": { "power_cost": 10.0, "health": 50.0, "rotates": true, "inventory": { "slots": 1, "can_output": false, "can_receive": true }, "io_config": { "input": ["back"], "output": ["none"] }, "shooting": true, "targeting": true, "attack_config": "fan_blow" }
+        "logic": { "power_cost": 10.0, "health": 20.0, "rotates": true, "inventory": { "slots": 1, "can_output": false, "can_receive": true }, "io_config": { "input": ["back"], "output": ["none"] }, "shooting": true, "targeting": true, "attack_config": "fan_blow" }
     },
     {
         "id": "slipslide", "name": "Slipslide", "description": "Places a slide where exported items glide.",
         "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32 },
-        "logic": { "power_cost": 5.0, "health": 50.0, "inventory": { "slots": 1, "can_output": true, "can_receive": true }, "io_config": { "input": ["back"], "output": ["front"] } }
+        "logic": { "power_cost": 5.0, "health": 20.0, "inventory": { "slots": 1, "can_output": true, "can_receive": true }, "io_config": { "input": ["back"], "output": ["front"] } }
     },
     {
         "id": "slipstream", "name": "Slipstream", "description": "Water puddle stream for fast travel.",
         "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32  },
-        "logic": { "power_cost": 0.0, "health": 50.0, "rotates": true, "inventory": { "slots": 1, "can_output": true, "can_receive": true }, "io_config": { "input": ["back"], "output": ["front"] } }
+        "logic": { "power_cost": 0.0, "health": 4.0, "rotates": true, "inventory": { "slots": 1, "can_output": true, "can_receive": true }, "io_config": { "input": ["back"], "output": ["front"] } }
     },
     {
         "id": "tarstream", "name": "Tarstream", "description": "Ink puddle stream for slow travel.",
         "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32  },
-        "logic": { "power_cost": 0.0, "health": 50.0, "rotates": true, "inventory": { "slots": 1, "can_output": true, "can_receive": true }, "io_config": { "input": ["back"], "output": ["front"] } }
+        "logic": { "power_cost": 0.0, "health": 4.0, "rotates": true, "inventory": { "slots": 1, "can_output": true, "can_receive": true }, "io_config": { "input": ["back"], "output": ["front"] } }
     }
 ]

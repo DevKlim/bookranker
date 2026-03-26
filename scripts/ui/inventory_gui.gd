@@ -77,6 +77,10 @@ func _ready() -> void:
 	size = base_min_size
 	clip_contents = true
 	
+	if item_icon:
+		item_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		item_icon.texture_filter = Control.TEXTURE_FILTER_NEAREST
+	
 	_apply_liquid_glass(self, 12.0)
 	
 	var main_margin = MarginContainer.new()
@@ -222,14 +226,14 @@ func _ready() -> void:
 	
 	input_slot = _create_slot_panel()
 	status_hbox.add_child(input_slot)
-	input_icon = input_slot.get_node("Icon")
+	input_icon = input_slot.get_node("Center/Icon")
 	input_count = input_slot.get_node("Count")
 
 	fuel_slot = _create_slot_panel()
 	fuel_slot.modulate = Color(0.8, 0.7, 0.6)
 	fuel_slot.visible = false
 	status_hbox.add_child(fuel_slot)
-	fuel_icon = fuel_slot.get_node("Icon")
+	fuel_icon = fuel_slot.get_node("Center/Icon")
 	
 	var arrow = TextureRect.new()
 	arrow.custom_minimum_size = Vector2(32, 32)
@@ -253,7 +257,7 @@ func _ready() -> void:
 	
 	output_slot = _create_slot_panel()
 	status_hbox.add_child(output_slot)
-	output_icon = output_slot.get_node("Icon")
+	output_icon = output_slot.get_node("Center/Icon")
 	output_count = output_slot.get_node("Count")
 	
 	var spacer = Control.new()
@@ -427,14 +431,21 @@ func _on_header_gui_input(event: InputEvent) -> void:
 func _create_slot_panel() -> Panel:
 	var p = Panel.new()
 	p.custom_minimum_size = Vector2(64, 64)
+	var center = CenterContainer.new()
+	center.name = "Center"
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.add_child(center)
+	
 	var icon = TextureRect.new()
 	icon.name = "Icon"
-	icon.layout_mode = 1
-	icon.anchors_preset = Control.PRESET_FULL_RECT
+	icon.custom_minimum_size = Vector2(64, 64)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icon.offset_left=4; icon.offset_top=4; icon.offset_right=-4; icon.offset_bottom=-4
-	p.add_child(icon)
+	icon.texture_filter = Control.TEXTURE_FILTER_NEAREST
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	center.add_child(icon)
+	
 	var lbl = Label.new()
 	lbl.name = "Count"
 	lbl.layout_mode = 1
@@ -454,11 +465,26 @@ func _create_slot_panel() -> Panel:
 func _create_grid_slot_btn(inv: InventoryComponent, idx: int) -> Button:
 	var btn = Button.new()
 	btn.custom_minimum_size = Vector2(64, 64)
-	btn.expand_icon = true
+	btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	
+	var center = CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	btn.add_child(center)
+	
+	var tr = TextureRect.new()
+	tr.name = "ItemIcon"
+	tr.custom_minimum_size = Vector2(64, 64)
+	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	tr.texture_filter = Control.TEXTURE_FILTER_NEAREST
+	tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	center.add_child(tr)
+	
 	var slot_data = inv.slots[idx]
 	if slot_data:
-		var item = slot_data.item
-		btn.icon = item.icon
+		tr.texture = slot_data.item.icon
 		var lbl = Label.new()
 		lbl.text = str(slot_data.count)
 		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -498,6 +524,8 @@ func _get_slot_drag_data(_pos, data_ctx):
 	preview.texture = item.icon
 	preview.size = Vector2(64, 64)
 	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	preview.texture_filter = Control.TEXTURE_FILTER_NEAREST
 	preview.z_index = 100
 	set_drag_preview(preview)
 	
@@ -604,7 +632,9 @@ func _update_display(_arg = null) -> void:
 			var btn = _create_grid_slot_btn(m_inv, i)
 			var tooltip = "Mod Slot " + str(i+1)
 			if m_inv.slots[i]:
-				tooltip = m_inv.slots[i].item.item_name
+				var itm = m_inv.slots[i].item
+				if "item_name" in itm: tooltip = itm.item_name
+				elif "buildable_name" in itm: tooltip = itm.buildable_name
 			btn.tooltip_text = tooltip
 			mod_grid.add_child(btn)
 	else:
@@ -676,9 +706,25 @@ func _update_display(_arg = null) -> void:
 			var slot_data = current_inventory.slots[i]
 			var btn = Button.new()
 			btn.custom_minimum_size = Vector2(64, 64)
-			btn.expand_icon = true
+			btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			
+			var center = CenterContainer.new()
+			center.set_anchors_preset(Control.PRESET_FULL_RECT)
+			center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			btn.add_child(center)
+			
+			var tr = TextureRect.new()
+			tr.name = "ItemIcon"
+			tr.custom_minimum_size = Vector2(64, 64)
+			tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			tr.texture_filter = Control.TEXTURE_FILTER_NEAREST
+			tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			center.add_child(tr)
 			
 			var tooltip = ""
+			var slot_name = ""
 			
 			if is_ally:
 				match i:
@@ -694,10 +740,31 @@ func _update_display(_arg = null) -> void:
 					3: 
 						btn.modulate = Color(1.0, 1.0, 0.8) # Artifact
 						tooltip = "[Artifact] "
+			else:
+				if current_context and current_context.has_method("get_slot_tooltip"):
+					tooltip = current_context.get_slot_tooltip(i) + "\n"
+				if current_context and current_context.has_method("get_slot_label"):
+					slot_name = current_context.get_slot_label(i)
+					
+			# Display the custom text overlay so labeled boxes are highly visible regardless of contents
+			if slot_name != "":
+				var title_lbl = Label.new()
+				title_lbl.text = slot_name
+				title_lbl.set_anchors_preset(Control.PRESET_TOP_LEFT)
+				title_lbl.offset_left = 4
+				title_lbl.offset_top = 2
+				var font = load("res://assets/fonts/v2-fs-tahoma-8px.otf")
+				if font: title_lbl.add_theme_font_override("font", font)
+				title_lbl.add_theme_font_size_override("font_size", 14)
+				title_lbl.add_theme_color_override("font_color", Color.WHITE)
+				title_lbl.add_theme_color_override("font_outline_color", Color.BLACK)
+				title_lbl.add_theme_constant_override("outline_size", 4)
+				title_lbl.z_index = 5
+				btn.add_child(title_lbl)
 			
 			if slot_data:
 				var item = slot_data.item
-				btn.icon = item.icon
+				tr.texture = item.icon
 				
 				var lbl = Label.new()
 				lbl.text = str(slot_data.count)
@@ -712,7 +779,8 @@ func _update_display(_arg = null) -> void:
 				lbl.add_theme_color_override("font_outline_color", Color.BLACK)
 				lbl.add_theme_constant_override("outline_size", 4)
 				btn.add_child(lbl)
-				tooltip += item.item_name
+				if "item_name" in item: tooltip += item.item_name
+				elif "buildable_name" in item: tooltip += item.buildable_name
 			else:
 				if is_ally:
 					match i:
@@ -758,12 +826,14 @@ func _update_machine_io(panel: Panel, icon_rect: TextureRect, count_lbl: Label, 
 				target_icon = entry.resource.icon
 				required_amount = entry.count
 				if "item_name" in entry.resource: item_name = entry.resource.item_name
+				elif "buildable_name" in entry.resource: item_name = entry.resource.buildable_name
 		else:
 			if recipe.outputs.size() > 0:
 				var entry = recipe.outputs[0]
 				target_icon = entry.resource.icon
 				required_amount = entry.count
 				if "item_name" in entry.resource: item_name = entry.resource.item_name
+				elif "buildable_name" in entry.resource: item_name = entry.resource.buildable_name
 	
 	if current_amount > 0 and inv.slots[0] != null:
 		icon_rect.texture = inv.slots[0].item.icon
@@ -800,14 +870,31 @@ func _populate_recipe_grid() -> void:
 		if recipe is RecipeResource:
 			var btn = Button.new()
 			btn.custom_minimum_size = Vector2(64, 64)
-			btn.expand_icon = true
+			btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			
+			var center = CenterContainer.new()
+			center.set_anchors_preset(Control.PRESET_FULL_RECT)
+			center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			btn.add_child(center)
+
+			var tr = TextureRect.new()
+			tr.custom_minimum_size = Vector2(64, 64)
+			tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			tr.texture_filter = Control.TEXTURE_FILTER_NEAREST
+			tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			center.add_child(tr)
+			
 			var name_str = recipe.recipe_name
 			var out = recipe.get_main_output()
-			if out: name_str = out.item_name
+			if out:
+				if "item_name" in out: name_str = out.item_name
+				elif "buildable_name" in out: name_str = out.buildable_name
 			btn.tooltip_text = "%s\n(Tier %d)" %[name_str, recipe.tier]
 			
 			if out and out.icon:
-				btn.icon = out.icon
+				tr.texture = out.icon
 			else:
 				btn.text = name_str.left(4)
 			

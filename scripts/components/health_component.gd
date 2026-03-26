@@ -128,9 +128,16 @@ func _on_stagger_end() -> void:
 
 func _spawn_damage_number(amount: float, element: Resource) -> void:
 	if amount < 0.5: return # Avoid spawning tons of 0s for tiny DPS
+	
 	var label = Label3D.new()
+	var font = load("res://assets/fonts/v2-fs-tahoma-8px.otf")
 	label.text = str(round(amount))
 	label.pixel_size = 0.02
+	if font:
+		label.font = font
+	label.font_size = 16
+	label.outline_modulate = Color.BLACK
+	label.outline_size = 4
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	label.no_depth_test = true
 	label.sorting_offset = amount # Layer highest number on top
@@ -163,6 +170,7 @@ func _spawn_crunch_text(amount: float) -> void:
 	label.pixel_size = 0.03
 	label.modulate = Color.GOLD
 	label.outline_modulate = Color.BLACK
+	label.outline_size = 4
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	label.no_depth_test = true
 	label.sorting_offset = amount + 100 

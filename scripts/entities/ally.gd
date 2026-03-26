@@ -22,7 +22,7 @@ const SLOT_WEAPON = 1
 const SLOT_ARMOR = 2
 const SLOT_ARTIFACT = 3
 
-var active_weapon_item: ItemResource = null
+var active_weapon_item: Resource = null
 
 # Visuals & State
 var selection_container: Node3D
@@ -31,6 +31,10 @@ var _tint_tween: Tween
 var _tint_materials: Array[StandardMaterial3D] =[]
 var _tint_sprites: Array[Node] =[]
 var progress_bar: Node3D 
+
+var _visuals_node: Node3D
+var _visuals_base_transform: Transform3D
+var _hop_phase: float = 0.0
 
 # Interaction
 var interaction_target: Node = null
@@ -77,6 +81,18 @@ func _ready() -> void:
 	if health_component:
 		health_component.died.connect(_on_died)
 		health_component.health_changed.connect(_on_health_changed)
+		
+	_visuals_node = get_node_or_null("Visuals")
+	if not _visuals_node:
+		for child in get_children():
+			if child is Node3D and not (child is CollisionShape3D):
+				if child.name.ends_with("Component"): continue
+				if child.name == "SelectionVisuals" or child.name == "ProgressBar": continue
+				if "visible" in child and not child.visible: continue
+				_visuals_node = child
+				break
+	if is_instance_valid(_visuals_node):
+		_visuals_base_transform = _visuals_node.transform
 	
 	if stats: _apply_stats_from_resource()
 	
@@ -156,6 +172,68 @@ func _process(delta: float) -> void:
 	if is_interacting: _process_interaction(delta)
 	elif is_centering: _process_centering()
 	_update_bar_visual()
+	
+	# Visual Chess-Piece Movement (Distance-based for exactly 1 hop per tile space)
+	var moving = false
+	var speed = 0.0
+	
+	if velocity.length_squared() > 0.01:
+		moving = true
+		speed = velocity.length()
+	elif move_component and move_component.is_moving:
+		moving = true
+		speed = stats.speed if stats else 5.0
+	elif get("is_moving") != null and get("is_moving") == true:
+		moving = true
+		speed = stats.speed if stats else 5.0
+		
+	if is_instance_valid(_visuals_node):
+		if moving:
+			var grid_scale = 1.0
+			if Engine.has_singleton("LaneManager"):
+				grid_scale = LaneManager.GRID_SCALE
+				
+			# Accumulate phase cleanly based on strict distance moved
+			_hop_phase += (speed * delta) / grid_scale
+			while _hop_phase >= 1.0:
+				_hop_phase -= 1.0
+		else:
+			# When stopped, smoothly settle the phase to complete the jump
+			if _hop_phase > 0.0:
+				if _hop_phase > 0.5:
+					_hop_phase += delta * 4.0
+					if _hop_phase >= 1.0: _hop_phase = 0.0
+				else:
+					_hop_phase -= delta * 4.0
+					if _hop_phase <= 0.0: _hop_phase = 0.0
+					
+		if _hop_phase > 0.0 or moving:
+			var p = _hop_phase
+			
+			var hop_height = 1.2
+			var y_offset = 4.0 * hop_height * p * (1.0 - p)
+			
+			# Powerful impact spikes only when taking off or landing (p=0 and p=1)
+			var impact = pow(cos(p * PI), 6.0) 
+			var mid_air = sin(p * PI)
+			
+			var scale_y = 1.0 - (0.4 * impact) + (0.15 * mid_air)
+			var scale_xz = 1.0 + (0.4 * impact) - (0.15 * mid_air)
+			
+			# Naturally tilt in anticipation of the landing
+			var tilt_angle = -sin(p * PI * 2.0) * 0.15
+			
+			var new_transform = _visuals_base_transform
+			var tilt_basis = Basis(Vector3.RIGHT, tilt_angle)
+			var scale_basis = Basis().scaled(Vector3(scale_xz, scale_y, scale_xz))
+			
+			new_transform.basis = tilt_basis * _visuals_base_transform.basis * scale_basis
+			new_transform.origin.y = _visuals_base_transform.origin.y + y_offset
+			
+			_visuals_node.transform = new_transform
+		else:
+			# Snappy pop out of the resting squash to settle into idle pose!
+			_visuals_node.transform = _visuals_node.transform.interpolate_with(_visuals_base_transform, delta * 25.0)
 
 func _process_attack_mode(_delta: float) -> void:
 	if not attacker_component or not attacker_component.basic_attack: return
@@ -290,7 +368,7 @@ func _process_auto_mine(_delta: float) -> void:
 		if move_component: move_component.stop_moving()
 		return
 
-func _get_item_in_slot(slot_idx: int) -> ItemResource:
+func _get_item_in_slot(slot_idx: int) -> Resource:
 	if not inventory_component: return null
 	if inventory_component.slots.size() > slot_idx:
 		var s = inventory_component.slots[slot_idx]
@@ -376,24 +454,27 @@ func _recalculate_stats(_arg = null) -> void:
 			var slot = inventory_component.slots[i]
 			if slot and slot.item:
 				var it = slot.item
-				if "defense_bonus" in it: total_def += it.defense_bonus
-				if "speed_bonus" in it: base_spd += it.speed_bonus
-				if "health_bonus" in it: base_hp += it.health_bonus
-				if "stats" in it and it.stats is Dictionary:
-					if it.stats.has("defense"): total_def += it.stats["defense"]
-					if it.stats.has("speed"): base_spd += it.stats["speed"]
-					if it.stats.has("health"): base_hp += it.stats["health"]
-					if it.stats.has("attack_damage"): attack_damage += it.stats["attack_damage"]
-					if it.stats.has("lux_stat"): lux_stat += it.stats["lux_stat"]
+				if "defense_bonus" in it: total_def += float(it.get("defense_bonus"))
+				if "speed_bonus" in it: base_spd += float(it.get("speed_bonus"))
+				if "health_bonus" in it: base_hp += float(it.get("health_bonus"))
 				
-				if it.modifiers:
-					if it.modifiers.has("attack_speed_mult"): attack_speed_mult += it.modifiers["attack_speed_mult"]
-					if it.modifiers.has("damage_mult"): damage_mult += it.modifiers["damage_mult"]
-					if it.modifiers.has("attack_damage"): attack_damage += it.modifiers["attack_damage"]
-					if it.modifiers.has("lux_stat"): lux_stat += it.modifiers["lux_stat"]
+				var stats_dict = it.get("stats") if "stats" in it else null
+				if stats_dict and stats_dict is Dictionary:
+					if stats_dict.has("defense"): total_def += stats_dict["defense"]
+					if stats_dict.has("speed"): base_spd += stats_dict["speed"]
+					if stats_dict.has("health"): base_hp += stats_dict["health"]
+					if stats_dict.has("attack_damage"): attack_damage += stats_dict["attack_damage"]
+					if stats_dict.has("lux_stat"): lux_stat += stats_dict["lux_stat"]
 				
-				if i == SLOT_WEAPON and it.attack_config:
-					active_weapon_attack = it.attack_config
+				var mods_dict = it.get("modifiers") if "modifiers" in it else {}
+				if mods_dict and mods_dict is Dictionary:
+					if mods_dict.has("attack_speed_mult"): attack_speed_mult += mods_dict["attack_speed_mult"]
+					if mods_dict.has("damage_mult"): damage_mult += mods_dict["damage_mult"]
+					if mods_dict.has("attack_damage"): attack_damage += mods_dict["attack_damage"]
+					if mods_dict.has("lux_stat"): lux_stat += mods_dict["lux_stat"]
+				
+				if i == SLOT_WEAPON and "attack_config" in it and it.get("attack_config"):
+					active_weapon_attack = it.get("attack_config")
 					active_weapon_item = it
 
 	if is_instance_valid(GameManager):
@@ -426,26 +507,28 @@ func _setup_selection_visuals() -> void:
 	selection_container.name = "SelectionVisuals"
 	selection_container.visible = false
 	add_child(selection_container)
-	var bracket_mat = StandardMaterial3D.new()
-	bracket_mat.albedo_color = Color(0.0, 1.0, 0.5, 0.8)
-	bracket_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	bracket_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	var corner_mesh = BoxMesh.new()
-	corner_mesh.size = Vector3(0.1, 0.1, 0.4)
+	
+	var ring_mat = StandardMaterial3D.new()
+	ring_mat.albedo_color = Color(0.0, 1.0, 0.5, 0.8)
+	ring_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	ring_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	
+	var ring_mesh = TorusMesh.new()
+	ring_mesh.inner_radius = 0.6
+	ring_mesh.outer_radius = 0.7
+	ring_mesh.rings = 16 
+	ring_mesh.ring_segments = 8
+	
 	var rotator = Node3D.new()
 	rotator.name = "Rotator"
 	selection_container.add_child(rotator)
-	var radius = 0.7
-	for i in range(4):
-		var corner = Node3D.new()
-		corner.rotation.y = i * (PI/2.0)
-		var arm1 = MeshInstance3D.new()
-		arm1.mesh = corner_mesh; arm1.material_override = bracket_mat; arm1.position = Vector3(radius, 0.1, radius)
-		corner.add_child(arm1)
-		var arm2 = MeshInstance3D.new()
-		arm2.mesh = corner_mesh; arm2.material_override = bracket_mat; arm2.position = Vector3(radius, 0.1, radius); arm2.rotation.y = PI/2.0
-		corner.add_child(arm2)
-		rotator.add_child(corner)
+	
+	var ring = MeshInstance3D.new()
+	ring.mesh = ring_mesh
+	ring.material_override = ring_mat
+	ring.position = Vector3(0, 0.05, 0)
+	ring.scale = Vector3(1.0, 0.1, 1.0)
+	rotator.add_child(ring)
 
 func set_selected(selected: bool) -> void:
 	selection_container.visible = selected
@@ -454,12 +537,10 @@ func set_selected(selected: bool) -> void:
 
 func _animate_visuals() -> void:
 	if _vis_tween: _vis_tween.kill()
-	_vis_tween = create_tween().set_loops().set_parallel(true)
+	_vis_tween = create_tween().set_loops()
 	var rot = selection_container.get_node_or_null("Rotator")
 	if rot:
-		_vis_tween.tween_property(rot, "rotation:y", 2*PI, 4.0).as_relative()
-		_vis_tween.tween_property(rot, "scale", Vector3(1.1, 1.1, 1.1), 1.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		_vis_tween.chain().tween_property(rot, "scale", Vector3(1.0, 1.0, 1.0), 1.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		_vis_tween.tween_property(rot, "rotation:y", 2*PI, 3.0).as_relative()
 
 func command_move(target_pos: Vector3) -> void:
 	interaction_target = null
@@ -568,6 +649,21 @@ func receive_item(item: Resource, _from_node: Node3D = null, _extra_data: Dictio
 	return inventory_component.add_item(item) == 0
 
 func _on_died(_node) -> void:
+	var main = get_tree().current_scene
+	if main and main.get("selection_controller"):
+		var sc = main.selection_controller
+		if sc.selected_allies.has(self):
+			sc.selected_allies.erase(self)
+			self.set_selected(false)
+			if self.is_in_group("player"):
+				PlayerManager.is_player_selected = false
+			if sc.selected_allies.is_empty():
+				sc.deselect_all()
+			else:
+				if sc.selected_ally == self:
+					sc.selected_ally = sc.selected_allies.back()
+					if main.game_ui: main.game_ui.set_selected_ally(sc.selected_ally)
+					
 	if respawns_unlimited or respawns_count > 0:
 		if not respawns_unlimited:
 			respawns_count -= 1
@@ -584,6 +680,9 @@ func _on_died(_node) -> void:
 		if ToolManager.instance and ToolManager.instance.active_miners.has(self):
 			ToolManager.instance.active_miners.erase(self)
 		
+		if main and main.get("game_ui"):
+			main.game_ui.register_ally_respawn(display_name, respawns_cooldown)
+			
 		get_tree().create_timer(respawns_cooldown).timeout.connect(_respawn)
 	else:
 		queue_free()

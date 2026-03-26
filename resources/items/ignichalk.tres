@@ -1,14 +1,15 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://cde1e6hfb38th"]
 
 [ext_resource type="Resource" uid="uid://d1xx6pi3kbvyn" path="res://resources/elements/igni.tres" id="1_06030"]
-[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="2_7ullf"]
+[ext_resource type="Texture2D" uid="uid://djk0btw38asm8" path="res://assets/icons/ignichalk.png" id="2_06030"]
 [ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="3_rrai1"]
 
 [resource]
 script = ExtResource("3_rrai1")
 item_name = "Igni Chalk"
-icon = ExtResource("2_7ullf")
-damage = 2.0
+icon = ExtResource("2_06030")
+color = Color(1, 0.46814483, 0.4276766, 1)
+damage = 1.0
 element = ExtResource("1_06030")
 is_ore = true
 ore_block_name = "Igni Chalk Deposit"

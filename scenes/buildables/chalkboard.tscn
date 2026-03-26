@@ -1,108 +1,22 @@
-[gd_scene format=4 uid="uid://82ilkabsu21k"]
+[gd_scene format=3 uid="uid://82ilkabsu21k"]
 
 [ext_resource type="Script" uid="uid://lg5rovrj17ud" path="res://scripts/entities/base_building.gd" id="1_xrxum"]
-[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="2_icqmy"]
 [ext_resource type="Script" uid="uid://bgll2kj53ogr" path="res://scripts/components/crafter_component.gd" id="3_rnk3l"]
 [ext_resource type="Script" uid="uid://dad3f8h2j4k5l" path="res://scripts/components/inventory_component.gd" id="4_fyh1j"]
 [ext_resource type="Script" uid="uid://dg4gfri6lu5o2" path="res://scripts/components/elemental_component.gd" id="5_l04um"]
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_xrxum"]
-albedo_texture = ExtResource("2_icqmy")
-texture_filter = 0
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_icqmy"]
-albedo_texture = ExtResource("2_icqmy")
-texture_filter = 0
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rnk3l"]
-albedo_texture = ExtResource("2_icqmy")
-texture_filter = 0
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fyh1j"]
-albedo_texture = ExtResource("2_icqmy")
-texture_filter = 0
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_l04um"]
-albedo_texture = ExtResource("2_icqmy")
-texture_filter = 0
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2tixu"]
-albedo_texture = ExtResource("2_icqmy")
-texture_filter = 0
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_8ua2u"]
-_surfaces = [{
-"aabb": AABB(-1, 1, -0.5, 2, 1e-05, 1),
-"attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
-"format": 34359738391,
-"material": SubResource("StandardMaterial3D_xrxum"),
-"primitive": 3,
-"uv_scale": Vector4(0, 0, 0, 0),
-"vertex_count": 6,
-"vertex_data": PackedByteArray("AACAvwAAgD8AAAC/AACAPwAAgD8AAAC/AACAPwAAgD8AAAA/AACAvwAAgD8AAAC/AACAPwAAgD8AAAA/AACAvwAAgD8AAAA//3///wAA/z//f///AAD/P/9///8AAP8//3///wAA/z//f///AAD/P/9///8AAP8/")
-}, {
-"aabb": AABB(-1, 0, -0.5, 2, 1e-05, 1),
-"attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
-"format": 34359738391,
-"material": SubResource("StandardMaterial3D_icqmy"),
-"primitive": 3,
-"uv_scale": Vector4(0, 0, 0, 0),
-"vertex_count": 6,
-"vertex_data": PackedByteArray("AACAvwAAAAAAAAA/AACAPwAAAAAAAAA/AACAPwAAAAAAAAC/AACAvwAAAAAAAAA/AACAPwAAAAAAAAC/AACAvwAAAAAAAAC//38AAAAA/z//fwAAAAD/P/9/AAAAAP8//38AAAAA/z//fwAAAAD/P/9/AAAAAP8/")
-}, {
-"aabb": AABB(-1, 0, 0.5, 2, 1, 1e-05),
-"attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
-"format": 34359738391,
-"material": SubResource("StandardMaterial3D_rnk3l"),
-"primitive": 3,
-"uv_scale": Vector4(0, 0, 0, 0),
-"vertex_count": 6,
-"vertex_data": PackedByteArray("AACAvwAAgD8AAAA/AACAPwAAgD8AAAA/AACAPwAAAAAAAAA/AACAvwAAgD8AAAA/AACAPwAAAAAAAAA/AACAvwAAAAAAAAA//3//fwAA/z//f/9/AAD/P/9//38AAP8//3//fwAA/z//f/9/AAD/P/9//38AAP8/")
-}, {
-"aabb": AABB(-1, 0, -0.5, 2, 1, 1e-05),
-"attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
-"format": 34359738391,
-"material": SubResource("StandardMaterial3D_fyh1j"),
-"primitive": 3,
-"uv_scale": Vector4(0, 0, 0, 0),
-"vertex_count": 6,
-"vertex_data": PackedByteArray("AACAPwAAgD8AAAC/AACAvwAAgD8AAAC/AACAvwAAAAAAAAC/AACAPwAAgD8AAAC/AACAvwAAAAAAAAC/AACAPwAAAAAAAAC//////////z//////////P/////////8//////////z//////////P/////////8/")
-}, {
-"aabb": AABB(-1, 0, -0.5, 1e-05, 1, 1),
-"attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
-"format": 34359738391,
-"material": SubResource("StandardMaterial3D_l04um"),
-"primitive": 3,
-"uv_scale": Vector4(0, 0, 0, 0),
-"vertex_count": 6,
-"vertex_data": PackedByteArray("AACAvwAAgD8AAAC/AACAvwAAgD8AAAA/AACAvwAAAAAAAAA/AACAvwAAgD8AAAC/AACAvwAAAAAAAAA/AACAvwAAAAAAAAC/AAD/f///AAAAAP9///8AAAAA/3///wAAAAD/f///AAAAAP9///8AAAAA/3///wAA")
-}, {
-"aabb": AABB(1, 0, -0.5, 1e-05, 1, 1),
-"attribute_data": PackedByteArray("AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/"),
-"format": 34359738391,
-"material": SubResource("StandardMaterial3D_2tixu"),
-"primitive": 3,
-"uv_scale": Vector4(0, 0, 0, 0),
-"vertex_count": 6,
-"vertex_data": PackedByteArray("AACAPwAAgD8AAAA/AACAPwAAgD8AAAC/AACAPwAAAAAAAAC/AACAPwAAgD8AAAA/AACAPwAAAAAAAAC/AACAPwAAAAAAAAA/////f/9//z////9//3//P////3//f/8/////f/9//z////9//3//P////3//f/8/")
-}]
+[ext_resource type="PackedScene" uid="uid://c76ene64h3vda" path="res://assets/buildables/chalkboard/chalkboard.gltf" id="5_xrxum"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_ynjod"]
-size = Vector3(2, 1, 1)
 
 [node name="Chalkboard" type="StaticBody3D" unique_id=1622388045]
 script = ExtResource("1_xrxum")
 max_health = 150.0
 power_consumption = 0.0
 default_output_mask = 4
-layout_config = Array[Vector2i]([Vector2i(0, 0), Vector2i(1, 0)])
-
-[node name="BlockVisual" type="MeshInstance3D" parent="." unique_id=1550912123]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, 0)
-mesh = SubResource("ArrayMesh_8ua2u")
+layout_config = [Vector2i(0, 0)]
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=139010795]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.5, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
 shape = SubResource("BoxShape3D_ynjod")
 
 [node name="CrafterComponent" type="Node" parent="." unique_id=1061312037]
@@ -114,3 +28,6 @@ max_slots = 4
 
 [node name="ElementalComponent" type="Node" parent="." unique_id=1538501562]
 script = ExtResource("5_l04um")
+
+[node name="blockbench_export" parent="." unique_id=1063638603 instance=ExtResource("5_xrxum")]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0)

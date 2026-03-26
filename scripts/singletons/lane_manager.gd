@@ -35,7 +35,6 @@ var clutter_types: Array[ClutterResource] =[]
 var block_id_to_item_map: Dictionary = {}
 var block_name_to_id_map: Dictionary = {}
 
-var block_id_to_yield_map: Dictionary = {}
 var active_ore_deposits: Dictionary = {} # tile (Vector2i) -> remaining_count (int)
 
 var enemies_by_lane: Dictionary = {}
@@ -130,7 +129,6 @@ func _build_block_cache() -> void:
 	if not grid_map or not grid_map.mesh_library: return
 	block_id_to_item_map.clear()
 	block_name_to_id_map.clear()
-	block_id_to_yield_map.clear()
 	
 	var lib = grid_map.mesh_library
 	for id in lib.get_item_list():
@@ -152,10 +150,6 @@ func _build_block_cache() -> void:
 						if ResourceLoader.exists(item_path):
 							var b_id = block_name_to_id_map[b_name]
 							block_id_to_item_map[b_id] = load(item_path)
-							block_id_to_yield_map[b_id] = {
-								"min": b.get("yield_min", 1),
-								"max": b.get("yield_max", 1)
-							}
 
 func _initialize() -> void:
 	_generate_lane_data()
@@ -225,7 +219,7 @@ func _generate_ores_for_lane(lane: int) -> void:
 		if picked_conf:
 			var block_id = picked_conf.get("block_id", -1)
 			if block_id != -1:
-				_place_ore_block_by_id(tile_coord, block_id)
+				_place_ore_block_by_config(tile_coord, block_id, picked_conf)
 
 func _generate_guaranteed_ores(level_ores: Array) -> void:
 	for o_conf in level_ores:
@@ -249,12 +243,15 @@ func _generate_guaranteed_ores(level_ores: Array) -> void:
 			var coord = _calculate_grid_coord(lane, depth)
 			var cell_pos = Vector3i(coord.x, 0, coord.y)
 			if grid_map.get_cell_item(cell_pos) == GridMap.INVALID_CELL_ITEM:
-				_place_ore_block_by_id(coord, block_id)
+				_place_ore_block_by_config(coord, block_id, o_conf)
 				placed += 1
 
-func _place_ore_block_by_id(coord: Vector2i, block_id: int) -> void:
+func _place_ore_block_by_config(coord: Vector2i, block_id: int, conf: Dictionary) -> void:
 	if not grid_map: return
 	grid_map.set_cell_item(Vector3i(coord.x, 0, coord.y), block_id)
+	var yield_min = conf.get("yield_min", 1)
+	var yield_max = conf.get("yield_max", 1)
+	active_ore_deposits[coord] = randi_range(yield_min, yield_max)
 
 func _generate_terrain() -> void:
 	for lane in range(num_lanes):
@@ -485,10 +482,8 @@ func consume_ore_at(tile: Vector2i) -> bool:
 		return true # Not an ore or empty
 		
 	if not active_ore_deposits.has(tile):
-		var yield_data = block_id_to_yield_map.get(block_id, {"min": 1, "max": 1})
-		var yield_min = int(yield_data.get("min", 1))
-		var yield_max = int(yield_data.get("max", 1))
-		active_ore_deposits[tile] = randi_range(yield_min, yield_max)
+		# Fallback if placed manually outside level configs
+		active_ore_deposits[tile] = 5
 		
 	active_ore_deposits[tile] -= 1
 	
@@ -521,7 +516,11 @@ func scan_for_spawners(dev_map: GridMap) -> void:
 			spawner_id = id
 			break
 	if spawner_id == -1: return
+	
 	var cells = dev_map.get_used_cells()
+	var ref_x: float = -INF
+	var ref_y: float = 0.5
+	
 	for cell in cells:
 		if dev_map.get_cell_item(cell) == spawner_id:
 			var world_pos = dev_map.to_global(dev_map.map_to_local(cell))
@@ -529,6 +528,20 @@ func scan_for_spawners(dev_map: GridMap) -> void:
 			var tile = world_to_tile(world_pos)
 			var lane_id = tile.y
 			spawners_by_lane[lane_id] = world_pos
+			
+			if ref_x == -INF:
+				ref_x = world_pos.x
+				ref_y = world_pos.y
+				
+	# Auto-fill missing spawners for all dynamic lanes up to num_lanes
+	if ref_x != -INF:
+		for i in range(num_lanes):
+			if not spawners_by_lane.has(i):
+				var virtual_tile = Vector2i(0, i + generation_offset.y)
+				var virtual_pos = tile_to_world(virtual_tile)
+				virtual_pos.x = ref_x
+				virtual_pos.y = ref_y
+				spawners_by_lane[i] = virtual_pos
 
 func register_enemy(enemy: Node, lane_id: int) -> void:
 	if not enemies_by_lane.has(lane_id): enemies_by_lane[lane_id] =[]

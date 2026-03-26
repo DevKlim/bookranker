@@ -107,8 +107,6 @@ script = ExtResource("6_nilrr")
 
 [node name="ShooterComponent" type="Node" parent="." unique_id=424103093]
 script = ExtResource("7_lbhbp")
-base_damage = 2.0
-fire_rate = 2.0
 fire_point_path = NodePath("../ProjectileOrigin")
 
 [node name="InventoryComponent" type="Node" parent="." unique_id=446958848]

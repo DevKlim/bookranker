@@ -1,0 +1,11 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://cgbgeqps64jbj"]
+
+[ext_resource type="Texture2D" uid="uid://c3n8beqbe7e38" path="res://assets/buildables/slipstream/slipstream_0.png" id="1_8dl3o"]
+
+[resource]
+resource_name = "material_0"
+transparency = 1
+cull_mode = 2
+albedo_texture = ExtResource("1_8dl3o")
+texture_filter = 0
+texture_repeat = false

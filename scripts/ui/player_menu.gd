@@ -465,8 +465,14 @@ func _build_ui_structure() -> void:
 	
 	var c_icon = CenterContainer.new(); details_content.add_child(c_icon)
 	var i_panel = Panel.new(); i_panel.custom_minimum_size = Vector2(80, 80); c_icon.add_child(i_panel)
-	details_icon = TextureRect.new(); details_icon.custom_minimum_size = Vector2(64, 64); details_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; details_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	details_icon.position = Vector2(8, 8); i_panel.add_child(details_icon)
+	var center2 = CenterContainer.new(); center2.set_anchors_preset(Control.PRESET_FULL_RECT); i_panel.add_child(center2)
+	
+	details_icon = TextureRect.new()
+	details_icon.custom_minimum_size = Vector2(64, 64)
+	details_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	details_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	details_icon.texture_filter = Control.TEXTURE_FILTER_NEAREST
+	center2.add_child(details_icon)
 	
 	var spacer = Control.new(); spacer.custom_minimum_size = Vector2(0, 20); details_content.add_child(spacer)
 	var req_l = Label.new(); req_l.text = "Requirements:"; req_l.add_theme_color_override("font_color", Color(0.2, 0.2, 0.2))
@@ -788,10 +794,28 @@ func _populate_grids() -> void:
 		for m in all_mods: mods_grid.add_child(_create_res_btn(m))
 
 func _create_craft_btn(r: RecipeResource) -> Button:
-	var b = CraftingButton.new(); b.recipe = r; b.custom_minimum_size = Vector2(64, 64); b.expand_icon = true
+	var b = CraftingButton.new()
+	b.recipe = r
+	b.custom_minimum_size = Vector2(64, 64)
+	b.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	
 	var out = r.get_main_output()
-	if out:
-		if out.get("icon"): b.icon = out.icon
+	if out and out.get("icon"):
+		var center = CenterContainer.new()
+		center.set_anchors_preset(Control.PRESET_FULL_RECT)
+		center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(center)
+
+		var tr = TextureRect.new()
+		tr.texture = out.icon
+		tr.custom_minimum_size = Vector2(64, 64)
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tr.texture_filter = Control.TEXTURE_FILTER_NEAREST
+		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		center.add_child(tr)
+		
 	b.pressed.connect(func(): _select_recipe(r))
 	return b
 
@@ -808,7 +832,11 @@ func _select_recipe(r: RecipeResource) -> void:
 	_clear(details_ingredients_grid)
 	for entry in r.inputs:
 		var hb = HBoxContainer.new()
-		var ic = TextureRect.new(); ic.custom_minimum_size = Vector2(32, 32); ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		var ic = TextureRect.new()
+		ic.custom_minimum_size = Vector2(32, 32)
+		ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		ic.texture_filter = Control.TEXTURE_FILTER_NEAREST
 		if entry.resource.get("icon"): ic.texture = entry.resource.icon
 		hb.add_child(ic)
 		var lb = Label.new()
@@ -886,6 +914,14 @@ func _update_ally_grid(_arg=null):
 func _create_slot_btn_base() -> Button:
 	var b = Button.new()
 	b.custom_minimum_size = Vector2(64, 64)
+	b.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	
+	var center = CenterContainer.new()
+	center.name = "IconCenter"
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	b.add_child(center)
 	return b
 
 func _fill_slot_btn(b: Button, slot_data):
@@ -898,12 +934,15 @@ func _fill_slot_btn(b: Button, slot_data):
 		
 		var tr = TextureRect.new()
 		tr.texture = it.icon
+		tr.custom_minimum_size = Vector2(64, 64)
 		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		tr.set_anchors_preset(Control.PRESET_FULL_RECT)
-		tr.offset_left = 4; tr.offset_top = 4; tr.offset_right = -4; tr.offset_bottom = -4
+		tr.texture_filter = Control.TEXTURE_FILTER_NEAREST
 		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		b.add_child(tr)
+		
+		var center = b.get_node("IconCenter")
+		if center:
+			center.add_child(tr)
 		
 		var l = Label.new()
 		l.text = str(slot_data.count)
@@ -926,11 +965,30 @@ func _create_slot_button(inv, i) -> Button:
 	return b
 
 func _create_res_btn(res):
-	var b = Button.new(); b.custom_minimum_size = Vector2(64, 64); b.expand_icon = true
-	if res.get("icon"): b.icon = res.icon
+	var b = Button.new()
+	b.custom_minimum_size = Vector2(64, 64)
+	b.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	
+	if res.get("icon"): 
+		var center = CenterContainer.new()
+		center.set_anchors_preset(Control.PRESET_FULL_RECT)
+		center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(center)
+		
+		var tr = TextureRect.new()
+		tr.texture = res.icon
+		tr.custom_minimum_size = Vector2(64, 64)
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tr.texture_filter = Control.TEXTURE_FILTER_NEAREST
+		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		center.add_child(tr)
+		
 	if "item_name" in res: b.tooltip_text = res.item_name
 	elif "buildable_name" in res: b.tooltip_text = res.buildable_name
 	elif "ally_name" in res: b.tooltip_text = res.ally_name
+	
 	b.gui_input.connect(_on_res_btn_input.bind(res))
 	b.set_drag_forwarding(Callable(self, "_drag_create").bind(res), Callable(), Callable())
 	return b
@@ -947,18 +1005,36 @@ func _on_res_btn_input(event: InputEvent, res: Resource):
 func _clear(p): for c in p.get_children(): c.queue_free()
 
 func _drag_create(_p, r): 
-	var t = TextureRect.new(); t.texture = r.icon; t.size = Vector2(64, 64); t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; set_drag_preview(t)
+	var t = TextureRect.new()
+	t.texture = r.icon
+	t.size = Vector2(64, 64)
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	t.texture_filter = Control.TEXTURE_FILTER_NEAREST
+	set_drag_preview(t)
 	return { "type": "creative_spawn", "resource": r }
 
 func _drag_inv(_p, i):
 	var s = PlayerManager.game_inventory.slots[i]
 	if not s: return null
-	var t = TextureRect.new(); t.texture = s.item.icon; t.size = Vector2(64, 64); t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; set_drag_preview(t)
+	var t = TextureRect.new()
+	t.texture = s.item.icon
+	t.size = Vector2(64, 64)
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	t.texture_filter = Control.TEXTURE_FILTER_NEAREST
+	set_drag_preview(t)
 	return { "type": "inventory_drag", "inventory": PlayerManager.game_inventory, "slot_index": i, "item": s.item, "count": s.count }
 
 func _drag_ally(_p, inv, i):
 	if i >= inv.slots.size() or not inv.slots[i]: return null
-	var t = TextureRect.new(); t.texture = inv.slots[i].item.icon; t.size = Vector2(64, 64); t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; set_drag_preview(t)
+	var t = TextureRect.new()
+	t.texture = inv.slots[i].item.icon
+	t.size = Vector2(64, 64)
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	t.texture_filter = Control.TEXTURE_FILTER_NEAREST
+	set_drag_preview(t)
 	return { "type": "inventory_drag", "inventory": inv, "slot_index": i, "item": inv.slots[i].item, "count": inv.slots[i].count }
 
 func _can_drop(_p, d): 

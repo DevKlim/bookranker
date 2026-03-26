@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://c5y1bubbo0st"]
+
+[ext_resource type="Resource" uid="uid://cbih706mvma8p" path="res://resources/attacks/projectile_shot.tres" id="1_g16ss"]
+[ext_resource type="Resource" uid="uid://um15w27vhhhx" path="res://resources/elements/aqua.tres" id="2_0su20"]
+[ext_resource type="Texture2D" uid="uid://742pu2cl3tb1" path="res://assets/blocks/swan_fold.png" id="3_g16ss"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="4_3e6hm"]
+
+[resource]
+script = ExtResource("4_3e6hm")
+item_name = "Swan Fold"
+icon = ExtResource("3_g16ss")
+equipment_type = 2
+attack_config = ExtResource("1_g16ss")
+damage = 12.0
+element = ExtResource("2_0su20")

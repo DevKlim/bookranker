@@ -82,6 +82,7 @@ func update_build_preview(world_pos: Vector3):
 	main.build_preview_container.global_position = final_pos + display_offset_3d
 	var can_build = BuildManager.can_build_at(world_pos)
 	var tint = Color(0.4, 1.0, 0.4, 0.6) if can_build else Color(1.0, 0.4, 0.4, 0.6)
+	
 	if buildable.layer == BuildableResource.BuildLayer.TOOL:
 		var has_target = BuildManager.has_removable_at(world_pos)
 		for c in main.build_preview_container.get_children():
@@ -108,6 +109,7 @@ func _apply_ghost_visuals(node: Node, color_tint: Color) -> void:
 			if target_mat is StandardMaterial3D:
 				target_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA; target_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED; target_mat.albedo_color = color_tint
 			node.set_surface_override_material(i, target_mat)
+			
 	for child in node.get_children(): _apply_ghost_visuals(child, color_tint)
 
 func _handle_delete_highlight(world_pos: Vector3) -> void:

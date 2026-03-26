@@ -1,13 +1,13 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://dbvkaka7j8068"]
 
 [ext_resource type="Resource" uid="uid://dxgrgiah56yli" path="res://resources/elements/chem.tres" id="1_mbche"]
-[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="2_3r44j"]
+[ext_resource type="Texture2D" uid="uid://dj3malavfemr7" path="res://assets/icons/picasso.png" id="2_mbche"]
 [ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="3_lnu5b"]
 
 [resource]
 script = ExtResource("3_lnu5b")
 item_name = "Picasso"
-icon = ExtResource("2_3r44j")
+icon = ExtResource("2_mbche")
 stack_size = 1
 equipment_type = 2
 damage = 1.0

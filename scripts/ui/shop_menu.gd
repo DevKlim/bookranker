@@ -422,13 +422,17 @@ func _create_shop_item(item: ItemResource) -> void:
 	inner_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	panel_bg.add_child(inner_vbox)
 	
+	var center = CenterContainer.new()
+	center.custom_minimum_size = Vector2(64, 64)
+	inner_vbox.add_child(center)
+	
 	var icon = TextureRect.new()
 	icon.texture = item.icon
-	icon.custom_minimum_size = Vector2(40, 40)
+	icon.custom_minimum_size = Vector2(64, 64)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	inner_vbox.add_child(icon)
+	icon.texture_filter = Control.TEXTURE_FILTER_NEAREST
+	center.add_child(icon)
 	
 	var name_lbl = Label.new()
 	name_lbl.text = item.item_name
@@ -481,3 +485,4 @@ func _create_shop_item(item: ItemResource) -> void:
 	
 	vbox.add_child(buy_btn)
 	items_container.add_child(vbox)
+

@@ -18,11 +18,24 @@ func _ready() -> void:
 	for i in range(SLOT_COUNT):
 		var button = Button.new()
 		button.custom_minimum_size = Vector2(64, 64)
-		button.expand_icon = true
+		button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		
-		# Center Icons in Hotbar
-		button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		button.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
+		# Center Container prevents Button's inner margins from fractionally shrinking the 64x64 TextureRect
+		var center = CenterContainer.new()
+		center.name = "IconCenter"
+		center.set_anchors_preset(Control.PRESET_FULL_RECT)
+		center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		button.add_child(center)
+
+		var tr = TextureRect.new()
+		tr.name = "ItemIcon"
+		tr.custom_minimum_size = Vector2(64, 64)
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tr.texture_filter = Control.TEXTURE_FILTER_NEAREST
+		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		center.add_child(tr)
 		
 		# Add Quantity Label
 		var lbl = Label.new()
@@ -45,6 +58,7 @@ func _ready() -> void:
 	BuildManager.selected_buildable_changed.connect(_update_visuals)
 	# Listen to build mode changes to clear highlight when right-clicking/canceling
 	BuildManager.build_mode_changed.connect(_on_build_mode_changed)
+	PlayerManager.equipped_item_changed.connect(_on_equipped_item_changed)
 	_update_visuals()
 
 func _on_slot_pressed(index: int) -> void:
@@ -57,7 +71,7 @@ func _on_slot_pressed(index: int) -> void:
 	if selected_slot_index == index:
 		selected_slot_index = -1
 		if BuildManager.is_building: BuildManager.exit_build_mode()
-		PlayerManager.set_equipped_item(null)
+		if PlayerManager.equipped_item: PlayerManager.set_equipped_item(null)
 		_update_visuals()
 		return
 	
@@ -66,13 +80,13 @@ func _on_slot_pressed(index: int) -> void:
 	
 	if slot == null:
 		if BuildManager.is_building: BuildManager.exit_build_mode()
-		PlayerManager.set_equipped_item(null)
+		if PlayerManager.equipped_item: PlayerManager.set_equipped_item(null)
 		_update_visuals()
 		return
 		
 	var res = slot.item
 	if res is BuildableResource:
-		PlayerManager.set_equipped_item(null)
+		if PlayerManager.equipped_item: PlayerManager.set_equipped_item(null)
 		# If user clicks a buildable, enter build mode
 		if BuildManager.is_building and BuildManager.selected_buildable == res:
 			pass
@@ -80,7 +94,7 @@ func _on_slot_pressed(index: int) -> void:
 			BuildManager.enter_build_mode(res)
 	elif res is ItemResource:
 		# Just highlight items (e.g. weapons/tools) but exit build mode
-		BuildManager.exit_build_mode()
+		if BuildManager.is_building: BuildManager.exit_build_mode()
 		PlayerManager.set_equipped_item(res)
 	
 	_update_visuals()
@@ -99,11 +113,23 @@ func _on_build_mode_changed(is_building: bool) -> void:
 				selected_slot_index = -1
 		_update_visuals()
 
+func _on_equipped_item_changed(item: Resource) -> void:
+	if not item:
+		if selected_slot_index != -1:
+			if selected_slot_index < PlayerManager.game_inventory.slots.size():
+				var slot = PlayerManager.game_inventory.slots[selected_slot_index]
+				if slot and slot.item is ItemResource:
+					selected_slot_index = -1
+			else:
+				selected_slot_index = -1
+		_update_visuals()
+
 func _update_visuals(_arg = null) -> void:
 	var slots = PlayerManager.game_inventory.slots
 	
 	for i in range(SLOT_COUNT):
 		var button = _buttons[i]
+		var tr = button.get_node("IconCenter/ItemIcon")
 		var lbl = button.get_node("CountLabel")
 		
 		# Handle case where inventory is smaller than hotbar
@@ -112,7 +138,7 @@ func _update_visuals(_arg = null) -> void:
 			slot = slots[i]
 		else:
 			# Slot is disabled/locked/non-existent
-			button.icon = null
+			tr.texture = null
 			button.text = "X"
 			lbl.text = ""
 			button.tooltip_text = "Locked Slot"
@@ -120,13 +146,13 @@ func _update_visuals(_arg = null) -> void:
 			continue
 		
 		if slot:
-			button.icon = slot.item.icon
+			tr.texture = slot.item.icon
 			button.text = "" # Hide number if item exists
 			lbl.text = str(slot.count) # Show count
 			if slot.item is BuildableResource: button.tooltip_text = "%s (%d)" %[slot.item.buildable_name, slot.count]
 			else: button.tooltip_text = "%s (%d)" %[slot.item.item_name, slot.count]
 		else:
-			button.icon = null
+			tr.texture = null
 			button.text = str((i + 1) % 10) # Show slot number if empty
 			lbl.text = ""
 			button.tooltip_text = "Slot %d" % ((i + 1) % 10)
@@ -145,10 +171,18 @@ func _get_slot_drag_data(_pos, index: int) -> Variant:
 	var slot = PlayerManager.game_inventory.slots[index]
 	if not slot: return null
 	
+	if selected_slot_index != -1:
+		selected_slot_index = -1
+		if BuildManager.is_building: BuildManager.exit_build_mode()
+		if PlayerManager.equipped_item: PlayerManager.set_equipped_item(null)
+		_update_visuals()
+
 	var preview = TextureRect.new()
 	preview.texture = slot.item.icon
-	preview.size = Vector2(40, 40)
+	preview.size = Vector2(64, 64) 
 	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	preview.texture_filter = Control.TEXTURE_FILTER_NEAREST
 	preview.z_index = 100 # Ensure on top
 	set_drag_preview(preview)
 	
@@ -162,7 +196,7 @@ func _get_slot_drag_data(_pos, index: int) -> Variant:
 
 func _can_drop(_pos, data) -> bool:
 	if typeof(data) != TYPE_DICTIONARY: return false
-	return data.type in ["creative_spawn", "inventory_drag"]
+	return data.type in["creative_spawn", "inventory_drag"]
 
 func _drop(_pos, data, index: int) -> void:
 	var inv = PlayerManager.game_inventory

@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="BuildableResource" format=3 uid="uid://dr3dix5bbggvi"]
 
-[ext_resource type="Texture2D" uid="uid://c3hgpubm2kqe3" path="res://assets/buildables/drill.png" id="1_iwtn5"]
+[ext_resource type="Texture2D" uid="uid://b2bacpvwdqecp" path="res://assets/icons/drill.png" id="1_iwtn5"]
 [ext_resource type="PackedScene" uid="uid://dkrn6jnj3i7cg" path="res://scenes/buildables/drill.tscn" id="2_iwtn5"]
 [ext_resource type="Script" uid="uid://qpm1dylmnjld" path="res://scripts/resources/buildable_resource.gd" id="3_xgtfc"]
 

@@ -390,7 +390,7 @@ func _try_pass_item(entry, lane_idx: int):
 			lanes[lane_idx].remove_at(0)
 
 func receive_item(item: Resource, from_node: Node3D = null, extra_data: Dictionary = {}) -> bool:
-	if not item is ItemResource: return false
+	if not (item is ItemResource or item is BuildableResource): return false
 	if not is_active: return false
 	
 	var target_lane = 0
@@ -424,7 +424,10 @@ func receive_item(item: Resource, from_node: Node3D = null, extra_data: Dictiona
 	var container = Node3D.new()
 	var sprite = Sprite3D.new()
 	sprite.texture = item.icon
-	sprite.modulate = item.color
+	if "color" in item:
+		sprite.modulate = item.color
+	else:
+		sprite.modulate = Color.WHITE
 	sprite.scale = item_scale
 	sprite.axis = Vector3.AXIS_Y
 	sprite.pixel_size = 0.03

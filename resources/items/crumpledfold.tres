@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://epkdq7r8xhed"]
+
+[ext_resource type="Resource" uid="uid://cbih706mvma8p" path="res://resources/attacks/projectile_shot.tres" id="1_u5k8g"]
+[ext_resource type="Resource" uid="uid://7j4j8iomabs5" path="res://resources/elements/tera.tres" id="2_1kila"]
+[ext_resource type="Texture2D" uid="uid://cnqw8863dvs2e" path="res://assets/blocks/crumpled_fold.png" id="3_u5k8g"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="4_qge2y"]
+
+[resource]
+script = ExtResource("4_qge2y")
+item_name = "Crumpled Fold"
+icon = ExtResource("3_u5k8g")
+equipment_type = 2
+attack_config = ExtResource("1_u5k8g")
+damage = 5.0
+element = ExtResource("2_1kila")

@@ -11,7 +11,7 @@ var _wires: Dictionary = {}
 # Keep track of logically powered tiles internally for stability
 var _powered_tiles: Dictionary = {}
 
-const POWER_SOURCE_COORD = Vector2i(0, 2)
+const POWER_SOURCE_COORD = Vector2i(0, 4)
 
 func _ready() -> void:
 	print("WiringManager (Redstone Mode) Initialized.")

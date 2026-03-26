@@ -2,7 +2,7 @@ shader_type spatial;
 render_mode unshaded, depth_draw_opaque, cull_disabled, blend_mix;
 
 uniform sampler2D texture_albedo : source_color, filter_nearest;
-uniform vec4 glow_color : source_color = vec4(0.2, 0.8, 1.0, 1.0);
+uniform vec4 glow_color : source_color = vec4(0.2, 0.8, 1.0, 0.2);
 uniform float width : hint_range(0.0, 10.0) = 2.0;
 
 void fragment() {

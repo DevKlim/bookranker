@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://v265px3bske8" path="res://assets/enemies/ecaker/ecaker.gltf" id="6_i87s0"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_ffjtk"]
+radius = 0.37695313
 
 [node name="Ecaker" type="CharacterBody3D" unique_id=1637462705]
 script = ExtResource("1_8or1y")

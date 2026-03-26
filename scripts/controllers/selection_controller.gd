@@ -261,7 +261,7 @@ func _show_clutter_context_menu(clutter: ClutterObject) -> void:
 func _find_best_stand_pos(target_node: Node3D, seeker: Node3D) -> Vector3:
 	var target_tile = LaneManager.world_to_tile(target_node.global_position)
 	var seeker_pos = seeker.global_position
-	var candidates = []
+	var candidates =[]
 	
 	var neighbors =[
 		Vector2i(0, 1), Vector2i(0, -1), Vector2i(-1, 0), Vector2i(1, 0)

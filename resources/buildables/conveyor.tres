@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="BuildableResource" format=3 uid="uid://b8idj7bgvrli3"]
 
-[ext_resource type="Texture2D" uid="uid://c1431rrakana5" path="res://assets/buildables/conveyor2.png" id="1_souto"]
+[ext_resource type="Texture2D" uid="uid://if31evh8i2oi" path="res://assets/icons/conveyor.png" id="1_souto"]
 [ext_resource type="PackedScene" uid="uid://l0dt41vcpltn" path="res://scenes/buildables/conveyor.tscn" id="2_souto"]
 [ext_resource type="Script" uid="uid://qpm1dylmnjld" path="res://scripts/resources/buildable_resource.gd" id="3_43ptq"]
 

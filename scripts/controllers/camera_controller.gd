@@ -1,7 +1,7 @@
 class_name CameraController extends Node
 
 var main: Node3D
-var isometric_view: bool = false
+var isometric_view: bool = true
 var camera_locked: bool = true
 
 # Perspective settings (Sega view)
@@ -29,10 +29,6 @@ func _apply_camera_state() -> void:
 		main.camera.projection = Camera3D.PROJECTION_PERSPECTIVE
 		main.camera.fov = 75.0
 		main.camera.rotation = Vector3(persp_pitch, deg_to_rad(-90.0), 0)
-		
-	var curver = main.get_node_or_null("WorldCurver")
-	if curver:
-		curver.set_active(not isometric_view)
 
 func handle_camera_movement(delta: float) -> void:
 	# Space toggles Isometric / Birds-Eye view

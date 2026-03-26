@@ -5,7 +5,7 @@ render_mode unshaded, blend_add, depth_draw_opaque;
 
 uniform vec4 glow_color : source_color = vec4(0.0, 0.8, 1.0, 1.0);
 uniform float fresnel_power : hint_range(0.1, 10.0) = 2.0;
-uniform float edge_intensity : hint_range(0.0, 5.0) = 1.5;
+uniform float edge_intensity : hint_range(0.0, 5.0) = 0.5;
 
 void fragment() {
     vec3 normal = normalize(NORMAL);

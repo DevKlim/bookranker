@@ -8,7 +8,7 @@
 script = ExtResource("3_qlnol")
 item_name = "Igni Pellet"
 icon = ExtResource("2_esjho")
-damage = 2.0
+damage = 1.0
 element = ExtResource("1_i7ayh")
 is_ore = true
 ore_block_name = "Igni Marble"

@@ -1,0 +1,6 @@
+[gd_scene load_steps=4 format=3 uid="uid://c_crane_fold_01"][ext_resource type="Script" path="res://scripts/entities/projectile.gd" id="1_script"][ext_resource type="PackedScene" path="res://assets/buildables/crane/crane.gltf" id="2_mesh"][sub_resource type="BoxShape3D" id="BoxShape3D_crane"]
+size = Vector3(0.5, 0.5, 0.5)
+
+[node name="FoldCrane" type="Area3D"]
+script = ExtResource("1_script")[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_crane")[node name="Model" type="Node3D" parent="."][node name="crane" parent="Model" instance=ExtResource("2_mesh")]
