@@ -98,6 +98,7 @@ func _ready() -> void:
 func _spawn_player() -> void:
 	player = PLAYER_SCENE.instantiate()
 	player.name = "Player"
+	player.add_to_group("player")
 	add_child(player)
 	
 	var target_pos = LaneManager.get_valid_ally_spawn_pos()

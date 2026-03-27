@@ -77,7 +77,7 @@ metadata/_custom_type_script = "uid://cgqs7pvpbdrdo"
 
 [node name="DataImporter" type="Node" parent="." unique_id=477849547]
 script = ExtResource("7_nxtc6")
-target_category = "Attacks"
+target_category = "Blocks"
 overwrite_existing = true
 target_item_id = "All"
 

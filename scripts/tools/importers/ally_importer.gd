@@ -42,6 +42,8 @@ func _generate_ally_scene(data: Dictionary, save_path: String) -> void:
 	inst.name = str(data.get("name", "GeneratedAlly"))
 	inst.set_script(load(ENTITY_ALLY_SCRIPT))
 	inst.add_to_group("allies")
+	if str(data.get("id")) == "player":
+		inst.add_to_group("player")
 	inst.collision_layer = 4 # Same layer as Player
 	
 	# Visuals
@@ -84,4 +86,3 @@ func _generate_ally_scene(data: Dictionary, save_path: String) -> void:
 	
 	_apply_logic_params(inst, data)
 	_save_scene(inst, save_path)
-

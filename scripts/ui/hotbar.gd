@@ -7,6 +7,9 @@ var _buttons: Array[Button] =[]
 # Track active slot index locally
 var selected_slot_index: int = -1
 
+var remover_button: Button
+var remover_lbl: Label
+
 func _ready() -> void:
 	# Wipe default gray box padding so it perfectly fits the glass window
 	add_theme_stylebox_override("panel", StyleBoxEmpty.new())
@@ -53,12 +56,73 @@ func _ready() -> void:
 		button.set_drag_forwarding(Callable(self, "_get_slot_drag_data").bind(i), Callable(self, "_can_drop"), Callable(self, "_drop").bind(i))
 		container.add_child(button)
 		_buttons.append(button)
+
+	var spacer = Control.new()
+	spacer.custom_minimum_size = Vector2(10, 0)
+	container.add_child(spacer)
+	
+	remover_button = Button.new()
+	remover_button.custom_minimum_size = Vector2(64, 64)
+	remover_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	remover_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	
+	var r_center = CenterContainer.new()
+	r_center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	r_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	remover_button.add_child(r_center)
+
+	var r_tr = TextureRect.new()
+	r_tr.custom_minimum_size = Vector2(64, 64)
+	r_tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	r_tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	r_tr.texture_filter = Control.TEXTURE_FILTER_NEAREST
+	r_tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	r_center.add_child(r_tr)
+	
+	var r_res = load("res://resources/buildables/remover_tool.tres")
+	if r_res and "icon" in r_res and r_res.icon:
+		r_tr.texture = r_res.icon
+	else:
+		remover_button.text = "DEL"
+		remover_button.add_theme_color_override("font_color", Color.RED)
+
+	remover_lbl = Label.new()
+	remover_lbl.add_theme_color_override("font_outline_color", Color.BLACK)
+	remover_lbl.add_theme_constant_override("outline_size", 4)
+	remover_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	remover_lbl.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	remover_lbl.anchors_preset = Control.PRESET_BOTTOM_RIGHT
+	remover_lbl.position = Vector2(-4, -2)
+	remover_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE 
+	remover_button.add_child(remover_lbl)
+	
+	remover_button.pressed.connect(_on_remover_pressed)
+	remover_button.tooltip_text = "Remove Tool"
+	container.add_child(remover_button)
 	
 	PlayerManager.game_inventory.inventory_changed.connect(_update_visuals)
 	BuildManager.selected_buildable_changed.connect(_update_visuals)
 	# Listen to build mode changes to clear highlight when right-clicking/canceling
 	BuildManager.build_mode_changed.connect(_on_build_mode_changed)
 	PlayerManager.equipped_item_changed.connect(_on_equipped_item_changed)
+	BuildManager.remove_mode_changed.connect(_update_visuals)
+	_update_visuals()
+
+func _on_remover_pressed() -> void:
+	if selected_slot_index == -2:
+		selected_slot_index = -1
+		BuildManager.exit_build_mode()
+		_update_visuals()
+		return
+		
+	selected_slot_index = -2
+	PlayerManager.set_equipped_item(null)
+	var remover_res = load("res://resources/buildables/remover_tool.tres")
+	if not remover_res:
+		remover_res = BuildableResource.new()
+		remover_res.buildable_name = "Remover"
+		remover_res.layer = BuildableResource.BuildLayer.TOOL
+	BuildManager.enter_build_mode(remover_res)
 	_update_visuals()
 
 func _on_slot_pressed(index: int) -> void:
@@ -103,8 +167,9 @@ func _on_build_mode_changed(is_building: bool) -> void:
 	# If build mode is cancelled externally (e.g. Right Click), clear slot highlight
 	if not is_building:
 		if selected_slot_index != -1:
-			# Bounds check
-			if selected_slot_index < PlayerManager.game_inventory.slots.size():
+			if selected_slot_index == -2:
+				selected_slot_index = -1
+			elif selected_slot_index < PlayerManager.game_inventory.slots.size():
 				var slot = PlayerManager.game_inventory.slots[selected_slot_index]
 				# If the selected item was a Buildable, we deselect it.
 				if slot and slot.item is BuildableResource:
@@ -116,7 +181,9 @@ func _on_build_mode_changed(is_building: bool) -> void:
 func _on_equipped_item_changed(item: Resource) -> void:
 	if not item:
 		if selected_slot_index != -1:
-			if selected_slot_index < PlayerManager.game_inventory.slots.size():
+			if selected_slot_index == -2:
+				selected_slot_index = -1
+			elif selected_slot_index < PlayerManager.game_inventory.slots.size():
 				var slot = PlayerManager.game_inventory.slots[selected_slot_index]
 				if slot and slot.item is ItemResource:
 					selected_slot_index = -1
@@ -162,6 +229,19 @@ func _update_visuals(_arg = null) -> void:
 			button.modulate = Color(0.5, 1.0, 0.5)
 		else:
 			button.modulate = Color.WHITE
+
+	if remover_button:
+		if selected_slot_index == -2:
+			remover_button.modulate = Color(1.0, 0.5, 0.5)
+			var mode_str = ""
+			match BuildManager.current_remove_mode:
+				BuildManager.RemoveMode.ALL: mode_str = "ALL"
+				BuildManager.RemoveMode.BUILDING_ONLY: mode_str = "BLD"
+				BuildManager.RemoveMode.WIRE_ONLY: mode_str = "WIR"
+			remover_lbl.text = mode_str
+		else:
+			remover_button.modulate = Color.WHITE
+			remover_lbl.text = ""
 
 # --- Drag and Drop Logic ---
 

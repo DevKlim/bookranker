@@ -106,7 +106,6 @@ func _perform_attack() -> void:
 				if not infinite:
 					inv.remove_item(ammo_item, 1)
 	elif current_attack.id == "fan_blow":
-		# Fan cannot blow without ammo to propel
 		stop_attacking()
 		return
 			
@@ -115,7 +114,6 @@ func _perform_attack() -> void:
 		current_attack = ammo_item.get("attack_config")
 
 	var final_damage = _calculate_damage(source, current_attack)
-	
 	var safe_target = current_target if target_valid else null
 	
 	emit_signal("attack_started", safe_target, current_attack)
@@ -129,7 +127,6 @@ func _perform_attack() -> void:
 	else:
 		_apply_hit(safe_target, current_target_pos, final_damage, current_attack, source)
 
-	# Apply base attack's hit if it was overridden and was meant to be an AOE/hit 
 	if base_attack != current_attack and not base_attack.spawn_projectile:
 		var base_dmg = _calculate_damage(source, base_attack)
 		_apply_hit(safe_target, current_target_pos, base_dmg, base_attack, source)
@@ -147,7 +144,6 @@ func _perform_attack() -> void:
 	var cd = current_attack.cooldown
 	var spd_mult = 0.0
 	
-	# Try to fetch global speed stat from BaseBuilding logic
 	if source.has_method("get_stat"):
 		spd_mult += source.get_stat("attack_speed_mult", 0.0)
 	else:
@@ -160,14 +156,12 @@ func _perform_attack() -> void:
 		if s_spd_mult != null:
 			spd_mult += float(s_spd_mult)
 			
-	# Apply dynamic artifact overrides
 	if "active_weapon_item" in source and source.active_weapon_item:
 		var artifact = source.active_weapon_item.get_artifact_instance()
 		if artifact and artifact.has_method("modify_cooldown"):
 			cd = artifact.modify_cooldown(cd, source, current_attack)
 	
 	cd /= max(0.1, (1.0 + spd_mult))
-	
 	attack_timer.start(cd)
 
 func _calculate_damage(source: Node, atk: AttackResource) -> float:
@@ -203,7 +197,7 @@ func _calculate_damage(source: Node, atk: AttackResource) -> float:
 		
 	dmg *= (1.0 + d_mult)
 		
-	if is_instance_valid(GameManager):
+	if get_tree().root.has_node("GameManager"):
 		if GameManager.has_method("get_global_stat"):
 			dmg += GameManager.get_global_stat("global_flat_damage", 0.0)
 			
@@ -302,17 +296,47 @@ func _spawn_projectile(source: Node, damage: float, atk: AttackResource, ammo_it
 		proj.initialize(start_pos, dir, atk_speed, damage, -1, elem, tex, col, false, params)
 
 func _apply_hit(target: Node, t_pos: Vector3, damage: float, atk: AttackResource, source: Node) -> void:
-	var targets_to_hit = []
+	var targets_to_hit =[]
 	var center_pos = target.global_position if is_instance_valid(target) else t_pos
 	if center_pos == Vector3.INF: return
 	
+	var hit_tiles =[]
+	
 	if atk.is_aoe:
+		var source_tile = LaneManager.world_to_tile(source.global_position)
 		var center_tile = LaneManager.world_to_tile(center_pos)
 		var is_source_ally = source.is_in_group("allies") or source.is_in_group("player") or source.is_in_group("core") or source.is_in_group("buildings")
 		
-		for w in range(-atk.range_width, atk.range_width + 1):
-			var tile = center_tile + Vector2i(0, w)
-			
+		# Build the relative tile map
+		if not atk.custom_aoe_tiles.is_empty():
+			var fx = 1
+			var fz = 0
+			if source is Node3D and "output_direction" in source:
+				match source.get("output_direction"):
+					0: # DOWN (+Z)
+						fx = 0; fz = 1
+					1: # LEFT (-X)
+						fx = -1; fz = 0
+					2: # UP (-Z)
+						fx = 0; fz = -1
+					3: # RIGHT (+X)
+						fx = 1; fz = 0
+			elif source is Node3D:
+				var fwd = -source.global_transform.basis.z
+				if abs(fwd.x) > abs(fwd.z):
+					fx = sign(fwd.x); fz = 0
+				else:
+					fx = 0; fz = sign(fwd.z)
+					
+			for offset in atk.custom_aoe_tiles:
+				var world_x = offset.x * fx - offset.y * fz
+				var world_z = offset.x * fz + offset.y * fx
+				hit_tiles.append(source_tile + Vector2i(world_x, world_z))
+		else:
+			for w in range(-atk.range_width, atk.range_width + 1):
+				hit_tiles.append(center_tile + Vector2i(0, w))
+		
+		for tile in hit_tiles:
 			if is_source_ally:
 				var enemies = LaneManager.get_enemies_at(tile)
 				for e in enemies:
@@ -328,15 +352,22 @@ func _apply_hit(target: Node, t_pos: Vector3, damage: float, atk: AttackResource
 					if a != target and is_instance_valid(a) and not targets_to_hit.has(a):
 						if LaneManager.world_to_tile(a.global_position) == tile:
 							targets_to_hit.append(a)
+							
 		if is_instance_valid(target) and not targets_to_hit.has(target):
 			targets_to_hit.append(target)
+			
 	elif atk.hitbox_extents != Vector3.ZERO:
 		var space_state = source.get_world_3d().direct_space_state
 		var query = PhysicsShapeQueryParameters3D.new()
 		var shape = BoxShape3D.new()
 		shape.size = atk.hitbox_extents
 		query.shape = shape
-		query.transform = Transform3D(Basis(), center_pos + Vector3(0, atk.hitbox_extents.y / 2.0, 0))
+		
+		var basis = Basis()
+		if source is Node3D:
+			basis = source.global_transform.basis.orthonormalized()
+			
+		query.transform = Transform3D(basis, center_pos + Vector3(0, atk.hitbox_extents.y / 2.0, 0))
 		query.collision_mask = 2 if (source.is_in_group("allies") or source.is_in_group("player")) else 5
 		var results = space_state.intersect_shape(query)
 		for res in results:
@@ -350,7 +381,7 @@ func _apply_hit(target: Node, t_pos: Vector3, damage: float, atk: AttackResource
 			targets_to_hit.append(target)
 							
 	if show_debug_hitboxes:
-		_spawn_debug_hitbox(center_pos, atk)
+		_spawn_debug_hitbox(center_pos, atk, source, hit_tiles)
 	
 	for t in targets_to_hit:
 		if not is_instance_valid(t): continue
@@ -370,39 +401,50 @@ func _apply_hit(target: Node, t_pos: Vector3, damage: float, atk: AttackResource
 		
 		emit_signal("attacked", t, damage)
 
-func _spawn_debug_hitbox(target_pos: Vector3, atk: AttackResource) -> void:
-	if not Engine.has_singleton("LaneManager") and not get_tree().root.has_node("LaneManager"): return
-	var mesh_inst = MeshInstance3D.new()
-	var box = BoxMesh.new()
+func _spawn_debug_hitbox(target_pos: Vector3, atk: AttackResource, source: Node, hit_tiles: Array) -> void:
+	if not get_tree().root.has_node("LaneManager"): return
 	
+	var meshes_to_spawn = []
+
 	if atk.is_aoe:
 		var s = LaneManager.GRID_SCALE if "GRID_SCALE" in LaneManager else 2.0
-		var width = (atk.range_width * 2 + 1) * s
-		box.size = Vector3(s, 1.0, width)
+		for tile in hit_tiles:
+			var mesh_inst = MeshInstance3D.new()
+			var box = BoxMesh.new()
+			box.size = Vector3(s, 1.0, s)
+			mesh_inst.mesh = box
+			var tile_center = LaneManager.tile_to_world(tile)
+			tile_center.y = target_pos.y + 0.5
+			mesh_inst.global_position = tile_center
+			meshes_to_spawn.append(mesh_inst)
 	elif atk.hitbox_extents != Vector3.ZERO:
+		var mesh_inst = MeshInstance3D.new()
+		var box = BoxMesh.new()
 		box.size = atk.hitbox_extents
-	else:
-		box.size = Vector3(0.5, 0.5, 0.5)
-		
-	mesh_inst.mesh = box
-	
-	var mat = StandardMaterial3D.new()
-	mat.albedo_color = Color(1.0, 0.2, 0.2, 0.5)
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mesh_inst.material_override = mat
-	
-	get_tree().root.add_child(mesh_inst)
-	
-	if atk.is_aoe:
-		var tile = LaneManager.world_to_tile(target_pos)
-		var tile_center = LaneManager.tile_to_world(tile)
-		tile_center.y = target_pos.y + 0.5
-		mesh_inst.global_position = tile_center
-	else:
+		mesh_inst.mesh = box
+		if source is Node3D:
+			mesh_inst.global_transform.basis = source.global_transform.basis.orthonormalized()
 		var offset_y = (atk.hitbox_extents.y / 2.0) if atk.hitbox_extents != Vector3.ZERO else 0.5
 		mesh_inst.global_position = target_pos + Vector3(0, offset_y, 0)
+		meshes_to_spawn.append(mesh_inst)
+	else:
+		var mesh_inst = MeshInstance3D.new()
+		var box = BoxMesh.new()
+		box.size = Vector3(0.5, 0.5, 0.5)
+		mesh_inst.mesh = box
+		mesh_inst.global_position = target_pos + Vector3(0, 0.5, 0)
+		meshes_to_spawn.append(mesh_inst)
 		
-	var tween = create_tween()
-	tween.tween_property(mat, "albedo_color:a", 0.0, 0.3)
-	tween.tween_callback(mesh_inst.queue_free)
+	for mesh_inst in meshes_to_spawn:
+		var mat = StandardMaterial3D.new()
+		mat.albedo_color = Color(1.0, 0.2, 0.2, 0.5)
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		mesh_inst.material_override = mat
+		
+		get_tree().root.add_child(mesh_inst)
+		
+		var tween = create_tween()
+		tween.tween_property(mat, "albedo_color:a", 0.0, 0.3)
+		tween.tween_callback(mesh_inst.queue_free)
+

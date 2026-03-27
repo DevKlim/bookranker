@@ -36,6 +36,7 @@ var generic_grid: GridContainer
 # Mod UI
 var mod_lbl: Label
 var mod_grid: GridContainer
+var b_stats_lbl: RichTextLabel
 
 var current_inventory: InventoryComponent
 var current_context: Object = null 
@@ -159,6 +160,8 @@ func _ready() -> void:
 	content_bg.add_theme_stylebox_override("panel", cbg_style)
 	content_bg.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	frame_margin.add_child(content_bg)
+	
+	content_bg.set_drag_forwarding(Callable(self, "_on_bg_get_drag_data"), Callable(self, "_on_bg_can_drop"), Callable(self, "_on_bg_drop"))
 	
 	recipe_scroll = ScrollContainer.new()
 	recipe_scroll.name = "RecipeScroll"
@@ -290,6 +293,12 @@ func _ready() -> void:
 	mod_grid.add_theme_constant_override("h_separation", 6)
 	mod_grid.add_theme_constant_override("v_separation", 6)
 	right_vbox.add_child(mod_grid)
+
+	b_stats_lbl = RichTextLabel.new()
+	b_stats_lbl.bbcode_enabled = true
+	b_stats_lbl.fit_content = true
+	b_stats_lbl.visible = false
+	right_vbox.add_child(b_stats_lbl)
 
 	main_vbox.queue_free()
 	_setup_window_resizing(self, scale_wrapper, scale_root, frame_margin)
@@ -511,6 +520,17 @@ func _create_grid_slot_btn(inv: InventoryComponent, idx: int) -> Button:
 
 # --- Drag & Drop Implementation ---
 
+func _on_bg_get_drag_data(_pos):
+	return null
+
+func _on_bg_can_drop(_pos, data) -> bool:
+	return typeof(data) == TYPE_DICTIONARY and data.get("type") == "inventory_drag"
+
+func _on_bg_drop(_pos, data) -> void:
+	if data.has("inventory") and data.has("item") and data.has("count"):
+		var inv = data.inventory
+		inv.remove_item(data.item, data.count)
+
 func _get_slot_drag_data(_pos, data_ctx):
 	var inv = data_ctx.inv
 	var slot_idx = data_ctx.slot
@@ -637,10 +657,30 @@ func _update_display(_arg = null) -> void:
 				elif "buildable_name" in itm: tooltip = itm.buildable_name
 			btn.tooltip_text = tooltip
 			mod_grid.add_child(btn)
+			
+		# Show Building Stats
+		if current_context.has_method("get_stat") or current_context.get("health_component"):
+			b_stats_lbl.show()
+			var hp = 0; var mhp = 0; var pwr = 0; var eff = 1.0
+			if current_context.get("health_component"):
+				hp = current_context.health_component.current_health
+				mhp = current_context.health_component.max_health
+			if current_context.get("power_consumer"):
+				pwr = current_context.power_consumer.power_consumption
+			if current_context.has_method("get_stat"):
+				eff = current_context.get_stat("efficiency", current_context.get("efficiency") if current_context.get("efficiency") != null else 1.0)
+			
+			b_stats_lbl.text = "[font_size=16][color=black][b]Building Stats[/b][/color]\n"
+			b_stats_lbl.text += "[color=#aa0000]HP:[/color] %d / %d\n" %[int(hp), int(mhp)]
+			b_stats_lbl.text += "[color=#aaaa00]Power:[/color] %d W\n" % int(pwr)
+			b_stats_lbl.text += "[color=#00aa00]Efficiency:[/color] %.1fx\n[/font_size]" % eff
+		else:
+			b_stats_lbl.hide()
 	else:
 		right_vbox.hide()
 		mod_lbl.hide()
 		mod_grid.hide()
+		if b_stats_lbl: b_stats_lbl.hide()
 
 	if current_context and current_context.has_method("get_processing_icon"):
 		item_panel.hide()

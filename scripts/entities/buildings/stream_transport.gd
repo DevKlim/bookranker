@@ -5,9 +5,18 @@ const TRANSPORT_SPEED_WATER = 5.0
 const TRANSPORT_SPEED_INK = 1.0
 
 var items: Array =[] # { "item": Resource, "progress": float, "visual": Node3D }
+var stream_type: String = "water"
 
 func _ready() -> void:
 	if Engine.is_editor_hint(): return
+	
+	if "tarstream" in scene_file_path.to_lower() or name.to_lower().begins_with("tarstream"):
+		stream_type = "ink"
+		display_name = "Tarstream"
+	else:
+		stream_type = "water"
+		display_name = "Slipstream"
+		
 	super._ready()
 	
 	# Guarantee an inventory component exists so the count is exposed and updated 
@@ -29,7 +38,7 @@ func _physics_process(delta: float) -> void:
 	super._physics_process(delta)
 	if not is_active: return
 	
-	var speed = TRANSPORT_SPEED_WATER if display_name == "Slipstream" else TRANSPORT_SPEED_INK
+	var speed = TRANSPORT_SPEED_WATER if stream_type == "water" else TRANSPORT_SPEED_INK
 	
 	for entry in items:
 		entry.progress += speed * delta
@@ -52,7 +61,7 @@ func _try_pass_item(entry):
 	
 	if is_instance_valid(neighbor):
 		# If the neighbor is also a stream, check if it turns. "if the stream turns, item disappears"
-		if neighbor.display_name == "Slipstream" or neighbor.display_name == "Tarstream":
+		if "display_name" in neighbor and neighbor.display_name in["Slipstream", "Tarstream"]:
 			if neighbor.output_direction != self.output_direction:
 				handled = true
 			elif neighbor.has_method("receive_item") and neighbor.get("has_input") != false:
@@ -80,6 +89,18 @@ func _try_pass_item(entry):
 
 func receive_item(item: Resource, from_node: Node3D = null, extra_data: Dictionary = {}) -> bool:
 	if not is_active: return false
+	
+	# Only allow Slipslide or another stream to push into a stream natively. (Prevents Foldgami from trying to store Folds into streams as storage)
+	var is_valid_source = false
+	if from_node:
+		if from_node is SlipslideBuilding:
+			is_valid_source = true
+		elif "display_name" in from_node and from_node.display_name in["Slipstream", "Tarstream"]:
+			is_valid_source = true
+			
+	if from_node and not is_valid_source:
+		return false
+		
 	if not (item is ItemResource or item is BuildableResource): return false
 	
 	var initial_progress = 0.0

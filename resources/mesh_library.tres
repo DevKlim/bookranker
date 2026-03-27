@@ -6,15 +6,15 @@
 [ext_resource type="Texture2D" uid="uid://mqxoqff2tw3y" path="res://assets/blocks/stone_bricks.png" id="3_0vm6o"]
 [ext_resource type="Texture2D" uid="uid://0eitcroqpbml" path="res://assets/blocks/graphite_marb.png" id="3_4agva"]
 [ext_resource type="Texture2D" uid="uid://dcxarbvt2tcmn" path="res://assets/blocks/redstone_ore.png" id="3_tj7sw"]
-[ext_resource type="Texture2D" uid="uid://bxhqc0rhwxlsd" path="res://assets/icons/aqua_marb.png" id="4_ga1tx"]
 [ext_resource type="Texture2D" uid="uid://c32nyhptymkbg" path="res://assets/blocks/iron_ore.png" id="4_tj7sw"]
 [ext_resource type="Texture2D" uid="uid://c0lyqfge10rn5" path="res://assets/blocks/coal_ore.png" id="5_5mxvs"]
 [ext_resource type="Texture2D" uid="uid://gdgerg45e8s5" path="res://assets/blocks/lapis_ore.png" id="5_g0dq6"]
 [ext_resource type="Texture2D" uid="uid://butkd3s1w6qi7" path="res://assets/blocks/ink_marb.png" id="5_w53qh"]
 [ext_resource type="Texture2D" uid="uid://duf5saj5nmqlr" path="res://assets/blocks/gold_ore.png" id="6_g0dq6"]
+[ext_resource type="Texture2D" uid="uid://d2n07q8vjj3a4" path="res://assets/blocks/aqua_marb.png" id="6_ga1tx"]
 [ext_resource type="Texture2D" uid="uid://brnfy3kfyqmpo" path="res://assets/blocks/igni_marb.png" id="6_m42t7"]
 [ext_resource type="Texture2D" uid="uid://we5ih5i3u100" path="res://assets/blocks/copper_ore.png" id="7_maflo"]
-[ext_resource type="Texture2D" uid="uid://dg2qgmnd0cf3h" path="res://assets/icons/aero_marb.png" id="7_tf0vr"]
+[ext_resource type="Texture2D" uid="uid://cqqr7qe8fyviu" path="res://assets/blocks/aero_marb.png" id="7_w53qh"]
 [ext_resource type="Texture2D" uid="uid://crjvfm6d34hvk" path="res://assets/blocks/luxe_marb.png" id="8_ga1tx"]
 [ext_resource type="Texture2D" uid="uid://cg7s86pftkf6y" path="res://assets/blocks/lux_ore.png" id="8_mb4a7"]
 [ext_resource type="Texture2D" uid="uid://ive5qlx1uppk" path="res://assets/blocks/petroleum_ore.png" id="9_4agva"]
@@ -512,27 +512,27 @@ _surfaces = [{
 [sub_resource type="BoxShape3D" id="BoxShape3D_l4hox"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_etqbk"]
-albedo_texture = ExtResource("4_ga1tx")
+albedo_texture = ExtResource("6_ga1tx")
 texture_filter = 0
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hf3md"]
-albedo_texture = ExtResource("4_ga1tx")
+albedo_texture = ExtResource("6_ga1tx")
 texture_filter = 0
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jju5l"]
-albedo_texture = ExtResource("4_ga1tx")
+albedo_texture = ExtResource("6_ga1tx")
 texture_filter = 0
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sug0x"]
-albedo_texture = ExtResource("4_ga1tx")
+albedo_texture = ExtResource("6_ga1tx")
 texture_filter = 0
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sce1h"]
-albedo_texture = ExtResource("4_ga1tx")
+albedo_texture = ExtResource("6_ga1tx")
 texture_filter = 0
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wntfi"]
-albedo_texture = ExtResource("4_ga1tx")
+albedo_texture = ExtResource("6_ga1tx")
 texture_filter = 0
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_3mck8"]
@@ -595,27 +595,27 @@ _surfaces = [{
 [sub_resource type="BoxShape3D" id="BoxShape3D_bn0rc"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gdeq5"]
-albedo_texture = ExtResource("7_tf0vr")
+albedo_texture = ExtResource("7_w53qh")
 texture_filter = 0
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_d14qu"]
-albedo_texture = ExtResource("7_tf0vr")
+albedo_texture = ExtResource("7_w53qh")
 texture_filter = 0
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jtt3l"]
-albedo_texture = ExtResource("7_tf0vr")
+albedo_texture = ExtResource("7_w53qh")
 texture_filter = 0
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mnpv4"]
-albedo_texture = ExtResource("7_tf0vr")
+albedo_texture = ExtResource("7_w53qh")
 texture_filter = 0
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cttum"]
-albedo_texture = ExtResource("7_tf0vr")
+albedo_texture = ExtResource("7_w53qh")
 texture_filter = 0
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dx23y"]
-albedo_texture = ExtResource("7_tf0vr")
+albedo_texture = ExtResource("7_w53qh")
 texture_filter = 0
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_alkw7"]

@@ -58,6 +58,7 @@ var damage_mult: float = 0.0
 var respawns_count: int = 0
 var respawns_unlimited: bool = false
 var respawns_cooldown: float = 5.0
+var is_dead: bool = false
 
 func _ready() -> void:
 	collision_layer = 4 
@@ -115,8 +116,18 @@ func _ready() -> void:
 	if is_instance_valid(GameManager):
 		GameManager.run_data_changed.connect(_recalculate_stats)
 
+func _exit_tree() -> void:
+	var main = get_tree().current_scene
+	if main and main.get("selection_controller"):
+		var sc = main.selection_controller
+		if "selected_allies" in sc:
+			for i in range(sc.selected_allies.size() - 1, -1, -1):
+				if sc.selected_allies[i] == self or not is_instance_valid(sc.selected_allies[i]):
+					sc.selected_allies.remove_at(i)
+
 func _input(event: InputEvent) -> void:
 	if not is_instance_valid(selection_container) or not selection_container.visible: return
+	if is_dead: return
 	
 	if event.is_action_pressed("switch"):
 		_cycle_mode()
@@ -155,6 +166,8 @@ func _show_notification(text: String, col: Color) -> void:
 	if ui: ui.show_notification(text, col)
 
 func _process(delta: float) -> void:
+	if is_dead: return
+	
 	if velocity.length_squared() > 0.01:
 		var dir = velocity.normalized()
 		dir.y = 0
@@ -649,23 +662,35 @@ func receive_item(item: Resource, _from_node: Node3D = null, _extra_data: Dictio
 	return inventory_component.add_item(item) == 0
 
 func _on_died(_node) -> void:
+	if is_dead: return
+	is_dead = true
+	
+	var is_player = self.is_in_group("player") or self.name == "Player"
+	
+	if inventory_component and not is_player:
+		for i in range(inventory_component.slots.size()):
+			inventory_component.slots[i] = null
+		inventory_component.inventory_changed.emit()
+
 	var main = get_tree().current_scene
 	if main and main.get("selection_controller"):
 		var sc = main.selection_controller
 		if sc.selected_allies.has(self):
 			sc.selected_allies.erase(self)
 			self.set_selected(false)
-			if self.is_in_group("player"):
-				PlayerManager.is_player_selected = false
+			if is_player:
+				PlayerManager.set("is_player_selected", false)
 			if sc.selected_allies.is_empty():
 				sc.deselect_all()
 			else:
 				if sc.selected_ally == self:
 					sc.selected_ally = sc.selected_allies.back()
-					if main.game_ui: main.game_ui.set_selected_ally(sc.selected_ally)
+					if "game_ui" in main and main.game_ui: main.game_ui.set_selected_ally(sc.selected_ally)
 					
-	if respawns_unlimited or respawns_count > 0:
-		if not respawns_unlimited:
+	var can_respawn = respawns_unlimited or respawns_count > 0 or is_player
+	
+	if can_respawn:
+		if not respawns_unlimited and not is_player:
 			respawns_count -= 1
 		
 		visible = false
@@ -680,19 +705,44 @@ func _on_died(_node) -> void:
 		if ToolManager.instance and ToolManager.instance.active_miners.has(self):
 			ToolManager.instance.active_miners.erase(self)
 		
-		if main and main.get("game_ui"):
-			main.game_ui.register_ally_respawn(display_name, respawns_cooldown)
-			
-		get_tree().create_timer(respawns_cooldown).timeout.connect(_respawn)
+		var ui = get_node_or_null("/root/Main/GameUI")
+		if not ui and main and "game_ui" in main: ui = main.game_ui
+		
+		if ui:
+			var lives_left = "Unlimited" if (respawns_unlimited or is_player) else str(respawns_count) + " left"
+			var r_cooldown = respawns_cooldown if respawns_cooldown > 0.0 else 5.0
+			ui.register_ally_respawn(display_name, r_cooldown, lives_left)
+			get_tree().create_timer(r_cooldown).timeout.connect(_respawn)
+		else:
+			var r_cooldown = respawns_cooldown if respawns_cooldown > 0.0 else 5.0
+			get_tree().create_timer(r_cooldown).timeout.connect(_respawn)
 	else:
 		queue_free()
 
 func _respawn() -> void:
-	var respawn_pos = LaneManager.get_nearby_valid_ally_spawn_pos(global_position)
-	global_position = respawn_pos
+	if not is_inside_tree(): return
+	is_dead = false
+	
+	var respawn_pos = Vector3.ZERO
+	if Engine.has_singleton("LaneManager"):
+		var middle_lane = int(LaneManager.num_lanes / 2.0)
+		var target_tile = Vector2i(LaneManager.generation_offset.x, middle_lane + LaneManager.generation_offset.y)
+		respawn_pos = LaneManager.tile_to_world(target_tile)
+		respawn_pos.y = 1.0 # Base Y for allies
+	else:
+		respawn_pos = Vector3(0.5, 1.0, 0.5)
+
+	# Start falling from the sky
+	var fall_start_pos = respawn_pos
+	fall_start_pos.y += 15.0
+	global_position = fall_start_pos
+	
+	var tween = create_tween()
+	tween.tween_property(self, "global_position:y", respawn_pos.y, 0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	
 	if move_component:
 		move_component.target_position = respawn_pos
+		move_component.stop_moving()
 	
 	# For Player specifically to cancel mouse movement tasks
 	if "target_pos" in self:

@@ -105,7 +105,10 @@ func _ready() -> void:
 	add_child(player_menu)
 
 	var vp_size = get_viewport().get_visible_rect().size
-	stats_window = _create_glass_window("Stats", bottom_left_content, Vector2(20, vp_size.y - 200), "Stats", Vector2(250, 130))
+	
+	# Increased height to 200 and shifted up to gracefully fit multiple respawning lines
+	stats_window = _create_glass_window("Stats", bottom_left_content, Vector2(20, vp_size.y - 230), "Stats", Vector2(280, 200))
+	
 	dev_window = _create_glass_window("Dev Tools", dev_ui_panel, Vector2(vp_size.x - 260, 20), "Dev Tools", Vector2(250, 200))
 	hotbar_window = _create_glass_window("Hotbar", hotbar, Vector2((vp_size.x - 750) / 2.0, vp_size.y - 180), "Hotbar", Vector2(750, 160))
 	
@@ -464,7 +467,7 @@ func _setup_bottom_left_ui() -> void:
 	vbox.add_child(core_hp_label)
 	
 	respawns_label = Label.new()
-	respawns_label.add_theme_font_size_override("font_size", 18)
+	respawns_label.add_theme_font_size_override("font_size", 16)
 	respawns_label.add_theme_color_override("font_color", Color(0.8, 0.2, 0.2))
 	respawns_label.text = ""
 	vbox.add_child(respawns_label)
@@ -472,8 +475,8 @@ func _setup_bottom_left_ui() -> void:
 	bottom_left_content = vbox
 	_update_currency_ui()
 
-func register_ally_respawn(a_name: String, time: float) -> void:
-	active_respawns.append({"name": a_name, "time": time})
+func register_ally_respawn(a_name: String, time: float, lives_left: String = "") -> void:
+	active_respawns.append({"name": a_name, "time": time, "lives": lives_left})
 
 func _update_currency_ui() -> void:
 	if currency_label:
@@ -554,7 +557,7 @@ func _process(delta: float) -> void:
 			if active_respawns[i].time <= 0:
 				active_respawns.remove_at(i)
 			else:
-				respawn_text += "Respawning %s: %.1fs\n" %[active_respawns[i].name, active_respawns[i].time]
+				respawn_text += "Respawning %s (Lives: %s): %.1fs\n" %[active_respawns[i].name, active_respawns[i].lives, active_respawns[i].time]
 		if respawns_label:
 			respawns_label.text = respawn_text
 	elif respawns_label and respawns_label.text != "":
@@ -820,7 +823,6 @@ func _unhandled_input(event: InputEvent) -> void:
 func toggle_player_menu() -> void:
 	if player_menu.visible: player_menu.hide()
 	else:
-		close_inventory()
 		player_menu.show()
 		if BuildManager.is_building: BuildManager.exit_build_mode()
 		if PlayerManager.equipped_item: PlayerManager.set_equipped_item(null)
@@ -830,7 +832,6 @@ func set_debug_text(text: String) -> void:
 
 func open_inventory(inventory: InventoryComponent, title: String = "Storage", context: Object = null) -> void:
 	if inventory_gui:
-		if player_menu: player_menu.hide()
 		inventory_gui.open(inventory, title, context)
 		if BuildManager.is_building: BuildManager.exit_build_mode()
 		if PlayerManager.equipped_item: PlayerManager.set_equipped_item(null)

@@ -1,12 +1,23 @@
-[gd_scene load_steps=5 format=3 uid="uid://b_foldgami"][ext_resource type="Script" path="res://scripts/entities/buildings/foldgami.gd" id="1_script"][ext_resource type="PackedScene" path="res://assets/buildables/foldgami/foldgami.gltf" id="2_mesh"][ext_resource type="Script" path="res://scripts/components/inventory_component.gd" id="3_inv"][sub_resource type="BoxShape3D" id="BoxShape3D_fg"]
-size = Vector3(1, 1, 1)
+[gd_scene format=3 uid="uid://chaux5mrfysew"]
 
-[node name="Foldgami" type="StaticBody3D"]
-script = ExtResource("1_script")[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+[ext_resource type="Script" uid="uid://bwam4sb3fgdvc" path="res://scripts/entities/buildings/foldgami.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://cik5ao1est6ly" path="res://assets/buildables/foldgami/foldgami.gltf" id="2_mesh"]
+[ext_resource type="Script" uid="uid://dad3f8h2j4k5l" path="res://scripts/components/inventory_component.gd" id="3_inv"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_fg"]
+
+[node name="Foldgami" type="StaticBody3D" unique_id=580360038]
+script = ExtResource("1_script")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1906564050]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
-shape = SubResource("BoxShape3D_fg")[node name="InventoryComponent" type="Node" parent="."]
+shape = SubResource("BoxShape3D_fg")
+
+[node name="InventoryComponent" type="Node" parent="." unique_id=460188441]
 script = ExtResource("3_inv")
 max_slots = 3
-slot_capacity = 50
-can_receive = true
-can_output = true[node name="Model" type="Node3D" parent="."][node name="foldgami" parent="Model" instance=ExtResource("2_mesh")]
+
+[node name="Model" type="Node3D" parent="." unique_id=242271932]
+
+[node name="blockbench_export" parent="." unique_id=210253265 instance=ExtResource("2_mesh")]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0)

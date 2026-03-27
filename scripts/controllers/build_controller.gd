@@ -117,8 +117,14 @@ func _handle_delete_highlight(world_pos: Vector3) -> void:
 		_clear_delete_highlight(); return
 	var cell = BuildManager.get_grid_cell(world_pos)
 	var tile = Vector2i(cell.x, cell.z)
-	var target = BuildManager.get_mech_at(tile)
-	if not target: target = BuildManager.wiring_manager.get_wire_instance(tile)
+	
+	var target = null
+	if BuildManager.current_remove_mode == BuildManager.RemoveMode.ALL or BuildManager.current_remove_mode == BuildManager.RemoveMode.BUILDING_ONLY:
+		target = BuildManager.get_mech_at(tile)
+	
+	if not target and (BuildManager.current_remove_mode == BuildManager.RemoveMode.ALL or BuildManager.current_remove_mode == BuildManager.RemoveMode.WIRE_ONLY):
+		target = BuildManager.wiring_manager.get_wire_instance(tile)
+		
 	if target != _hovered_for_deletion:
 		_clear_delete_highlight()
 		_hovered_for_deletion = target
@@ -144,7 +150,7 @@ func _update_arrow_indicator() -> void:
 	var pivot_world_pos = Vector3.ZERO
 	var show_arrows = false
 	var input_mask = 0; var output_mask = 0
-	var current_layout: Array[Vector2i] = [Vector2i.ZERO]
+	var current_layout: Array[Vector2i] =[Vector2i.ZERO]
 	var is_preview_mode = false; var rotation_index = 0
 	
 	if BuildManager.is_building and main.build_preview_container.visible and BuildManager.selected_buildable:

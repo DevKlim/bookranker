@@ -1,4 +1,4 @@
-[    {
+[	{
 		"id": "pipe_swing",
 		"cooldown": 3.0,
 		"damage": 2.0,
@@ -66,5 +66,54 @@
 		"damage": 500.0,
 		"min_range": 1, "max_range": 1, "is_aoe": true,
 		"hitbox_extents":[2.0, 2.0, 2.0]
+	},
+	{
+		"id": "cranefold_shot",
+		"cooldown": 3.0,
+		"damage": 3.0,
+		"spawn_projectile": true,
+		"projectile_speed": 300.0,
+		"range_width": 0
+	},
+	{
+		"id": "crumpledfold_shot",
+		"cooldown": 2.0,
+		"damage": 1.0,
+		"spawn_projectile": true,
+		"projectile_speed": 150.0,
+		"range_width": 0
+	},
+	{
+		"id": "lotusfold_shot",
+		"cooldown": 2.0,
+		"damage": 2.0,
+		"spawn_projectile": true,
+		"projectile_speed": 200.0,
+		"is_aoe": true,
+		"range_width": 1
+	},
+	{
+		"id": "planefold_shot",
+		"cooldown": 2.0,
+		"damage": 2.0,
+		"spawn_projectile": true,
+		"projectile_speed": 300.0,
+		"range_width": 0
+	},
+	{
+		"id": "shurikenfold_shot",
+		"cooldown": 2.0,
+		"damage": 1.0,
+		"spawn_projectile": true,
+		"projectile_speed": 400.0,
+		"range_width": 0
+	},
+	{
+		"id": "swanfold_shot",
+		"cooldown": 2.0,
+		"damage": 2.0,
+		"spawn_projectile": true,
+		"projectile_speed": 250.0,
+		"range_width": 0
 	}
 ]

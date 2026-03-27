@@ -1,6 +1,18 @@
-[gd_scene load_steps=4 format=3 uid="uid://c_shuriken_fold_01"][ext_resource type="Script" path="res://scripts/entities/projectile.gd" id="1_script"][ext_resource type="PackedScene" path="res://assets/buildables/shuriken/shuriken.gltf" id="2_mesh"][sub_resource type="BoxShape3D" id="BoxShape3D_shuriken"]
-size = Vector3(0.6, 0.2, 0.6)[node name="FoldShuriken" type="Area3D"]
-script = ExtResource("1_script")[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+[gd_scene format=3 uid="uid://djfsgtn4stnyx"]
+
+[ext_resource type="Script" uid="uid://1uckad6v513s" path="res://scripts/entities/projectile.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://7y2eu2lubhvv" path="res://assets/buildables/shuriken/shuriken.gltf" id="2_mesh"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_shuriken"]
+
+[node name="FoldShuriken" type="Area3D" unique_id=527568709]
+script = ExtResource("1_script")
+default_scale = Vector3(1, 1, 1)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1768742532]
 shape = SubResource("BoxShape3D_shuriken")
 
-[node name="Model" type="Node3D" parent="."][node name="shuriken" parent="Model" instance=ExtResource("2_mesh")]
+[node name="Model" type="Node3D" parent="." unique_id=279262003]
+
+[node name="shuriken" parent="Model" unique_id=1584955113 instance=ExtResource("2_mesh")]
+transform = Transform3D(-8.742278e-08, -2, 0, 2, -8.742278e-08, 0, 0, 0, 2, 0, 0, 0)

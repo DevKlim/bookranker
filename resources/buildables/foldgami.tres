@@ -1,8 +1,8 @@
 [gd_resource type="Resource" script_class="BuildableResource" format=3 uid="uid://dg7s0va0yd8uy"]
 
-[ext_resource type="Texture2D" uid="uid://cvb60858ltea7" path="res://assets/icons/foldgami.png" id="1_uuj0v"]
+[ext_resource type="Texture2D" uid="uid://bh0egasr534a0" path="res://assets/icons/foldgami.png" id="1_uuj0v"]
 [ext_resource type="Script" uid="uid://qpm1dylmnjld" path="res://scripts/resources/buildable_resource.gd" id="2_uuj0v"]
-[ext_resource type="PackedScene" uid="uid://d3ycbus0w1076" path="res://scenes/buildables/foldgami.tscn" id="2_xijhj"]
+[ext_resource type="PackedScene" uid="uid://chaux5mrfysew" path="res://scenes/buildables/foldgami.tscn" id="2_xijhj"]
 
 [resource]
 script = ExtResource("2_uuj0v")

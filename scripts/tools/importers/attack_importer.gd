@@ -30,6 +30,16 @@ func import_attacks(list: Array) -> void:
 		res.range_width = int(entry.get("range_width", 0))
 		res.is_aoe = bool(entry.get("is_aoe", false))
 		
+		if entry.has("custom_aoe_tiles"):
+			var arr_out: Array[Vector2i] = []
+			for v in entry["custom_aoe_tiles"]:
+				arr_out.append(Vector2i(int(v[0]), int(v[1])))
+			res.custom_aoe_tiles = arr_out
+			
+		if entry.has("hitbox_extents"):
+			var hex = entry["hitbox_extents"]
+			res.hitbox_extents = Vector3(float(hex[0]), float(hex[1]), float(hex[2]))
+		
 		# Projectiles
 		res.spawn_projectile = bool(entry.get("spawn_projectile", false))
 		res.projectile_speed = float(entry.get("projectile_speed", 10.0))

@@ -1,6 +1,17 @@
-[gd_scene load_steps=4 format=3 uid="uid://c_crane_fold_01"][ext_resource type="Script" path="res://scripts/entities/projectile.gd" id="1_script"][ext_resource type="PackedScene" path="res://assets/buildables/crane/crane.gltf" id="2_mesh"][sub_resource type="BoxShape3D" id="BoxShape3D_crane"]
-size = Vector3(0.5, 0.5, 0.5)
+[gd_scene format=3 uid="uid://dq7pb5368cpl6"]
 
-[node name="FoldCrane" type="Area3D"]
-script = ExtResource("1_script")[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
-shape = SubResource("BoxShape3D_crane")[node name="Model" type="Node3D" parent="."][node name="crane" parent="Model" instance=ExtResource("2_mesh")]
+[ext_resource type="Script" uid="uid://1uckad6v513s" path="res://scripts/entities/projectile.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://bljac0gvsmxkm" path="res://assets/buildables/crane/crane.gltf" id="2_mesh"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_crane"]
+
+[node name="FoldCrane" type="Area3D" unique_id=929305340]
+script = ExtResource("1_script")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=279364084]
+shape = SubResource("BoxShape3D_crane")
+
+[node name="Model" type="Node3D" parent="." unique_id=474681880]
+
+[node name="crane" parent="Model" unique_id=1509918912 instance=ExtResource("2_mesh")]
+transform = Transform3D(4, 0, 0, 0, 4, 0, 0, 0, 4, 0, 0, 0)

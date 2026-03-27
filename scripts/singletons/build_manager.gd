@@ -3,6 +3,10 @@ extends Node
 signal build_mode_changed(is_building)
 signal selected_buildable_changed(buildable_resource)
 signal build_rotation_changed(new_rotation_val)
+signal remove_mode_changed(mode)
+
+enum RemoveMode { ALL, BUILDING_ONLY, WIRE_ONLY }
+var current_remove_mode: RemoveMode = RemoveMode.ALL
 
 var is_building: bool = false:
 	set(value):
@@ -17,7 +21,7 @@ var selected_buildable: BuildableResource = null:
 			emit_signal("selected_buildable_changed", selected_buildable)
 
 var current_rotation_index: int = 0
-var _current_build_layout: Array[Vector2i] = [Vector2i.ZERO]
+var _current_build_layout: Array[Vector2i] =[Vector2i.ZERO]
 
 @onready var wiring_manager = get_node("/root/WiringManager")
 @onready var lane_manager = get_node("/root/LaneManager")
@@ -40,6 +44,11 @@ func exit_build_mode():
 
 func rotate_buildable():
 	if not is_building: return
+	if selected_buildable and selected_buildable.layer == BuildableResource.BuildLayer.TOOL:
+		current_remove_mode = (current_remove_mode + 1) % 3 as RemoveMode
+		emit_signal("remove_mode_changed", current_remove_mode)
+		return
+		
 	if selected_buildable and selected_buildable.layer != BuildableResource.BuildLayer.MECH:
 		return 
 	current_rotation_index = (current_rotation_index + 1) % 4
@@ -47,7 +56,7 @@ func rotate_buildable():
 	emit_signal("build_rotation_changed", current_rotation_index)
 
 func _update_current_layout_cache() -> void:
-	_current_build_layout = [Vector2i.ZERO]
+	_current_build_layout =[Vector2i.ZERO]
 	if not selected_buildable or not selected_buildable.scene: return
 	
 	var temp = selected_buildable.scene.instantiate()
@@ -112,8 +121,10 @@ func can_build_at(world_pos: Vector3) -> bool:
 
 func has_removable_at(world_pos: Vector3) -> bool:
 	var logic_coord = _get_logic_coord(world_pos)
-	if lane_manager.get_entity_at(logic_coord, "building") != null: return true
-	if lane_manager.get_entity_at(logic_coord, "wire") != null: return true
+	if current_remove_mode == RemoveMode.ALL or current_remove_mode == RemoveMode.BUILDING_ONLY:
+		if lane_manager.get_entity_at(logic_coord, "building") != null: return true
+	if current_remove_mode == RemoveMode.ALL or current_remove_mode == RemoveMode.WIRE_ONLY:
+		if lane_manager.get_entity_at(logic_coord, "wire") != null: return true
 	return false
 
 func place_buildable(world_pos: Vector3):
@@ -141,8 +152,10 @@ func place_buildable(world_pos: Vector3):
 
 func remove_buildable_at(world_pos: Vector3):
 	var logic_coord = _get_logic_coord(world_pos)
-	_remove_at_tile(logic_coord, "building")
-	_remove_at_tile(logic_coord, "wire")
+	if current_remove_mode == RemoveMode.ALL or current_remove_mode == RemoveMode.BUILDING_ONLY:
+		_remove_at_tile(logic_coord, "building")
+	if current_remove_mode == RemoveMode.ALL or current_remove_mode == RemoveMode.WIRE_ONLY:
+		_remove_at_tile(logic_coord, "wire")
 
 func _remove_at_tile(coord: Vector2i, layer_filter: String = ""):
 	if layer_filter == "" or layer_filter == "building":

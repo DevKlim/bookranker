@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://dt25u32oxnfc6"]
 
-[ext_resource type="Texture2D" uid="uid://cu8te1ys3kix6" path="res://assets/icons/stamp_swan.png" id="1_vhii6"]
+[ext_resource type="Texture2D" uid="uid://dajgb4xo1228h" path="res://assets/items/stamp_swan.png" id="1_vhii6"]
 [ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="2_kobei"]
 
 [resource]

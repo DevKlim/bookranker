@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://dnrhabjmal0si" path="res://assets/buildables/slipstream/slipstream.gltf" id="2_7h7cf"]
 
 [sub_resource type="BoxShape3D" id="1"]
-size = Vector3(1, 0.1, 1)
+size = Vector3(1, 0.5, 1)
 
 [node name="Slipstream" type="StaticBody3D" unique_id=1567428293]
 script = ExtResource("1")
@@ -13,7 +13,7 @@ default_input_mask = 1
 default_output_mask = 4
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1219158396]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.26206055, 0)
 shape = SubResource("1")
 
 [node name="blockbench_export" parent="." unique_id=743092892 instance=ExtResource("2_7h7cf")]

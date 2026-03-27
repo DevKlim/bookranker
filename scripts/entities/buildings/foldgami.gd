@@ -156,11 +156,15 @@ func _try_fold(mat_item: ItemResource, stamp_item: ItemResource, element_item: I
 			extra_dmg = 2.0
 			range_blocks = 100
 			is_aoe = true
+			is_tick_damage = true
 		elif type == "shuriken":
 			extra_dmg = 1.0
 			range_blocks = 20
 			
 	var total_dmg = base_dmg + extra_dmg
+	
+	if type == "crumpled":
+		total_dmg = 1.0 if mat_id == "paper" else 2.0
 	
 	var elem = null
 	var col = Color.WHITE
@@ -178,7 +182,8 @@ func _try_fold(mat_item: ItemResource, stamp_item: ItemResource, element_item: I
 			if elem: col = elem.color
 
 	# Cache dynamic item resource definition
-	var dyn_path = "dynamic:fold_%s_%s_%s" %[mat_id, type, prefix.strip_edges()]
+	var clean_prefix = prefix.strip_edges().replace(" ", "_")
+	var dyn_path = "dynamic_fold_%s_%s_%s" %[mat_id, type, clean_prefix]
 	var dyn_item = Engine.get_meta(dyn_path) if Engine.has_meta(dyn_path) else null
 	
 	if not dyn_item:
@@ -216,10 +221,18 @@ func _try_fold(mat_item: ItemResource, stamp_item: ItemResource, element_item: I
 	# 1. Output into Forward Neighbor Inventory (Belt / Cubby)
 	var output_neighbor = get_neighbor(output_direction)
 	if is_instance_valid(output_neighbor) and output_neighbor.has_method("receive_item") and output_neighbor.get("has_input") != false:
-		if output_neighbor.receive_item(dyn_item, self):
-			_consume_inputs(mat_item, stamp_item, element_item)
-			print("[Foldgami] Handed fold successfully to neighbor.")
-			return
+		var is_sea_borne = dyn_item.modifiers.get("sea_borne", false)
+		
+		var is_neighbor_stream = false
+		if "display_name" in output_neighbor and output_neighbor.display_name in["Slipstream", "Tarstream"]:
+			is_neighbor_stream = true
+		
+		# Prevent turning projectiles into static inventory items strictly on streams
+		if not (is_sea_borne and is_neighbor_stream):
+			if output_neighbor.receive_item(dyn_item, self):
+				_consume_inputs(mat_item, stamp_item, element_item)
+				print("[Foldgami] Handed fold successfully to neighbor.")
+				return
 
 	# 2. Fire as active Projectile into the wild
 	_consume_inputs(mat_item, stamp_item, element_item)
@@ -227,7 +240,7 @@ func _try_fold(mat_item: ItemResource, stamp_item: ItemResource, element_item: I
 
 func _consume_inputs(m, s, e):
 	inventory_component.remove_item(m, 1)
-	if s: inventory_component.remove_item(s, 1)
+	# STAMPS ARE NEVER CONSUMED. Reusable modifiers.
 	if e: inventory_component.remove_item(e, 1)
 
 func _fire_projectile(dyn_item: ItemResource, type: String):
@@ -268,7 +281,7 @@ func _fire_projectile(dyn_item: ItemResource, type: String):
 	params["grace_period"] = 0.5 # Give Seaborne items half a second to locate the stream upon firing
 	
 	# Convert grid blocks into seconds of lifetime
-	var lifetime = params.get("range", 10.0) / (speed * 0.02)
+	var lifetime = float(params.get("range", 10.0)) / (speed * 0.02)
 	params["lifetime"] = lifetime
 	
 	proj.initialize(spawn_pos, dir, speed, dyn_item.damage, lane_id, dyn_item.element, dyn_item.icon, dyn_item.color, false, params)

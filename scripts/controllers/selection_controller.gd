@@ -1,8 +1,8 @@
 class_name SelectionController extends Node
 
 var main: Node3D
-var selected_ally: Node = null
-var selected_allies: Array[Node] =[]
+var selected_ally = null # CHANGED: Untyped Variant prevents assignment crashes when nodes are freed
+var selected_allies: Array =[] 
 var selected_mech_coords: Vector2i = Vector2i(-1, -1)
 var selected_wire_coords: Vector2i = Vector2i(-1, -1)
 
@@ -44,7 +44,7 @@ func update(selection_ray: Dictionary, terrain_ray: Dictionary, mouse_world_pos:
 
 	if not BuildManager.is_building:
 		if Input.is_action_just_pressed("use"):
-			if selected_ally and is_instance_valid(selected_ally) and selected_ally.has_method("activate_mode"):
+			if is_instance_valid(selected_ally) and not selected_ally.is_queued_for_deletion() and selected_ally.has_method("activate_mode"):
 				selected_ally.activate_mode()
 		
 		if PlayerManager.equipped_item and PlayerManager.equipped_item.is_tool:
@@ -53,29 +53,36 @@ func update(selection_ray: Dictionary, terrain_ray: Dictionary, mouse_world_pos:
 			if Input.is_action_just_pressed("build_place"):
 				if not main.is_mouse_over_ui():
 					var collider = selection_ray.get("collider") if selection_ray else null
+					
+					# Hard scrub the collider: if it's dead/freed, pretend we didn't click it
+					if collider and (not is_instance_valid(collider) or collider.is_queued_for_deletion()):
+						collider = null
+					
 					var clicked_unit = false
 					var is_shift_held = Input.is_key_pressed(KEY_SHIFT)
 					
-					selected_allies = selected_allies.filter(func(a): return is_instance_valid(a))
+					_clean_selected_allies()
 					
-					if collider == main.player:
+					if collider and collider == main.player:
 						if not is_shift_held: deselect_all()
 						
 						if not selected_allies.has(main.player):
 							selected_allies.append(main.player)
 							PlayerManager.is_player_selected = true
-							main.player.set_selected(true)
+							if is_instance_valid(main.player) and main.player.has_method("set_selected"):
+								main.player.set_selected(true)
 						elif is_shift_held:
 							selected_allies.erase(main.player)
 							PlayerManager.is_player_selected = false
-							main.player.set_selected(false)
+							if is_instance_valid(main.player) and main.player.has_method("set_selected"):
+								main.player.set_selected(false)
 						
 						if not selected_allies.is_empty():
 							selected_ally = selected_allies.back()
-							main.game_ui.set_selected_ally(selected_ally)
+							if main.game_ui: main.game_ui.set_selected_ally(selected_ally)
 						else:
 							selected_ally = null
-							main.game_ui.set_selected_ally(null)
+							if main.game_ui: main.game_ui.set_selected_ally(null)
 							
 						clicked_unit = true
 
@@ -91,24 +98,24 @@ func update(selection_ray: Dictionary, terrain_ray: Dictionary, mouse_world_pos:
 						
 						if not selected_allies.is_empty():
 							selected_ally = selected_allies.back()
-							main.game_ui.set_selected_ally(selected_ally)
+							if main.game_ui: main.game_ui.set_selected_ally(selected_ally)
 							
 							if selected_allies.size() == 1:
 								if "inventory_component" in selected_ally and selected_ally.inventory_component:
 									var d_name = "Ally"
 									if "display_name" in selected_ally: d_name = selected_ally.display_name
 									elif "ally_name" in selected_ally: d_name = selected_ally.ally_name
-									main.game_ui.open_inventory(selected_ally.inventory_component, d_name, selected_ally)
+									if main.game_ui: main.game_ui.open_inventory(selected_ally.inventory_component, d_name, selected_ally)
 						else:
 							selected_ally = null
-							main.game_ui.set_selected_ally(null)
+							if main.game_ui: main.game_ui.set_selected_ally(null)
 						
 						clicked_unit = true
 						
 					elif collider and collider is Core:
 						deselect_all()
 						selected_mech_coords = Vector2i(-1, -1)
-						main.game_ui.open_inventory(collider.mod_inventory, "Core System", collider)
+						if main.game_ui: main.game_ui.open_inventory(collider.mod_inventory, "Core System", collider)
 						clicked_unit = true
 					
 					if not clicked_unit:
@@ -120,7 +127,7 @@ func update(selection_ray: Dictionary, terrain_ray: Dictionary, mouse_world_pos:
 								deselect_all()
 							else:
 								var mech = BuildManager.get_mech_at(tile_coord)
-								if mech:
+								if mech and is_instance_valid(mech) and not mech.is_queued_for_deletion():
 									selected_mech_coords = tile_coord
 									deselect_all()
 									var inventory = null
@@ -131,18 +138,19 @@ func update(selection_ray: Dictionary, terrain_ray: Dictionary, mouse_world_pos:
 									# Even if it lacks a standard inventory, we want to see mods
 									if (inventory and inventory is InventoryComponent) or ("mod_inventory" in mech):
 										var title = mech.name.rstrip("0123456789")
-										main.game_ui.open_inventory(inventory, title, mech)
+										if main.game_ui: main.game_ui.open_inventory(inventory, title, mech)
 									else:
-										main.game_ui.close_inventory()
+										if main.game_ui: main.game_ui.close_inventory()
 								else:
 									selected_mech_coords = Vector2i(-1, -1)
-									main.game_ui.close_inventory()
-									main.game_ui.hide_network_stats()
+									if main.game_ui:
+										main.game_ui.close_inventory()
+										main.game_ui.hide_network_stats()
 									deselect_all()
 
 			elif Input.is_action_just_pressed("build_cancel"):
 				if not main.is_mouse_over_ui():
-					selected_allies = selected_allies.filter(func(a): return is_instance_valid(a))
+					_clean_selected_allies()
 					if not selected_allies.is_empty():
 						var cell = BuildManager.get_grid_cell(mouse_world_pos)
 						var tile_coord = Vector2i(cell.x, cell.z)
@@ -158,10 +166,20 @@ func update(selection_ray: Dictionary, terrain_ray: Dictionary, mouse_world_pos:
 								if is_instance_valid(ally) and ally.has_method("command_move"):
 									ally.command_move(target_pos)
 					else:
-						if main.game_ui.is_pause_menu_open(): main.game_ui.toggle_pause_menu()
-						elif main.game_ui.is_any_menu_open():
+						if main.game_ui and main.game_ui.is_pause_menu_open(): main.game_ui.toggle_pause_menu()
+						elif main.game_ui and main.game_ui.is_any_menu_open():
 							main.game_ui.close_all_menus()
 							if selected_mech_coords != Vector2i(-1, -1): selected_mech_coords = Vector2i(-1, -1)
+
+func _clean_selected_allies() -> void:
+	var valid_allies =[]
+	for a in selected_allies:
+		if is_instance_valid(a) and not a.is_queued_for_deletion():
+			valid_allies.append(a)
+	selected_allies = valid_allies
+	
+	if selected_ally and (not is_instance_valid(selected_ally) or selected_ally.is_queued_for_deletion()):
+		selected_ally = null
 
 func _update_cursor_highlight(world_pos: Vector3) -> void:
 	if not main.grid_map or main.is_mouse_over_ui():
@@ -208,17 +226,18 @@ func _handle_wire_click(tile_coord: Vector2i) -> void:
 	if has_wire:
 		selected_wire_coords = tile_coord
 		var stats = WiringManager.get_network_stats(tile_coord)
-		main.game_ui.show_network_stats(stats)
+		if main.game_ui: main.game_ui.show_network_stats(stats)
 	else:
 		selected_wire_coords = Vector2i(-1, -1)
-		main.game_ui.hide_network_stats()
+		if main.game_ui: main.game_ui.hide_network_stats()
 
 func deselect_all() -> void:
 	PlayerManager.is_player_selected = false
-	selected_allies = selected_allies.filter(func(a): return is_instance_valid(a))
+	_clean_selected_allies()
 	for ally in selected_allies:
-		if ally.has_method("set_selected"):
-			ally.set_selected(false)
+		if is_instance_valid(ally) and not ally.is_queued_for_deletion():
+			if ally.has_method("set_selected"):
+				ally.set_selected(false)
 	
 	selected_allies.clear()
 	selected_ally = null
@@ -228,11 +247,12 @@ func deselect_all() -> void:
 	
 	selected_mech_coords = Vector2i(-1, -1)
 	selected_wire_coords = Vector2i(-1, -1)
-	main.game_ui.close_inventory()
-	main.game_ui.hide_context_menu()
+	if main.game_ui:
+		main.game_ui.close_inventory()
+		main.game_ui.hide_context_menu()
 
 func has_selection() -> bool:
-	selected_allies = selected_allies.filter(func(a): return is_instance_valid(a))
+	_clean_selected_allies()
 	return not selected_allies.is_empty() or selected_mech_coords != Vector2i(-1, -1) or selected_wire_coords != Vector2i(-1, -1)
 
 func _show_clutter_context_menu(clutter: ClutterObject) -> void:
@@ -256,7 +276,8 @@ func _show_clutter_context_menu(clutter: ClutterObject) -> void:
 				lead_ally.set_interaction(clutter, "pickup_clutter")
 		})
 	
-	main.game_ui.show_context_menu(main.get_viewport().get_mouse_position(), options)
+	if main.game_ui:
+		main.game_ui.show_context_menu(main.get_viewport().get_mouse_position(), options)
 
 func _find_best_stand_pos(target_node: Node3D, seeker: Node3D) -> Vector3:
 	var target_tile = LaneManager.world_to_tile(target_node.global_position)

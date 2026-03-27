@@ -7,6 +7,7 @@
 script = ExtResource("1_lqy7v")
 element_name = "Aqua"
 icon = ExtResource("1_p45mx")
+color = Color(0.48964185, 0.72866, 1, 1)
 application_cooldown = 0.5
 reaction_rules = {
 "aero": "tailwind",

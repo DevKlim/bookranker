@@ -267,7 +267,7 @@ func _physics_process(delta: float) -> void:
 	_update_stats()
 	
 	if current_attack_target:
-		if not is_instance_valid(current_attack_target) or current_attack_target.is_queued_for_deletion():
+		if not is_instance_valid(current_attack_target) or current_attack_target.is_queued_for_deletion() or current_attack_target.get("is_dead") == true:
 			_stop_attacking_sequence()
 		elif current_state in[State.ATTACK_WAIT, State.ATTACK_LUNGE]:
 			if not _is_target_in_range(current_attack_target):
@@ -417,7 +417,7 @@ func _process_wander_state(delta: float) -> void:
 	_process_grid_movement(delta)
 
 func _process_aggro_state(delta: float) -> void:
-	if not is_instance_valid(current_attack_target):
+	if not is_instance_valid(current_attack_target) or current_attack_target.get("is_dead") == true:
 		_stop_attacking_sequence()
 		return
 	
@@ -453,6 +453,7 @@ func _check_aggro(_delta: float) -> void:
 	
 	var allies = get_tree().get_nodes_in_group("allies")
 	for ally in allies:
+		if ally.get("is_dead") == true: continue
 		if is_instance_valid(ally):
 			if global_position.distance_squared_to(ally.global_position) <= (aggro_range * aggro_range):
 				current_attack_target = ally
@@ -486,7 +487,7 @@ func _process_grid_movement(delta: float) -> void:
 
 func _process_attack_wait(delta: float) -> void:
 	velocity.x = 0; velocity.z = 0
-	if is_instance_valid(current_attack_target):
+	if is_instance_valid(current_attack_target) and current_attack_target.get("is_dead") != true:
 		var target_pos = current_attack_target.global_position
 		var look_pos = Vector3(target_pos.x, global_position.y, target_pos.z)
 		if global_position.distance_squared_to(look_pos) > 0.001:
@@ -497,7 +498,7 @@ func _process_attack_wait(delta: float) -> void:
 		current_state = State.ATTACK_LUNGE
 
 func _process_attack_lunge(_delta: float) -> void:
-	if not is_instance_valid(current_attack_target):
+	if not is_instance_valid(current_attack_target) or current_attack_target.get("is_dead") == true:
 		_stop_attacking_sequence(); return
 
 	var target_pos = current_attack_target.global_position
@@ -553,13 +554,14 @@ func _process_attack_return(delta: float) -> void:
 	velocity.x = dir.x * spd
 	velocity.z = dir.z * spd
 	
-	if is_instance_valid(current_attack_target):
+	if is_instance_valid(current_attack_target) and current_attack_target.get("is_dead") != true:
 		var t_pos = current_attack_target.global_position
 		look_at(Vector3(t_pos.x, global_position.y, t_pos.z), Vector3.UP)
 
 func _scan_for_targets() -> void:
 	var allies = get_tree().get_nodes_in_group("allies")
 	for ally in allies:
+		if ally.get("is_dead") == true: continue
 		if is_instance_valid(ally) and _is_target_in_range(ally):
 			if ally.has_method("take_damage") or ally.has_node("HealthComponent"):
 				_start_attacking_sequence(ally); return
@@ -617,7 +619,7 @@ func _start_attacking_sequence(target: Node) -> void:
 	current_state = State.ATTACK_RETURN
 
 func _perform_attack_damage() -> void:
-	if not is_instance_valid(current_attack_target): return
+	if not is_instance_valid(current_attack_target) or current_attack_target.get("is_dead") == true: return
 	
 	if attacker_component:
 		attacker_component.start_attacking(current_attack_target)
@@ -661,7 +663,9 @@ func _apply_tint(color: Color):
 		if m: m.albedo_color = color
 func take_damage(amount: float, element: ElementResource = null, source: Node = null) -> void:
 	if is_field_enemy and source and source != self and source.is_in_group("allies"):
-		if not current_attack_target:
+		if source.get("is_dead") == true:
+			pass
+		elif not current_attack_target:
 			current_attack_target = source
 			current_state = State.AGGRO
 			set_path([])

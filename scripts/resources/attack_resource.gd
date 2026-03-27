@@ -26,6 +26,8 @@ extends Resource
 @export var range_width: int = 0
 ## If true, hits all entities in the target tile(s).
 @export var is_aoe: bool = false
+## Custom relative grid coordinates to hit. X is Forward, Y is Right. e.g.[Vector2i(1, 0), Vector2i(1, 1)]
+@export var custom_aoe_tiles: Array[Vector2i] =[]
 ## If aoe is false and this is set, does a physics overlap check instead of grid
 @export var hitbox_extents: Vector3 = Vector3.ZERO
 
