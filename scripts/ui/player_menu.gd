@@ -756,6 +756,9 @@ func _create_grid_tab(name: String) -> Control:
 	m.add_theme_constant_override("margin_left", 10); m.add_theme_constant_override("margin_right", 10)
 	m.add_theme_constant_override("margin_top", 10); m.add_theme_constant_override("margin_bottom", 10)
 	var s = ScrollContainer.new(); s.name = "Scroll"; m.add_child(s)
+	
+	s.set_drag_forwarding(Callable(), Callable(self, "_can_drop_trash"), Callable(self, "_drop_trash"))
+	
 	var g = GridContainer.new(); g.name = "Grid"; g.columns = 8; g.add_theme_constant_override("h_separation", 6); g.add_theme_constant_override("v_separation", 6); s.add_child(g)
 	return m
 
@@ -990,7 +993,7 @@ func _create_res_btn(res):
 	elif "ally_name" in res: b.tooltip_text = res.ally_name
 	
 	b.gui_input.connect(_on_res_btn_input.bind(res))
-	b.set_drag_forwarding(Callable(self, "_drag_create").bind(res), Callable(), Callable())
+	b.set_drag_forwarding(Callable(self, "_drag_create").bind(res), Callable(self, "_can_drop_trash"), Callable(self, "_drop_trash"))
 	return b
 
 func _on_res_btn_input(event: InputEvent, res: Resource):
@@ -1065,3 +1068,12 @@ func _generic_drop(data, target_inv, target_idx):
 			var taken = count - remainder
 			if taken > 0:
 				src.remove_item(item, taken)
+
+func _can_drop_trash(_pos, data) -> bool:
+	if not PlayerManager.is_creative_mode: return false
+	return data is Dictionary and data.has("type") and data.type == "inventory_drag"
+
+func _drop_trash(_pos, data) -> void:
+	if data.has("inventory") and data.has("item") and data.has("count"):
+		data.inventory.remove_item(data.item, data.count)
+

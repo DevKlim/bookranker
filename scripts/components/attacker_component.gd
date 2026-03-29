@@ -105,9 +105,6 @@ func _perform_attack() -> void:
 				var infinite = source.get("infinite_ammo") if "infinite_ammo" in source else false
 				if not infinite:
 					inv.remove_item(ammo_item, 1)
-	elif current_attack.id == "fan_blow":
-		stop_attacking()
-		return
 			
 	var base_attack = current_attack
 	if ammo_item and ammo_item.get("attack_config"):
@@ -227,9 +224,7 @@ func _spawn_visuals(source: Node3D, target: Node3D, t_pos: Vector3) -> void:
 			2: pos = source.global_position.lerp(final_t_pos, 0.5)
 		vis.global_position = pos + current_attack.visual_offset
 	
-	if current_attack.visual_spawn_point == 0:
-		if not current_attack.attach_visual_to_source and final_t_pos != Vector3.INF:
-			vis.look_at(Vector3(final_t_pos.x, vis.global_position.y, final_t_pos.z), Vector3.UP)
+	vis.global_basis = Basis.looking_at(Vector3.RIGHT, Vector3.UP)
 		
 	if current_attack.visual_duration > 0 and not vis.has_method("_on_finished"):
 		get_tree().create_timer(current_attack.visual_duration).timeout.connect(func(): if is_instance_valid(vis): vis.queue_free())
@@ -297,44 +292,69 @@ func _spawn_projectile(source: Node, damage: float, atk: AttackResource, ammo_it
 
 func _apply_hit(target: Node, t_pos: Vector3, damage: float, atk: AttackResource, source: Node) -> void:
 	var targets_to_hit =[]
-	var center_pos = target.global_position if is_instance_valid(target) else t_pos
+	var source_valid = is_instance_valid(source) and source.is_inside_tree()
+	var center_pos = source.global_position if (source_valid and source is Node3D) else t_pos
 	if center_pos == Vector3.INF: return
 	
 	var hit_tiles =[]
+	var rotates = atk.get("rotates_with_source") == true or (atk.has_meta("rotates_with_source") and atk.get_meta("rotates_with_source"))
+	var targets_b = atk.get("targets_buildings") == true or (atk.has_meta("targets_buildings") and atk.get_meta("targets_buildings"))
+	var is_source_ally = source_valid and (source.is_in_group("allies") or source.is_in_group("player") or source.is_in_group("core") or source.is_in_group("buildings"))
 	
 	if atk.is_aoe:
-		var source_tile = LaneManager.world_to_tile(source.global_position)
 		var center_tile = LaneManager.world_to_tile(center_pos)
-		var is_source_ally = source.is_in_group("allies") or source.is_in_group("player") or source.is_in_group("core") or source.is_in_group("buildings")
 		
-		# Build the relative tile map
 		if not atk.custom_aoe_tiles.is_empty():
 			var fx = 1
 			var fz = 0
-			if source is Node3D and "output_direction" in source:
-				match source.get("output_direction"):
-					0: # DOWN (+Z)
-						fx = 0; fz = 1
-					1: # LEFT (-X)
-						fx = -1; fz = 0
-					2: # UP (-Z)
-						fx = 0; fz = -1
-					3: # RIGHT (+X)
-						fx = 1; fz = 0
-			elif source is Node3D:
-				var fwd = -source.global_transform.basis.z
-				if abs(fwd.x) > abs(fwd.z):
-					fx = sign(fwd.x); fz = 0
+			if rotates and source_valid and source is Node3D:
+				if "output_direction" in source:
+					match source.get("output_direction"):
+						0: # DOWN (+Z)
+							fx = 0; fz = 1
+						1: # LEFT (-X)
+							fx = -1; fz = 0
+						2: # UP (-Z)
+							fx = 0; fz = -1
+						3: # RIGHT (+X)
+							fx = 1; fz = 0
 				else:
-					fx = 0; fz = sign(fwd.z)
+					var fwd = -source.global_transform.basis.z
+					if abs(fwd.x) > abs(fwd.z):
+						fx = sign(fwd.x); fz = 0
+					else:
+						fx = 0; fz = sign(fwd.z)
+			else:
+				fx = 1 if is_source_ally else -1
+				fz = 0
 					
 			for offset in atk.custom_aoe_tiles:
 				var world_x = offset.x * fx - offset.y * fz
 				var world_z = offset.x * fz + offset.y * fx
-				hit_tiles.append(source_tile + Vector2i(world_x, world_z))
+				hit_tiles.append(center_tile + Vector2i(world_x, world_z))
 		else:
-			for w in range(-atk.range_width, atk.range_width + 1):
-				hit_tiles.append(center_tile + Vector2i(0, w))
+			var dir_x = 1 if is_source_ally else -1
+			var dir_z = 0
+			
+			if rotates and source_valid and source is Node3D:
+				if "output_direction" in source:
+					match source.get("output_direction"):
+						0: dir_x = 0; dir_z = 1
+						1: dir_x = -1; dir_z = 0
+						2: dir_x = 0; dir_z = -1
+						3: dir_x = 1; dir_z = 0
+				else:
+					var fwd = -source.global_transform.basis.z
+					if abs(fwd.x) > abs(fwd.z):
+						dir_x = sign(fwd.x); dir_z = 0
+					else:
+						dir_x = 0; dir_z = sign(fwd.z)
+			
+			for r in range(atk.min_range, atk.max_range + 1):
+				for w in range(-atk.range_width, atk.range_width + 1):
+					var world_x = r * dir_x - w * dir_z
+					var world_z = r * dir_z + w * dir_x
+					hit_tiles.append(center_tile + Vector2i(world_x, world_z))
 		
 		for tile in hit_tiles:
 			if is_source_ally:
@@ -342,6 +362,11 @@ func _apply_hit(target: Node, t_pos: Vector3, damage: float, atk: AttackResource
 				for e in enemies:
 					if e != target and is_instance_valid(e) and not targets_to_hit.has(e):
 						targets_to_hit.append(e)
+				
+				if targets_b:
+					var building = LaneManager.get_entity_at(tile, "building")
+					if building and is_instance_valid(building) and not building.is_in_group("clutter") and building != source and not targets_to_hit.has(building):
+						targets_to_hit.append(building)
 			else:
 				var building = LaneManager.get_entity_at(tile, "building")
 				if building and building != target and is_instance_valid(building) and not building.is_in_group("clutter") and not targets_to_hit.has(building):
@@ -357,23 +382,34 @@ func _apply_hit(target: Node, t_pos: Vector3, damage: float, atk: AttackResource
 			targets_to_hit.append(target)
 			
 	elif atk.hitbox_extents != Vector3.ZERO:
-		var space_state = source.get_world_3d().direct_space_state
-		var query = PhysicsShapeQueryParameters3D.new()
-		var shape = BoxShape3D.new()
-		shape.size = atk.hitbox_extents
-		query.shape = shape
-		
-		var basis = Basis()
-		if source is Node3D:
-			basis = source.global_transform.basis.orthonormalized()
+		var space_node = source if source_valid else get_tree().root
+		var space_state = space_node.get_world_3d().direct_space_state if space_node.is_inside_tree() else null
+		if space_state:
+			var query = PhysicsShapeQueryParameters3D.new()
+			var shape = BoxShape3D.new()
+			shape.size = atk.hitbox_extents
+			query.shape = shape
 			
-		query.transform = Transform3D(basis, center_pos + Vector3(0, atk.hitbox_extents.y / 2.0, 0))
-		query.collision_mask = 2 if (source.is_in_group("allies") or source.is_in_group("player")) else 5
-		var results = space_state.intersect_shape(query)
-		for res in results:
-			var col = res.collider
-			if is_instance_valid(col) and not targets_to_hit.has(col) and col != source:
-				targets_to_hit.append(col)
+			var start_pos = source.global_position if (source_valid and source is Node3D) else center_pos
+			var basis = Basis()
+			if rotates and source_valid and source is Node3D:
+				basis = source.global_transform.basis.orthonormalized()
+			else:
+				if not is_source_ally:
+					basis = basis.rotated(Vector3.UP, PI)
+					
+			var source_transform = Transform3D(basis, start_pos)
+			var local_offset_transform = Transform3D(Basis(), Vector3(0, atk.hitbox_extents.y / 2.0, -atk.hitbox_extents.z / 2.0))
+			query.transform = source_transform * local_offset_transform
+			
+			query.collision_mask = 2 if is_source_ally else 5
+			var results = space_state.intersect_shape(query)
+			for res in results:
+				var col = res.collider
+				if is_instance_valid(col) and not targets_to_hit.has(col) and col != source:
+					var is_b = col.is_in_group("buildings")
+					if is_b and is_source_ally and not targets_b: continue
+					targets_to_hit.append(col)
 		if is_instance_valid(target) and not targets_to_hit.has(target):
 			targets_to_hit.append(target)
 	else:
@@ -382,19 +418,19 @@ func _apply_hit(target: Node, t_pos: Vector3, damage: float, atk: AttackResource
 							
 	if show_debug_hitboxes:
 		_spawn_debug_hitbox(center_pos, atk, source, hit_tiles)
-	
+		
 	for t in targets_to_hit:
 		if not is_instance_valid(t): continue
 		
 		if atk.element:
-			ElementManager.apply_element(t, atk.element, source, damage, atk.element_units, atk.ignore_element_cd)
+			ElementManager.apply_element(t, atk.element, source if source_valid else null, damage, atk.element_units, atk.ignore_element_cd)
 		
 		if t.has_method("take_damage"):
-			t.take_damage(damage, atk.element, source)
+			t.take_damage(damage, atk.element, source if source_valid else null)
 		elif t.has_node("HealthComponent"):
-			t.get_node("HealthComponent").take_damage(damage, atk.element, source)
+			t.get_node("HealthComponent").take_damage(damage, atk.element, source if source_valid else null)
 			
-		if "active_weapon_item" in source and source.active_weapon_item:
+		if source_valid and "active_weapon_item" in source and source.active_weapon_item:
 			var artifact = source.active_weapon_item.get_artifact_instance()
 			if artifact and artifact.has_method("on_attack"):
 				artifact.on_attack(source, t, source.active_weapon_item, damage)
@@ -404,6 +440,7 @@ func _apply_hit(target: Node, t_pos: Vector3, damage: float, atk: AttackResource
 func _spawn_debug_hitbox(target_pos: Vector3, atk: AttackResource, source: Node, hit_tiles: Array) -> void:
 	if not get_tree().root.has_node("LaneManager"): return
 	
+	var source_valid = is_instance_valid(source) and source.is_inside_tree()
 	var meshes_to_spawn = []
 
 	if atk.is_aoe:
@@ -411,27 +448,51 @@ func _spawn_debug_hitbox(target_pos: Vector3, atk: AttackResource, source: Node,
 		for tile in hit_tiles:
 			var mesh_inst = MeshInstance3D.new()
 			var box = BoxMesh.new()
-			box.size = Vector3(s, 1.0, s)
+			# Shrink slightly to prevent overlapping faces/z-fighting
+			box.size = Vector3(s * 0.95, 1.0, s * 0.95)
 			mesh_inst.mesh = box
+			get_tree().root.add_child(mesh_inst) # Added to tree BEFORE setting global_position
+			
 			var tile_center = LaneManager.tile_to_world(tile)
 			tile_center.y = target_pos.y + 0.5
 			mesh_inst.global_position = tile_center
 			meshes_to_spawn.append(mesh_inst)
+			
 	elif atk.hitbox_extents != Vector3.ZERO:
 		var mesh_inst = MeshInstance3D.new()
 		var box = BoxMesh.new()
-		box.size = atk.hitbox_extents
+		# Shrink slightly to prevent overlapping faces/z-fighting
+		box.size = atk.hitbox_extents * 0.95
 		mesh_inst.mesh = box
-		if source is Node3D:
-			mesh_inst.global_transform.basis = source.global_transform.basis.orthonormalized()
-		var offset_y = (atk.hitbox_extents.y / 2.0) if atk.hitbox_extents != Vector3.ZERO else 0.5
-		mesh_inst.global_position = target_pos + Vector3(0, offset_y, 0)
+		get_tree().root.add_child(mesh_inst) # Added to tree BEFORE setting global_transform
+		
+		var start_pos = target_pos
+		var basis = Basis()
+		var rotates = atk.get("rotates_with_source") == true or (atk.has_meta("rotates_with_source") and atk.get_meta("rotates_with_source"))
+		var is_ally = false
+		if source_valid:
+			is_ally = source.is_in_group("allies") or source.is_in_group("player") or source.is_in_group("core") or source.is_in_group("buildings")
+			
+		if rotates and source_valid and source is Node3D:
+			basis = source.global_transform.basis.orthonormalized()
+			start_pos = source.global_position
+		else:
+			if not is_ally:
+				basis = basis.rotated(Vector3.UP, PI)
+				
+		var source_transform = Transform3D(basis, start_pos)
+		var local_offset_transform = Transform3D(Basis(), Vector3(0, atk.hitbox_extents.y / 2.0, -atk.hitbox_extents.z / 2.0))
+		mesh_inst.global_transform = source_transform * local_offset_transform
+		
 		meshes_to_spawn.append(mesh_inst)
+		
 	else:
 		var mesh_inst = MeshInstance3D.new()
 		var box = BoxMesh.new()
-		box.size = Vector3(0.5, 0.5, 0.5)
+		box.size = Vector3(0.45, 0.45, 0.45)
 		mesh_inst.mesh = box
+		get_tree().root.add_child(mesh_inst) # Added to tree BEFORE setting global_position
+		
 		mesh_inst.global_position = target_pos + Vector3(0, 0.5, 0)
 		meshes_to_spawn.append(mesh_inst)
 		
@@ -440,11 +501,11 @@ func _spawn_debug_hitbox(target_pos: Vector3, atk: AttackResource, source: Node,
 		mat.albedo_color = Color(1.0, 0.2, 0.2, 0.5)
 		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		mat.render_priority = 11
 		mesh_inst.material_override = mat
 		
-		get_tree().root.add_child(mesh_inst)
-		
-		var tween = create_tween()
+		# Bind the tween directly to the mesh_inst instead of the AttackerComponent.
+		# This prevents the tween from crashing if the AttackerComponent is freed mid-animation.
+		var tween = mesh_inst.create_tween()
 		tween.tween_property(mat, "albedo_color:a", 0.0, 0.3)
 		tween.tween_callback(mesh_inst.queue_free)
-

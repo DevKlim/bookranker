@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="BuildableResource" format=3 uid="uid://bkdt0h7ocv5u2"]
 
-[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="1_yol3x"]
+[ext_resource type="Texture2D" uid="uid://dxde4434yboc5" path="res://assets/icons/chalkboard.png" id="1_67ejo"]
 [ext_resource type="Script" uid="uid://qpm1dylmnjld" path="res://scripts/resources/buildable_resource.gd" id="2_67ejo"]
 [ext_resource type="PackedScene" uid="uid://82ilkabsu21k" path="res://scenes/buildables/chalkboard.tscn" id="2_r11u1"]
 
@@ -8,7 +8,7 @@
 script = ExtResource("2_67ejo")
 buildable_name = "Chalkboard"
 description = "Tier 1 Crafter."
-icon = ExtResource("1_yol3x")
+icon = ExtResource("1_67ejo")
 width = 2.0
 has_input = false
 has_output = false

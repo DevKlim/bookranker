@@ -651,7 +651,34 @@ func _on_staggered(_duration: float) -> void:
 	is_staggered = true
 	if current_state != State.RAGDOLL: velocity = Vector3.ZERO
 func _on_recovered() -> void: is_staggered = false
-func _on_died(_node): queue_free()
+func _on_died(_node):
+	_drop_loot()
+	queue_free()
+	
+func _drop_loot() -> void:
+	if not enemy_resource: return
+	for drop in enemy_resource.drops:
+		if drop.has("pool"):
+			var pool_name = drop["pool"]
+			var pool = GameManager.get_item_pool(pool_name)
+			var item_pick = GameManager.pick_from_weighted_pool(pool)
+			if not item_pick.is_empty() and randf() <= drop.get("chance", 1.0):
+				var item_id = item_pick.get("item", "")
+				_spawn_item(item_id, item_pick.get("min", 1), item_pick.get("max", 1))
+		else:
+			if randf() <= drop.get("chance", 1.0):
+				var item_id = drop.get("item", "")
+				_spawn_item(item_id, drop.get("min", 1), drop.get("max", 1))
+
+func _spawn_item(item_id: String, min_amt: int, max_amt: int) -> void:
+	if item_id == "": return
+	var path = "res://resources/items/%s.tres" % item_id
+	if ResourceLoader.exists(path):
+		var item = load(path)
+		var count = randi_range(min_amt, max_amt)
+		if PlayerManager.game_inventory:
+			PlayerManager.game_inventory.add_item(item, count)
+			
 func _on_health_changed(new_val, old_val):
 	if new_val < old_val: _tint_timer = TINT_DURATION
 	if is_field_enemy and not current_attack_target and current_state != State.RAGDOLL:

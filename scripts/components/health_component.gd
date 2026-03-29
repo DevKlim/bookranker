@@ -131,8 +131,11 @@ func _spawn_damage_number(amount: float, element: Resource) -> void:
 	
 	var label = Label3D.new()
 	var font = load("res://assets/fonts/v2-fs-tahoma-8px.otf")
-	label.text = str(round(amount))
-	label.pixel_size = 0.02
+	if step_decimals(amount):
+		label.text = str(round(amount))
+	else:
+		label.text = str(int(amount))
+	label.pixel_size = 0.03
 	if font:
 		label.font = font
 	label.font_size = 16

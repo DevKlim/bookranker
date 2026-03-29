@@ -38,6 +38,32 @@ var selection_controller
 var level_mechanics: Node
 
 func _ready() -> void:
+	var env_node = get_node_or_null("WorldEnvironment")
+	if env_node and env_node.environment:
+		var env = env_node.environment
+		env.background_mode = Environment.BG_SKY
+		
+		var sky = Sky.new()
+		var sky_mat = ShaderMaterial.new()
+		var sky_shader = load("res://shaders/skybox_cross.gdshader")
+		
+		if sky_shader:
+			sky_mat.shader = sky_shader
+		
+		# Allows a user-placed skybox texture in a 4x3 Cross format (e.g., 2048x1536)
+		# Mapping:
+		# [Empty, Top, Empty, Empty]
+		# [Left, Center, Right, Back]
+		# [Empty, Bottom, Empty, Empty]
+		var tex = load("res://assets/textures/Daylight Box UV.png")
+		if tex:
+			sky_mat.set_shader_parameter("cross_tex", tex)
+			
+		sky.sky_material = sky_mat
+		env.sky = sky
+		
+		env.volumetric_fog_enabled = true
+		env.volumetric_fog_density = 0.0
 
 	var mech_path = "res://scripts/levels/level_1_mechanics.gd"
 	if ResourceLoader.exists(mech_path):
@@ -84,6 +110,11 @@ func _ready() -> void:
 	camera_controller = load("res://scripts/controllers/camera_controller.gd").new()
 	camera_controller.setup(self)
 	add_child(camera_controller)
+	
+	var highlight_sys = load("res://scripts/utils/highlight_system.gd").new()
+	highlight_sys.name = "HighlightSystem"
+	add_child(highlight_sys)
+	highlight_sys.setup(camera)
 	
 	build_controller = load("res://scripts/controllers/build_controller.gd").new()
 	build_controller.setup(self)

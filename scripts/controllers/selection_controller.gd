@@ -22,6 +22,7 @@ func setup(main_node: Node3D) -> void:
 	cursor_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	cursor_material.albedo_color = Color(0.0, 0.5, 1.0, 0.3)
 	cursor_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	cursor_material.render_priority = 10 # Fixes ordering against screen-space shaders
 	cursor_highlight.material_override = cursor_material
 	cursor_highlight.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	main.add_child(cursor_highlight)
@@ -34,11 +35,20 @@ func setup(main_node: Node3D) -> void:
 	sel_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	sel_mat.albedo_color = Color(1.0, 1.0, 0.0, 0.4)
 	sel_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	sel_mat.render_priority = 10 # Fixes ordering against screen-space shaders
 	selection_indicator.material_override = sel_mat
 	selection_indicator.visible = false
 	main.add_child(selection_indicator)
 
 func update(selection_ray: Dictionary, terrain_ray: Dictionary, mouse_world_pos: Vector3, cursor_target: Vector3) -> void:
+	var cell = BuildManager.get_grid_cell(mouse_world_pos)
+	if LaneManager.fog_manager and cell.x >= LaneManager.fog_manager.current_fog_depth:
+		cursor_highlight.visible = false
+		_update_selection_indicator()
+		if Input.is_action_just_pressed("build_place") or Input.is_action_just_pressed("use"):
+			deselect_all()
+		return
+
 	_update_cursor_highlight(cursor_target)
 	_update_selection_indicator()
 
@@ -120,8 +130,8 @@ func update(selection_ray: Dictionary, terrain_ray: Dictionary, mouse_world_pos:
 					
 					if not clicked_unit:
 						if not is_shift_held:
-							var cell = BuildManager.get_grid_cell(mouse_world_pos)
-							var tile_coord = Vector2i(cell.x, cell.z)
+							var cell2 = BuildManager.get_grid_cell(mouse_world_pos)
+							var tile_coord = Vector2i(cell2.x, cell2.z)
 							if main.current_layer_mode == main.LayerMode.WIRE_ONLY:
 								_handle_wire_click(tile_coord)
 								deselect_all()
@@ -138,6 +148,7 @@ func update(selection_ray: Dictionary, terrain_ray: Dictionary, mouse_world_pos:
 									# Even if it lacks a standard inventory, we want to see mods
 									if (inventory and inventory is InventoryComponent) or ("mod_inventory" in mech):
 										var title = mech.name.rstrip("0123456789")
+										if "display_name" in mech and mech.display_name != "": title = mech.display_name
 										if main.game_ui: main.game_ui.open_inventory(inventory, title, mech)
 									else:
 										if main.game_ui: main.game_ui.close_inventory()
@@ -152,8 +163,8 @@ func update(selection_ray: Dictionary, terrain_ray: Dictionary, mouse_world_pos:
 				if not main.is_mouse_over_ui():
 					_clean_selected_allies()
 					if not selected_allies.is_empty():
-						var cell = BuildManager.get_grid_cell(mouse_world_pos)
-						var tile_coord = Vector2i(cell.x, cell.z)
+						var cell2 = BuildManager.get_grid_cell(mouse_world_pos)
+						var tile_coord = Vector2i(cell2.x, cell2.z)
 						if LaneManager.is_valid_tile(tile_coord):
 							var target_pos = LaneManager.tile_to_world(tile_coord) 
 							

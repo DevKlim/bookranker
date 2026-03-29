@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EventResource" format=3 uid="uid://c6ttrvhbvgkcc"]
+
+[ext_resource type="Script" uid="uid://rnrwtma8as5q" path="res://scripts/resources/event_resource.gd" id="1_jmmrp"]
+
+[resource]
+script = ExtResource("1_jmmrp")
+id = "meteor_shower"
+event_name = "Meteor Shower"
+description = "Meteors fall from the sky giving you stone."
+effect_type = "give_item"
+parameters = {
+"count": 50.0,
+"item_id": "stone"
+}

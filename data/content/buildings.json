@@ -52,7 +52,7 @@
     {
         "id": "box_fan", "name": "Box Fan", "description": "Blows the folded creations towards enemies.",
         "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32 },
-        "logic": { "power_cost": 10.0, "health": 20.0, "rotates": true, "inventory": { "slots": 1, "can_output": false, "can_receive": true }, "io_config": { "input": ["back"], "output": ["none"] }, "shooting": true, "targeting": true, "attack_config": "fan_blow" }
+        "logic": { "power_cost": 10.0, "health": 20.0, "rotates": true, "inventory": { "slots": 1, "can_output": false, "can_receive": true }, "io_config": { "input": ["back"], "output": ["none"] }, "shooting": true, "attack_config": "fan_blow" }
     },
     {
         "id": "slipslide", "name": "Slipslide", "description": "Places a slide where exported items glide.",

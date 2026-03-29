@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://cdnyuj3ykimk7"]
+
+[ext_resource type="Resource" uid="uid://fnimcv81cy5p" path="res://resources/items/cardboard.tres" id="1_sn4vq"]
+[ext_resource type="Resource" uid="uid://cre15ma7kwikd" path="res://resources/buildables/cubby.tres" id="2_ylg02"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="3_5y3xx"]
+
+[resource]
+script = ExtResource("3_5y3xx")
+category = "chalkboard"
+recipe_name = "Cubby"
+craft_time = 1.0
+inputs = [{
+"count": 2,
+"resource": ExtResource("1_sn4vq")
+}]
+outputs = [{
+"count": 1,
+"resource": ExtResource("2_ylg02")
+}]

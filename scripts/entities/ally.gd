@@ -523,6 +523,7 @@ func _setup_selection_visuals() -> void:
 	
 	var ring_mat = StandardMaterial3D.new()
 	ring_mat.albedo_color = Color(0.0, 1.0, 0.5, 0.8)
+	ring_mat.render_priority = 10 
 	ring_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	ring_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	

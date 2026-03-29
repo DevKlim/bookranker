@@ -79,12 +79,8 @@ func _ready() -> void:
 	r_tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	r_center.add_child(r_tr)
 	
-	var r_res = load("res://resources/buildables/remover_tool.tres")
-	if r_res and "icon" in r_res and r_res.icon:
-		r_tr.texture = r_res.icon
-	else:
-		remover_button.text = "DEL"
-		remover_button.add_theme_color_override("font_color", Color.RED)
+	remover_button.text = "DEL"
+	remover_button.add_theme_color_override("font_color", Color.RED)
 
 	remover_lbl = Label.new()
 	remover_lbl.add_theme_color_override("font_outline_color", Color.BLACK)
@@ -117,11 +113,9 @@ func _on_remover_pressed() -> void:
 		
 	selected_slot_index = -2
 	PlayerManager.set_equipped_item(null)
-	var remover_res = load("res://resources/buildables/remover_tool.tres")
-	if not remover_res:
-		remover_res = BuildableResource.new()
-		remover_res.buildable_name = "Remover"
-		remover_res.layer = BuildableResource.BuildLayer.TOOL
+	var remover_res = BuildableResource.new()
+	remover_res.buildable_name = "Remover"
+	remover_res.layer = BuildableResource.BuildLayer.TOOL
 	BuildManager.enter_build_mode(remover_res)
 	_update_visuals()
 

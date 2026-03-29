@@ -8,12 +8,16 @@ signal wave_ended
 signal wave_cleared
 
 var waves_config: Array =[]
+var waves_dict: Dictionary = {}
+
 var current_wave_idx: int = -1
 var active_enemies: Array =[]
 var active_bosses: Array =[]
 var is_wave_active: bool = false
 var _spawning_done: bool = false
 var _wave_has_bosses: bool = false
+var _active_spawning_groups: int = 0
+var _spawning_sequence_finished: bool = false
 
 # Dictionary to cache loaded EnemyResources
 var enemy_cache: Dictionary = {}
@@ -45,42 +49,58 @@ func _process(_delta: float) -> void:
 
 func load_waves_from_config(waves: Array) -> void:
 	waves_config = waves
+	waves_dict.clear()
+	for w in waves:
+		var id = w.get("id", "")
+		if id != "":
+			waves_dict[id] = w
 	print("WaveManager: Loaded %d waves from level config." % waves_config.size())
 
 func get_total_waves() -> int:
 	return waves_config.size()
 
-func start_wave(index: int) -> void:
-	if index < 0 or index >= waves_config.size():
-		printerr("WaveManager: Invalid wave index %d" % index)
-		# Fallback to clear instantly so game doesn't softlock
-		_spawning_done = true 
-		is_wave_active = true
-		return
-	
+func get_wave_by_id(id: String) -> Dictionary:
+	return waves_dict.get(id, {})
+
+func get_wave_by_index(index: int) -> Dictionary:
+	if index >= 0 and index < waves_config.size():
+		return waves_config[index]
+	return {}
+
+func start_wave_data(wave_data: Dictionary, display_index: int) -> void:
 	if is_wave_active:
 		print("WaveManager: Wave already active.")
 		return
 
-	current_wave_idx = index
+	current_wave_idx = display_index
 	is_wave_active = true
 	_spawning_done = false
+	_spawning_sequence_finished = false
 	_wave_has_bosses = false
 	active_bosses.clear()
-	emit_signal("wave_started", index + 1)
+	emit_signal("wave_started", display_index + 1)
 	
-	var wave_data = waves_config[index]
 	var groups = wave_data.get("groups",[])
 	
-	print("WaveManager: Starting Wave %d..." % (index + 1))
+	print("WaveManager: Starting Wave %d..." % (display_index + 1))
 	
 	if LaneManager.spawners_by_lane.is_empty() and LaneManager.num_lanes <= 0:
 		printerr("WaveManager: No spawners or lanes detected! Cannot spawn enemies.")
 		_spawning_done = true
 		return
 
-	# Start processing groups
+	_active_spawning_groups = 0
 	_run_wave_sequence(groups)
+
+func start_wave(index: int) -> void:
+	var wave = get_wave_by_index(index)
+	if wave.is_empty():
+		printerr("WaveManager: Invalid wave index %d" % index)
+		# Fallback to clear instantly so game doesn't softlock
+		_spawning_done = true 
+		is_wave_active = true
+		return
+	start_wave_data(wave, index)
 
 func stop_wave() -> void:
 	is_wave_active = false
@@ -93,36 +113,83 @@ func stop_wave() -> void:
 	emit_signal("wave_ended")
 
 func _run_wave_sequence(groups: Array) -> void:
+	_active_spawning_groups = 0
+	_spawning_sequence_finished = false
+	
+	if groups.is_empty():
+		_spawning_sequence_finished = true
+		_check_spawning_done()
+		return
+		
 	for group in groups:
 		if not is_wave_active: break
 		
-		var enemy_id = group.get("enemy_id", "")
-		var count = group.get("count", 1)
-		var interval = group.get("interval", 1.0)
-		var is_boss = group.get("is_boss", false)
-		if is_boss: _wave_has_bosses = true
-		var spawn_lane = group.get("spawn_lane", "random")
+		var g_type = group.get("type", "spawn")
+		if g_type == "pause":
+			var duration = group.get("duration", 1.0)
+			if duration > 0:
+				await get_tree().create_timer(duration).timeout
+		else:
+			_active_spawning_groups += 1
+			_spawn_group(group)
+			
+	_spawning_sequence_finished = true
+	_check_spawning_done()
+
+func _spawn_group(group: Dictionary) -> void:
+	var enemy_id = group.get("enemy_id", "")
+	var total_count = group.get("count", 1)
+	var interval = group.get("interval", 1.0)
+	var interval_max = group.get("interval_max", interval)
+	var is_boss = group.get("is_boss", false)
+	if is_boss: _wave_has_bosses = true
+	var spawn_lane = group.get("spawn_lane", "random")
+	var capacity = group.get("capacity", -1)
+	
+	var res = _get_enemy_resource(enemy_id)
+	if not res:
+		printerr("WaveManager: Enemy resource not found for '%s'" % enemy_id)
+		_active_spawning_groups -= 1
+		_check_spawning_done()
+		return
 		
-		var res = _get_enemy_resource(enemy_id)
-		if not res:
-			printerr("WaveManager: Enemy resource not found for '%s'" % enemy_id)
+	var spawned = 0
+	var active_in_group =[]
+	
+	while spawned < total_count:
+		if not is_wave_active: break
+		
+		# Clean up dead entities from tracked group
+		for i in range(active_in_group.size() - 1, -1, -1):
+			if not is_instance_valid(active_in_group[i]) or active_in_group[i].is_queued_for_deletion():
+				active_in_group.remove_at(i)
+				
+		# Respect capacity cap
+		if capacity > 0 and active_in_group.size() >= capacity:
+			await get_tree().create_timer(0.5).timeout
 			continue
 			
-		# Spawn 'count' enemies, one by one, with 'interval' delay
-		for i in range(count):
-			if not is_wave_active: break
+		var enemy = _spawn_single_with_lane(res, spawn_lane, is_boss)
+		if enemy:
+			active_in_group.append(enemy)
 			
-			_spawn_single_with_lane(res, spawn_lane, is_boss)
-			
-			if interval > 0:
-				await get_tree().create_timer(interval).timeout
+		spawned += 1
+		
+		if spawned < total_count:
+			var wait_time = randf_range(interval, interval_max)
+			if wait_time > 0:
+				await get_tree().create_timer(wait_time).timeout
 				
-	if is_wave_active:
+	_active_spawning_groups -= 1
+	_check_spawning_done()
+
+func _check_spawning_done() -> void:
+	if _spawning_sequence_finished and _active_spawning_groups <= 0 and is_wave_active:
 		_spawning_done = true
 
-func _spawn_single_with_lane(res: EnemyResource, spawn_lane: Variant, is_boss: bool) -> void:
+func _spawn_single_with_lane(res: EnemyResource, spawn_lane: Variant, is_boss: bool) -> Node:
 	var num_lanes = LaneManager.num_lanes
-	if num_lanes <= 0: return
+	if num_lanes <= 0: return null
 	
 	var available_lanes = range(num_lanes)
 	var chosen_lane = available_lanes[0]
@@ -145,10 +212,10 @@ func _spawn_single_with_lane(res: EnemyResource, spawn_lane: Variant, is_boss: b
 		spawn_pos = LaneManager.tile_to_world(tile)
 		spawn_pos.y = 0.5
 		
-	_spawn_enemy(res, chosen_lane, spawn_pos, is_boss)
+	return _spawn_enemy(res, chosen_lane, spawn_pos, is_boss)
 
-func _spawn_enemy(res: EnemyResource, lane_id: int, spawn_pos: Vector3, is_boss: bool = false) -> void:
-	if not res.scene: return
+func _spawn_enemy(res: EnemyResource, lane_id: int, spawn_pos: Vector3, is_boss: bool = false) -> Node:
+	if not res.scene: return null
 	
 	var enemy = res.scene.instantiate()
 	if enemy is Enemy:
@@ -178,6 +245,9 @@ func _spawn_enemy(res: EnemyResource, lane_id: int, spawn_pos: Vector3, is_boss:
 			enemy.tree_exiting.connect(func(): if active_bosses.has(enemy): active_bosses.erase(enemy))
 			
 		enemy.tree_exiting.connect(func(): if active_enemies.has(enemy): active_enemies.erase(enemy))
+		return enemy
+		
+	return null
 
 func _get_enemy_resource(id: String) -> EnemyResource:
 	if enemy_cache.has(id): return enemy_cache[id]

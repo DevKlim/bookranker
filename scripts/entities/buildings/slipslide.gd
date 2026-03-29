@@ -52,12 +52,27 @@ func _create_visual():
 	_update_visual()
 
 func _try_pass_item():
-	var neighbor = get_neighbor(output_direction)
+	var offset = Vector2i.ZERO
+	match output_direction:
+		Direction.DOWN: offset = Vector2i(0, 1)
+		Direction.UP:   offset = Vector2i(0, -1)
+		Direction.LEFT: offset = Vector2i(-1, 0)
+		Direction.RIGHT:offset = Vector2i(1, 0)
+	
+	var tile = LaneManager.world_to_tile(global_position)
+	var target_tile = tile + offset
+	
+	var neighbor = LaneManager.get_entity_at(target_tile, "wire")
 	var valid_stream = false
-	if is_instance_valid(neighbor) and (neighbor.display_name == "Slipstream" or neighbor.display_name == "Tarstream"):
+	
+	if is_instance_valid(neighbor) and neighbor.get("display_name") in["Slipstream", "Tarstream"]:
 		valid_stream = true
-		
-	if valid_stream and neighbor.has_method("receive_item"):
+	else:
+		neighbor = LaneManager.get_entity_at(target_tile, "building")
+		if is_instance_valid(neighbor) and neighbor.get("display_name") in ["Slipstream", "Tarstream"]:
+			valid_stream = true
+			
+	if valid_stream and is_instance_valid(neighbor) and neighbor.has_method("receive_item"):
 		if neighbor.receive_item(stored_item, self):
 			if is_instance_valid(visual_node): visual_node.queue_free()
 			stored_item = null

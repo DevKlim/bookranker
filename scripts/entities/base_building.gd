@@ -2,6 +2,8 @@
 class_name BaseBuilding
 extends StaticBody3D
 
+signal stats_updated
+
 enum Direction { DOWN, LEFT, UP, RIGHT }
 
 # Components
@@ -70,6 +72,16 @@ func _get_main_sprite() -> AnimatedSprite3D:
 func _ready() -> void:
 	if Engine.is_editor_hint(): return
 	if has_meta("is_preview"): return
+	
+	add_to_group("buildings")
+	
+	if Engine.has_singleton("GameManager") and GameManager.current_state == GameManager.GameState.IDLE:
+		var n = name.to_lower()
+		if "cubby" in n or is_in_group("loot_buildings"):
+			if not has_node("LootComponent"):
+				var lc = LootComponent.new()
+				lc.name = "LootComponent"
+				add_child(lc)
 	
 	if display_name == "":
 		var n = name
@@ -143,6 +155,16 @@ func _setup_elemental_component() -> void:
 		elemental_component = ElementalComponent.new()
 		elemental_component.name = "ElementalComponent"
 		add_child(elemental_component)
+		
+	if not elemental_component.is_connected("status_applied", _on_element_changed):
+		elemental_component.status_applied.connect(_on_element_changed)
+	if not elemental_component.is_connected("status_removed", _on_element_changed):
+		elemental_component.status_removed.connect(_on_element_changed)
+	if not elemental_component.is_connected("status_changed", _on_element_changed):
+		elemental_component.status_changed.connect(_on_element_changed)
+
+func _on_element_changed(_id = "", _units = 0) -> void:
+	emit_signal("stats_updated")
 
 func _setup_power_component() -> void:
 	power_consumer = get_node_or_null("PowerConsumerComponent")
@@ -181,6 +203,7 @@ func _setup_health_component() -> void:
 func _on_health_changed(new_val, old_val) -> void:
 	if new_val < old_val:
 		_flash_damage()
+	emit_signal("stats_updated")
 
 func _flash_damage() -> void:
 	if _tint_tween: _tint_tween.kill()
@@ -245,6 +268,8 @@ func _recalculate_stats() -> void:
 		if health_component.current_energy > health_component.max_energy:
 			health_component.current_energy = health_component.max_energy
 
+	emit_signal("stats_updated")
+
 func _on_power_status_changed(has_power: bool) -> void:
 	is_active = has_power and not is_staggered
 	
@@ -263,6 +288,8 @@ func _on_power_status_changed(has_power: bool) -> void:
 	
 	var shooter = get_node_or_null("ShooterComponent")
 	if shooter: shooter.set_process(is_active)
+	
+	emit_signal("stats_updated")
 
 func _on_staggered(_duration: float) -> void:
 	is_staggered = true

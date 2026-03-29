@@ -112,6 +112,7 @@ func _create_mesh_instance(tex: Texture2D, size: Vector2, is_half_crop: bool) ->
 	mat.albedo_texture = tex
 	mat.albedo_color = COLOR_OFF
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.render_priority = 10
 	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 	
 	mesh_inst.material_override = mat

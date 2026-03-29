@@ -54,6 +54,7 @@ func _on_build_state_changed(_arg = null) -> void:
 		elif buildable.layer == BuildableResource.BuildLayer.TOOL:
 			var s = Sprite3D.new()
 			s.texture = buildable.icon; s.axis = Vector3.AXIS_Y; s.pixel_size = 0.03; s.modulate = Color(1, 0.5, 0.5, 0.7)
+			s.render_priority = 10 # Fixes ordering against screen-space shaders
 			main.build_preview_container.add_child(s)
 
 func _clear_preview() -> void:
@@ -108,6 +109,7 @@ func _apply_ghost_visuals(node: Node, color_tint: Color) -> void:
 				target_mat.set_meta("is_ghost", true)
 			if target_mat is StandardMaterial3D:
 				target_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA; target_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED; target_mat.albedo_color = color_tint
+				target_mat.render_priority = 10 # Fixes ordering against screen-space shaders
 			node.set_surface_override_material(i, target_mat)
 			
 	for child in node.get_children(): _apply_ghost_visuals(child, color_tint)
@@ -262,6 +264,7 @@ func _create_arrow_mesh(color: Color) -> Node3D:
 	var container = Node3D.new()
 	var mat = StandardMaterial3D.new()
 	mat.albedo_color = color; mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED; mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA; mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.render_priority = 10 # Fixes ordering against screen-space shaders
 	var prism = PrismMesh.new(); prism.size = Vector3(0.3, 0.3, 0.1) 
 	var mesh_inst = MeshInstance3D.new(); mesh_inst.mesh = prism; mesh_inst.material_override = mat; mesh_inst.rotation.x = deg_to_rad(-90)
 	container.add_child(mesh_inst)
@@ -271,6 +274,7 @@ func _create_direction_indicator() -> Node3D:
 	var container = Node3D.new()
 	var mat = StandardMaterial3D.new()
 	mat.albedo_color = Color(1.0, 0.8, 0.0, 0.8); mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED; mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.render_priority = 10 # Fixes ordering against screen-space shaders
 	var prism = PrismMesh.new(); prism.size = Vector3(0.6, 0.6, 0.1)
 	var mesh = MeshInstance3D.new(); mesh.mesh = prism; mesh.material_override = mat; mesh.rotation.x = deg_to_rad(-90)
 	container.add_child(mesh)

@@ -33,6 +33,12 @@ func _ready() -> void:
 		power_consumer.requires_wire_connection = false
 	is_active = true
 
+func _setup_health_component() -> void:
+	pass # Streams do not have health and cannot be targeted
+
+func take_damage(_amount: float, _element: Resource = null, _source: Node = null) -> void:
+	pass # Immune
+
 func _physics_process(delta: float) -> void:
 	if Engine.is_editor_hint(): return
 	super._physics_process(delta)
@@ -56,12 +62,27 @@ func _physics_process(delta: float) -> void:
 			_try_pass_item(head)
 
 func _try_pass_item(entry):
-	var neighbor = get_neighbor(output_direction)
+	var tile = LaneManager.world_to_tile(global_position)
+	var offset = Vector2i.ZERO
+	match output_direction:
+		Direction.DOWN: offset = Vector2i(0, 1)
+		Direction.UP:   offset = Vector2i(0, -1)
+		Direction.LEFT: offset = Vector2i(-1, 0)
+		Direction.RIGHT:offset = Vector2i(1, 0)
+	
+	var target_tile = tile + offset
+	var neighbor = LaneManager.get_entity_at(target_tile, "wire")
+	
+	if not is_instance_valid(neighbor) or neighbor.get("display_name") not in ["Slipstream", "Tarstream"]:
+		var b_neighbor = LaneManager.get_entity_at(target_tile, "building")
+		if is_instance_valid(b_neighbor):
+			neighbor = b_neighbor
+			
 	var handled = false
 	
 	if is_instance_valid(neighbor):
 		# If the neighbor is also a stream, check if it turns. "if the stream turns, item disappears"
-		if "display_name" in neighbor and neighbor.display_name in["Slipstream", "Tarstream"]:
+		if neighbor.get("display_name") in ["Slipstream", "Tarstream"]:
 			if neighbor.output_direction != self.output_direction:
 				handled = true
 			elif neighbor.has_method("receive_item") and neighbor.get("has_input") != false:
@@ -93,9 +114,9 @@ func receive_item(item: Resource, from_node: Node3D = null, extra_data: Dictiona
 	# Only allow Slipslide or another stream to push into a stream natively. (Prevents Foldgami from trying to store Folds into streams as storage)
 	var is_valid_source = false
 	if from_node:
-		if from_node is SlipslideBuilding:
+		if from_node is SlipslideBuilding or from_node.get("display_name") in ["Slipstream", "Tarstream", "Slipslide"]:
 			is_valid_source = true
-		elif "display_name" in from_node and from_node.display_name in["Slipstream", "Tarstream"]:
+		elif "slipslide" in from_node.name.to_lower():
 			is_valid_source = true
 			
 	if from_node and not is_valid_source:
@@ -105,10 +126,13 @@ func receive_item(item: Resource, from_node: Node3D = null, extra_data: Dictiona
 	
 	var initial_progress = 0.0
 	if from_node:
-		var dir = (global_position - from_node.global_position).normalized()
-		var input_world_pos = from_node.global_position + (dir * 0.5)
-		var local_pos = to_local(input_world_pos)
-		initial_progress = clamp(0.5 - local_pos.z, 0.0, 1.0)
+		if from_node is SlipslideBuilding or from_node.get("display_name") == "Slipslide" or "slipslide" in from_node.name.to_lower():
+			initial_progress = 0.0
+		else:
+			var dir = (global_position - from_node.global_position).normalized()
+			var input_world_pos = from_node.global_position + (dir * 0.5)
+			var local_pos = to_local(input_world_pos)
+			initial_progress = clamp(0.5 - local_pos.z, 0.0, 1.0)
 	
 	if items.size() >= 3: return false # max capacity
 	

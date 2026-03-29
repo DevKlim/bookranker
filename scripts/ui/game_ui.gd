@@ -110,7 +110,7 @@ func _ready() -> void:
 	stats_window = _create_glass_window("Stats", bottom_left_content, Vector2(20, vp_size.y - 230), "Stats", Vector2(280, 200))
 	
 	dev_window = _create_glass_window("Dev Tools", dev_ui_panel, Vector2(vp_size.x - 260, 20), "Dev Tools", Vector2(250, 200))
-	hotbar_window = _create_glass_window("Hotbar", hotbar, Vector2((vp_size.x - 750) / 2.0, vp_size.y - 180), "Hotbar", Vector2(750, 160))
+	hotbar_window = _create_glass_window("Hotbar", hotbar, Vector2((vp_size.x - 750) / 2.0, vp_size.y - 180), "Hotbar", Vector2(800, 160))
 	
 	var pm_btn = Button.new()
 	pm_btn.text = "Player Menu"
@@ -491,27 +491,28 @@ func _setup_timer_ui() -> void:
 	panel.add_theme_stylebox_override("panel", style)
 	
 	panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	panel.position = Vector2(-50, 0)
-	panel.custom_minimum_size = Vector2(100, 40)
+	panel.position = Vector2(-80, 0)
+	panel.custom_minimum_size = Vector2(160, 40)
 	
 	timer_label = Label.new()
 	timer_label.add_theme_font_size_override("font_size", 24)
 	timer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	timer_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	timer_label.text = "00:00"
+	timer_label.text = "Phase 1 - 00:00"
 	panel.add_child(timer_label)
 	
 	add_child(panel)
 
 func _on_time_updated(time_left: float, is_day: bool) -> void:
 	if not timer_label: return
+	var phase = GameManager.game_data.get("wave", 1)
 	if is_day:
 		var mins = int(time_left) / 60
 		var secs = int(time_left) % 60
-		timer_label.text = "%02d:%02d" %[mins, secs]
+		timer_label.text = "Phase %d - %02d:%02d" %[phase, mins, secs]
 		timer_label.add_theme_color_override("font_color", Color.WHITE)
 	else:
-		timer_label.text = "WAVE"
+		timer_label.text = "Phase %d - WAVE" % phase
 		timer_label.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
 
 func _setup_shop_menu() -> void:
@@ -865,3 +866,4 @@ func close_all_menus() -> void:
 
 func set_selected_ally(ally: Node) -> void:
 	if player_menu: player_menu.set_current_ally(ally)
+

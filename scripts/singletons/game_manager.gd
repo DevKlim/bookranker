@@ -44,7 +44,13 @@ var _field_enemies: Array =[] # Array of Dictionaries {resource: EnemyResource, 
 var _field_spawn_timers: Dictionary = {} 
 var _active_field_spawns: Dictionary = {} 
 
+var event_manager: Node
+
 func _ready() -> void:
+	event_manager = load("res://scripts/singletons/event_manager.gd").new()
+	event_manager.name = "EventManager"
+	add_child(event_manager)
+	
 	load_level(1)
 	WaveManager.wave_cleared.connect(_on_wave_cleared)
 	# Deferred to ensure PlayerManager finishes initializing its inventory first
@@ -79,8 +85,12 @@ func load_level(level_num: int) -> void:
 	_setup_field_enemies()
 	
 	if WaveManager:
-		WaveManager.load_waves_from_config(current_level_config.get("waves", []))
-		game_data["max_waves"] = WaveManager.get_total_waves()
+		WaveManager.load_waves_from_config(current_level_config.get("waves",[]))
+		var phases = current_level_config.get("day_phases",[])
+		if not phases.is_empty():
+			game_data["max_waves"] = phases.size()
+		else:
+			game_data["max_waves"] = WaveManager.get_total_waves()
 	
 	call_deferred("_grant_starting_items")
 	call_deferred("_initial_shop_prompt")
@@ -164,21 +174,50 @@ func spend_currency(amount: int) -> bool:
 		return true
 	return false
 
+# --- Pools / Events ---
+
+func get_item_pool(pool_name: String) -> Array:
+	var pools = current_level_config.get("item_pools", {})
+	if pools.has(pool_name):
+		return pools[pool_name]
+	return[]
+
+func pick_from_weighted_pool(pool: Array) -> Dictionary:
+	if pool.is_empty(): return {}
+	var total_weight = 0.0
+	for entry in pool:
+		total_weight += float(entry.get("weight", 1.0))
+	var roll = randf() * total_weight
+	for entry in pool:
+		var w = float(entry.get("weight", 1.0))
+		if roll <= w:
+			return entry
+		roll -= w
+	return pool.back()
+
+func trigger_event(event_id: String) -> void:
+	if event_manager:
+		event_manager.trigger_event(event_id)
+
 # --- Game Flow ---
 
 func start_day_phase() -> void:
 	current_state = GameState.DAY_PLANNING
 	
-	var phases = current_level_config.get("day_phases",[])
+	var phases = current_level_config.get("day_phases", [])
 	var w_idx = game_data["wave"] - 1
 	if w_idx >= 0 and w_idx < phases.size():
-		day_duration = float(phases[w_idx])
+		var phase_data = phases[w_idx]
+		if typeof(phase_data) == TYPE_DICTIONARY:
+			day_duration = float(phase_data.get("duration", 300.0))
+		else:
+			day_duration = float(phase_data)
 	else:
 		day_duration = current_level_config.get("day_duration", 300.0)
 		
 	day_timer = day_duration
 	emit_signal("state_changed", current_state)
-	print("GameManager: Day Planning Started. Level %d, Wave %d" %[game_data["level"], game_data["wave"]])
+	print("GameManager: Day Planning Started. Level %d, Wave %d" % [game_data["level"], game_data["wave"]])
 
 func start_night_phase() -> void:
 	current_state = GameState.NIGHT_WAVE
@@ -187,11 +226,33 @@ func start_night_phase() -> void:
 	print("GameManager: Night Wave Started!")
 	
 	var wave_index = game_data["wave"] - 1
-	if wave_index >= WaveManager.get_total_waves() and WaveManager.get_total_waves() > 0:
-		wave_index = WaveManager.get_total_waves() - 1 
+	var wave_to_play: Dictionary = {}
+	var event_to_play: String = ""
 	
-	if wave_index >= 0:
-		WaveManager.start_wave(wave_index)
+	var phases = current_level_config.get("day_phases",[])
+	if wave_index >= 0 and wave_index < phases.size():
+		var phase_data = phases[wave_index]
+		if typeof(phase_data) == TYPE_DICTIONARY:
+			var pool_name = phase_data.get("pool", "")
+			if pool_name != "":
+				var pools = current_level_config.get("wave_pools", {})
+				if pools.has(pool_name):
+					var pool = pools[pool_name]
+					var pick = pick_from_weighted_pool(pool)
+					if pick:
+						wave_to_play = WaveManager.get_wave_by_id(pick.get("wave_id", ""))
+						event_to_play = pick.get("event_id", "")
+	
+	if wave_to_play.is_empty():
+		var max_idx = WaveManager.get_total_waves() - 1
+		var safe_idx = clamp(wave_index, 0, max_idx)
+		if safe_idx >= 0:
+			wave_to_play = WaveManager.get_wave_by_index(safe_idx)
+			
+	if not wave_to_play.is_empty():
+		if event_to_play != "":
+			trigger_event(event_to_play)
+		WaveManager.start_wave_data(wave_to_play, wave_index)
 
 func _on_wave_cleared() -> void:
 	if current_state == GameState.NIGHT_WAVE:
@@ -214,6 +275,8 @@ func reset_state() -> void:
 	
 	_active_field_spawns.clear()
 	_field_spawn_timers.clear()
+	if event_manager:
+		event_manager.clear_active_events()
 	
 	for entry in _field_enemies:
 		var id = entry["config"]["id"]
@@ -293,3 +356,4 @@ func _try_spawn_field_enemy(res: EnemyResource, config: Dictionary) -> void:
 				_active_field_spawns[id] -= 1
 				if _active_field_spawns[id] < 0: _active_field_spawns[id] = 0
 		)
+

@@ -3,14 +3,20 @@
         "name": "Roomdog",
         "scene_path": "res://scenes/enemies/roomdog.tscn",
         "logic": { "health": 10, "speed": 40, "defense": 0, "magical_defense": 0.2, "elemental_cd": 0.0 },
-        "params": { "attack_damage": 2, "attack_speed": 1.0 }
+        "params": { "attack_damage": 2, "attack_speed": 1.0 },
+        "drops":[
+            { "pool": "basic_loot", "chance": 0.5 }
+        ]
     },
     {
         "id": "proller",
         "name": "Proller",
         "scene_path": "res://scenes/enemies/proller.tscn",
         "logic": { "health": 15, "speed": 25, "defense": 0, "magical_defense": 0.0 },
-        "params": { "attack_damage": 3, "attack_speed": 0.8 }
+        "params": { "attack_damage": 3, "attack_speed": 0.8 },
+        "drops":[
+            { "pool": "basic_loot", "chance": 0.8 }
+        ]
     },
     {
         "id": "inkhog",

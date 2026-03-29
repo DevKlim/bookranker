@@ -10,10 +10,11 @@ var grid_component: Node
 var visual_offset: Vector3 = Vector3.ZERO
 
 func _ready() -> void:
-	# Apply Visual Offset to the main visual child
-	var animated_sprite = get_node_or_null("AnimatedSprite3D")
-	if animated_sprite:
-		animated_sprite.position = visual_offset
+	if visual_offset != Vector3.ZERO:
+		for child in get_children():
+			if child.name == "GridComponent": continue
+			if child is Node3D:
+				child.position += visual_offset
 
 	if not has_node("GridComponent"):
 		# Use class_name directly
@@ -40,3 +41,4 @@ func set_powered(_is_powered: bool) -> void:
 
 func set_connections(_connections: Array[int]) -> void:
 	pass
+

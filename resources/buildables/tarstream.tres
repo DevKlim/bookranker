@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="BuildableResource" format=3 uid="uid://dymdmdwhni6ua"]
 
-[ext_resource type="Texture2D" uid="uid://bs7slh3gcqqgd" path="res://assets/icons/turret.png" id="1_do654"]
+[ext_resource type="Texture2D" uid="uid://butkd3s1w6qi7" path="res://assets/blocks/ink_marb.png" id="1_do654"]
 [ext_resource type="Script" uid="uid://qpm1dylmnjld" path="res://scripts/resources/buildable_resource.gd" id="2_do654"]
 [ext_resource type="PackedScene" uid="uid://tarstreamuid" path="res://scenes/buildables/tarstream.tscn" id="2_pmjej"]
 

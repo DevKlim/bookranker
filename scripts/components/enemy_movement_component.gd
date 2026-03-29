@@ -59,6 +59,10 @@ func get_movement_velocity(delta: float, path_queue: Array[Vector3], is_field: b
 		var wire_name = wire.get("display_name")
 		if wire_name == "Slipstream":
 			speed_multiplier = 2.0
+			if Engine.get_frames_drawn() % 30 == 0:
+				var aqua = ElementManager.get_element("aqua")
+				if aqua:
+					ElementManager.apply_element(body, aqua, wire, 0.0, 1)
 		elif wire_name == "Tarstream":
 			speed_multiplier = 0.5
 			if Engine.get_frames_drawn() % 30 == 0:

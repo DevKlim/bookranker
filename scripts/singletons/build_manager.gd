@@ -92,6 +92,10 @@ func _get_logic_coord(world_pos: Vector3) -> Vector2i:
 func can_build_at(world_pos: Vector3) -> bool:
 	if not selected_buildable: return false
 	
+	var origin_logic = _get_logic_coord(world_pos)
+	if lane_manager.fog_manager and origin_logic.x >= lane_manager.fog_manager.current_fog_depth:
+		return false
+	
 	# 1. Check Resources
 	if selected_buildable.layer != BuildableResource.BuildLayer.TOOL:
 		if not PlayerManager.has_resources_to_build(selected_buildable):
@@ -99,7 +103,6 @@ func can_build_at(world_pos: Vector3) -> bool:
 
 	if not grid_map: return false
 	
-	var origin_logic = _get_logic_coord(world_pos)
 	if not lane_manager.is_valid_tile(origin_logic): return false
 	
 	if selected_buildable.layer == BuildableResource.BuildLayer.MECH:

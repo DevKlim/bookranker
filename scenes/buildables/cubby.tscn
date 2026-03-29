@@ -1,0 +1,30 @@
+[gd_scene format=3 uid="uid://bnpsh61amywux"]
+
+[ext_resource type="Script" uid="uid://lg5rovrj17ud" path="res://scripts/entities/base_building.gd" id="1_0jsyl"]
+[ext_resource type="Script" uid="uid://dad3f8h2j4k5l" path="res://scripts/components/inventory_component.gd" id="3_ssupu"]
+[ext_resource type="PackedScene" uid="uid://c0ra4f2nnep5t" path="res://assets/buildables/cubby/cubby.gltf" id="4_0jsyl"]
+[ext_resource type="Script" uid="uid://dg4gfri6lu5o2" path="res://scripts/components/elemental_component.gd" id="4_ltt50"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ljxwx"]
+
+[node name="Cubby" type="StaticBody3D" unique_id=112632989]
+script = ExtResource("1_0jsyl")
+unpowered_color = Color(1, 1, 1, 1)
+power_consumption = 0.0
+default_output_mask = 4
+layout_config = [Vector2i(0, 0)]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1072209423]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("BoxShape3D_ljxwx")
+
+[node name="InventoryComponent" type="Node" parent="." unique_id=719972625]
+script = ExtResource("3_ssupu")
+max_slots = 5
+slot_capacity = 100
+
+[node name="ElementalComponent" type="Node" parent="." unique_id=1966841558]
+script = ExtResource("4_ltt50")
+
+[node name="blockbench_export" parent="." unique_id=1242276002 instance=ExtResource("4_0jsyl")]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0)

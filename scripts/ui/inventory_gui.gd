@@ -36,7 +36,12 @@ var generic_grid: GridContainer
 # Mod UI
 var mod_lbl: Label
 var mod_grid: GridContainer
-var b_stats_lbl: RichTextLabel
+
+# Building Stats UI
+var b_stats_container: VBoxContainer
+var b_stats_hp: Label
+var b_stats_power: Label
+var b_stats_eff: Label
 
 var current_inventory: InventoryComponent
 var current_context: Object = null 
@@ -171,6 +176,8 @@ func _ready() -> void:
 	recipe_scroll.visible = false
 	content_bg.add_child(recipe_scroll)
 	
+	recipe_scroll.set_drag_forwarding(Callable(self, "_on_bg_get_drag_data"), Callable(self, "_on_bg_can_drop"), Callable(self, "_on_bg_drop"))
+	
 	var margin = MarginContainer.new()
 	margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -294,18 +301,40 @@ func _ready() -> void:
 	mod_grid.add_theme_constant_override("v_separation", 6)
 	right_vbox.add_child(mod_grid)
 
-	b_stats_lbl = RichTextLabel.new()
-	b_stats_lbl.bbcode_enabled = true
-	b_stats_lbl.fit_content = true
-	b_stats_lbl.visible = false
-	right_vbox.add_child(b_stats_lbl)
+	# Stats UI using robust VBox/Labels instead of RichTextLabel
+	b_stats_container = VBoxContainer.new()
+	b_stats_container.visible = false
+	b_stats_container.add_theme_constant_override("separation", 4)
+	b_stats_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right_vbox.add_child(b_stats_container)
+	
+	var b_stats_title = Label.new()
+	b_stats_title.text = "Building Stats"
+	b_stats_title.add_theme_font_size_override("font_size", 16)
+	b_stats_title.add_theme_color_override("font_color", Color.BLACK)
+	b_stats_container.add_child(b_stats_title)
+	
+	b_stats_hp = Label.new()
+	b_stats_hp.add_theme_font_size_override("font_size", 14)
+	b_stats_hp.add_theme_color_override("font_color", Color(0.7, 0.0, 0.0))
+	b_stats_container.add_child(b_stats_hp)
+	
+	b_stats_power = Label.new()
+	b_stats_power.add_theme_font_size_override("font_size", 14)
+	b_stats_power.add_theme_color_override("font_color", Color(0.6, 0.6, 0.0))
+	b_stats_container.add_child(b_stats_power)
+	
+	b_stats_eff = Label.new()
+	b_stats_eff.add_theme_font_size_override("font_size", 14)
+	b_stats_eff.add_theme_color_override("font_color", Color(0.0, 0.6, 0.0))
+	b_stats_container.add_child(b_stats_eff)
 
 	main_vbox.queue_free()
 	_setup_window_resizing(self, scale_wrapper, scale_root, frame_margin)
 
 func _setup_window_resizing(win: Control, scale_wrapper: Control, scale_root: Control, content_node: Control) -> void:
 	var m = 12
-	var configs =[[0, -1, Control.CURSOR_VSIZE],[0, 1, Control.CURSOR_VSIZE],[-1, 0, Control.CURSOR_HSIZE],[1, 0, Control.CURSOR_HSIZE],[-1, -1, Control.CURSOR_FDIAGSIZE],[1, -1, Control.CURSOR_BDIAGSIZE],[-1, 1, Control.CURSOR_BDIAGSIZE],[1, 1, Control.CURSOR_FDIAGSIZE] 
+	var configs = [[0, -1, Control.CURSOR_VSIZE],[0, 1, Control.CURSOR_VSIZE],[-1, 0, Control.CURSOR_HSIZE],[1, 0, Control.CURSOR_HSIZE],[-1, -1, Control.CURSOR_FDIAGSIZE],[1, -1, Control.CURSOR_BDIAGSIZE],[-1, 1, Control.CURSOR_BDIAGSIZE],[1, 1, Control.CURSOR_FDIAGSIZE] 
 	]
 	
 	var handles =[]
@@ -527,8 +556,17 @@ func _on_bg_can_drop(_pos, data) -> bool:
 	return typeof(data) == TYPE_DICTIONARY and data.get("type") == "inventory_drag"
 
 func _on_bg_drop(_pos, data) -> void:
+	# Specifically zero-out the exact slot dragged to prevent accidentally eating other identical stacks
 	if data.has("inventory") and data.has("item") and data.has("count"):
 		var inv = data.inventory
+		if data.has("slot_index") and data.slot_index >= 0 and data.slot_index < inv.slots.size():
+			var slot = inv.slots[data.slot_index]
+			if slot and slot.item == data.item:
+				inv.slots[data.slot_index] = null
+				inv.inventory_changed.emit()
+				return
+		
+		# Fallback if slot index wasn't perfectly mapped
 		inv.remove_item(data.item, data.count)
 
 func _get_slot_drag_data(_pos, data_ctx):
@@ -592,7 +630,17 @@ func _on_slot_drop(_pos, data, target_inv: InventoryComponent, to_index: int) ->
 		var remainder = target_inv.add_item(item, count)
 		var taken = count - remainder
 		if taken > 0:
-			source_inv.remove_item(item, taken)
+			# Directly deduct from the source slot rather than calling a broad remove_item
+			# which might accidentally sweep a different slot holding the same item type.
+			var s_slot = source_inv.slots[source_idx]
+			if s_slot and s_slot.item == item:
+				s_slot.count -= taken
+				if s_slot.count <= 0:
+					source_inv.slots[source_idx] = null
+				source_inv.inventory_changed.emit()
+			else:
+				# Safe fallback
+				source_inv.remove_item(item, taken)
 
 # ----------------------------------
 
@@ -610,6 +658,9 @@ func open(inventory: InventoryComponent, title: String = "Storage", context: Obj
 		if current_context.has_signal("recipe_changed"):
 			if not current_context.recipe_changed.is_connected(_update_display):
 				current_context.recipe_changed.connect(_update_display)
+		if current_context.has_signal("stats_updated"):
+			if not current_context.stats_updated.is_connected(_update_display):
+				current_context.stats_updated.connect(_update_display)
 		for inv_name in["input_inventory", "output_inventory", "fuel_inventory", "mod_inventory"]:
 			var inv = current_context.get(inv_name)
 			if inv and not inv.inventory_changed.is_connected(_update_display):
@@ -635,6 +686,9 @@ func _disconnect_context_signals():
 		if current_context.has_signal("recipe_changed"):
 			if current_context.recipe_changed.is_connected(_update_display):
 				current_context.recipe_changed.disconnect(_update_display)
+		if current_context.has_signal("stats_updated"):
+			if current_context.stats_updated.is_connected(_update_display):
+				current_context.stats_updated.disconnect(_update_display)
 		for inv_name in["input_inventory", "output_inventory", "fuel_inventory", "mod_inventory"]:
 			var inv = current_context.get(inv_name)
 			if inv and inv.is_connected("inventory_changed", _update_display):
@@ -658,10 +712,11 @@ func _update_display(_arg = null) -> void:
 			btn.tooltip_text = tooltip
 			mod_grid.add_child(btn)
 			
-		# Show Building Stats
+		# Show Building Stats using robust Label nodes
 		if current_context.has_method("get_stat") or current_context.get("health_component"):
-			b_stats_lbl.show()
+			b_stats_container.show()
 			var hp = 0; var mhp = 0; var pwr = 0; var eff = 1.0
+			
 			if current_context.get("health_component"):
 				hp = current_context.health_component.current_health
 				mhp = current_context.health_component.max_health
@@ -670,17 +725,16 @@ func _update_display(_arg = null) -> void:
 			if current_context.has_method("get_stat"):
 				eff = current_context.get_stat("efficiency", current_context.get("efficiency") if current_context.get("efficiency") != null else 1.0)
 			
-			b_stats_lbl.text = "[font_size=16][color=black][b]Building Stats[/b][/color]\n"
-			b_stats_lbl.text += "[color=#aa0000]HP:[/color] %d / %d\n" %[int(hp), int(mhp)]
-			b_stats_lbl.text += "[color=#aaaa00]Power:[/color] %d W\n" % int(pwr)
-			b_stats_lbl.text += "[color=#00aa00]Efficiency:[/color] %.1fx\n[/font_size]" % eff
+			b_stats_hp.text = "HP: %d / %d" %[int(hp), int(mhp)]
+			b_stats_power.text = "Power: %d W" % int(pwr)
+			b_stats_eff.text = "Efficiency: %.1fx" % eff
 		else:
-			b_stats_lbl.hide()
+			b_stats_container.hide()
 	else:
 		right_vbox.hide()
 		mod_lbl.hide()
 		mod_grid.hide()
-		if b_stats_lbl: b_stats_lbl.hide()
+		if b_stats_container: b_stats_container.hide()
 
 	if current_context and current_context.has_method("get_processing_icon"):
 		item_panel.hide()
@@ -730,6 +784,7 @@ func _update_display(_arg = null) -> void:
 	item_panel.hide()
 	
 	if not current_inventory: 
+		generic_grid.hide()
 		return
 
 	var is_core = (current_context and current_context.is_in_group("core"))
@@ -939,6 +994,13 @@ func _populate_recipe_grid() -> void:
 				btn.text = name_str.left(4)
 			
 			btn.pressed.connect(_on_recipe_selected.bind(recipe))
+			
+			btn.set_drag_forwarding(
+				Callable(self, "_on_bg_get_drag_data"),
+				Callable(self, "_on_bg_can_drop"),
+				Callable(self, "_on_bg_drop")
+			)
+			
 			recipe_grid.add_child(btn)
 
 func _on_recipe_selected(recipe: RecipeResource) -> void:

@@ -27,7 +27,8 @@ func import_events(list: Array) -> void:
 		res.duration = float(entry.get("duration", 0.0))
 		
 		if entry.has("parameters") and entry["parameters"] is Dictionary:
-			res.parameters = entry["parameters"]
+			res.parameters = entry["parameters"].duplicate(true)
+		else:
+			res.parameters = {}
 		
 		ResourceSaver.save(res, path)
-		

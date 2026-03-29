@@ -44,7 +44,24 @@ var num_lanes: int = 9
 # Increased length to support field enemies spawning deeper in the map
 const LANE_LENGTH = 100
 
+var current_generated_depth: int = 0
+const CHUNK_SIZE: int = 25
+const RENDER_AHEAD: int = 35
+
+var grid_generator: Node
+var fog_manager: Node
+
 func _ready() -> void:
+	grid_generator = load("res://scripts/managers/grid_generator.gd").new()
+	grid_generator.name = "GridGenerator"
+	add_child(grid_generator)
+	grid_generator.setup(self)
+	
+	fog_manager = load("res://scripts/managers/fog_manager.gd").new()
+	fog_manager.name = "FogManager"
+	add_child(fog_manager)
+	fog_manager.setup(self)
+
 	_init_astar()
 	for i in range(num_lanes):
 		enemies_by_lane[i] =[]
@@ -79,17 +96,21 @@ func add_lane() -> void:
 	enemies_by_lane[new_lane_idx] =[]
 	
 	if grid_map:
-		_generate_ores_for_lane(new_lane_idx)
-		_generate_clutter_for_lane(new_lane_idx)
-		_generate_terrain_for_lane(new_lane_idx)
+		grid_generator._generate_ores_for_lane_chunk(new_lane_idx, 0, current_generated_depth)
+		grid_generator._generate_clutter_for_lane_chunk(new_lane_idx, 0, current_generated_depth)
+		grid_generator._generate_loot_buildings_for_lane_chunk(new_lane_idx, 0, current_generated_depth)
+		grid_generator._generate_terrain_for_lane_chunk(new_lane_idx, 0, current_generated_depth)
 		
 	# Update spawners for the new lane so pathfinding has a valid endpoint
-	if spawners_by_lane.size() > 0:
+	if fog_manager:
+		var spawn_tile = Vector2i(fog_manager.current_fog_depth, new_lane_idx + generation_offset.y)
+		spawners_by_lane[new_lane_idx] = tile_to_world(spawn_tile)
+	elif spawners_by_lane.size() > 0:
 		var existing = spawners_by_lane.values()[0]
 		var new_tile = Vector2i(world_to_tile(existing).x, new_lane_idx + generation_offset.y)
 		var new_world_pos = tile_to_world(new_tile)
 		new_world_pos.y = existing.y
-		new_world_pos.x = existing.x # Keep exact X to be safe
+		new_world_pos.x = existing.x
 		spawners_by_lane[new_lane_idx] = new_world_pos
 
 func _load_resources() -> void:
@@ -154,9 +175,40 @@ func _build_block_cache() -> void:
 func _initialize() -> void:
 	_generate_lane_data()
 	if grid_map: 
-		_generate_ores()
-		_generate_clutter()
-		_generate_terrain()
+		grid_generator.generate_guaranteed_ores(GameManager.current_level_config.get("ores",[]))
+		var root = get_tree().current_scene
+		var parent_node = root.get_node_or_null("Buildings")
+		if not parent_node: parent_node = root
+		grid_generator.generate_guaranteed_clutter(GameManager.current_level_config.get("clutter",[]), parent_node)
+		grid_generator.generate_guaranteed_loot_buildings(GameManager.current_level_config.get("loot_buildings",[]), parent_node)
+		
+		current_generated_depth = 0
+		var end = min(CHUNK_SIZE, LANE_LENGTH)
+		grid_generator.generate_chunk(0, end)
+		current_generated_depth = end
+		
+		if fog_manager:
+			fog_manager._update_fog_for_current_phase()
+
+func _process(_delta: float) -> void:
+	if not grid_map: return
+	
+	var cam_x = 0
+	var cam = get_viewport().get_camera_3d()
+	if cam:
+		cam_x = int(cam.global_position.x / GRID_SCALE)
+		
+	var fog_depth = 0
+	if fog_manager:
+		fog_depth = fog_manager.current_fog_depth
+		
+	var max_x = max(get_furthest_building_depth(), max(cam_x, fog_depth))
+	var target_depth = max_x + RENDER_AHEAD
+	
+	if target_depth > current_generated_depth and current_generated_depth < LANE_LENGTH:
+		var end = min(current_generated_depth + CHUNK_SIZE, LANE_LENGTH)
+		grid_generator.generate_chunk(current_generated_depth, end)
+		current_generated_depth = end
 
 func _generate_lane_data() -> void:
 	_tile_to_logical_map.clear()
@@ -180,181 +232,10 @@ func _calculate_grid_coord(lane_id: int, depth: int) -> Vector2i:
 	var z = lane_id + generation_offset.y
 	return Vector2i(x, z)
 
-func _get_clutter_resource(id: String) -> ClutterResource:
-	for c in clutter_types:
-		if c.resource_path.ends_with(id + ".tres"):
-			return c
-	return null
-
-func _generate_ores() -> void:
-	if not GameManager.current_level_config.has("ores"): return
-	var level_ores = GameManager.current_level_config.get("ores",[])
-	if level_ores.is_empty(): return
-	
-	_generate_guaranteed_ores(level_ores)
-	for lane in range(num_lanes):
-		_generate_ores_for_lane(lane)
-
-func _generate_ores_for_lane(lane: int) -> void:
-	var level_ores = GameManager.current_level_config.get("ores",[])
-	if level_ores.is_empty(): return
-	for depth in range(0, LANE_LENGTH):
-		var tile_coord = _calculate_grid_coord(lane, depth)
-		var cell_pos = Vector3i(tile_coord.x, 0, tile_coord.y)
-		if grid_map.get_cell_item(cell_pos) != GridMap.INVALID_CELL_ITEM: continue
-		
-		var valid_ores =[]
-		for o_conf in level_ores:
-			if depth >= o_conf.get("min_depth", 0) and depth <= o_conf.get("max_depth", 30):
-				valid_ores.append(o_conf)
-				
-		if valid_ores.is_empty(): continue
-		var picked_conf = null
-		valid_ores.shuffle()
-		for o_conf in valid_ores:
-			if randf() < o_conf.get("rarity", 0.1):
-				picked_conf = o_conf
-				break
-				
-		if picked_conf:
-			var block_id = picked_conf.get("block_id", -1)
-			if block_id != -1:
-				_place_ore_block_by_config(tile_coord, block_id, picked_conf)
-
-func _generate_guaranteed_ores(level_ores: Array) -> void:
-	for o_conf in level_ores:
-		var guaranteed = o_conf.get("guaranteed", 0)
-		if guaranteed <= 0: continue
-		
-		var block_id = o_conf.get("block_id", -1)
-		if block_id == -1: continue
-		
-		var placed = 0
-		var attempts = 0
-		var min_d = o_conf.get("min_depth", 0)
-		var max_d = o_conf.get("max_depth", 30)
-		
-		while placed < guaranteed and attempts < 1000:
-			attempts += 1
-			var lane = randi() % num_lanes
-			var act_max = min(max_d, LANE_LENGTH - 1)
-			if act_max < min_d: continue
-			var depth = randi_range(min_d, act_max)
-			var coord = _calculate_grid_coord(lane, depth)
-			var cell_pos = Vector3i(coord.x, 0, coord.y)
-			if grid_map.get_cell_item(cell_pos) == GridMap.INVALID_CELL_ITEM:
-				_place_ore_block_by_config(coord, block_id, o_conf)
-				placed += 1
-
-func _place_ore_block_by_config(coord: Vector2i, block_id: int, conf: Dictionary) -> void:
-	if not grid_map: return
-	grid_map.set_cell_item(Vector3i(coord.x, 0, coord.y), block_id)
-	var yield_min = conf.get("yield_min", 1)
-	var yield_max = conf.get("yield_max", 1)
-	active_ore_deposits[coord] = randi_range(yield_min, yield_max)
-
-func _generate_terrain() -> void:
-	for lane in range(num_lanes):
-		_generate_terrain_for_lane(lane)
-
-func _generate_terrain_for_lane(lane: int) -> void:
-	if not grid_map: return
-	var terrain_layers = GameManager.current_level_config.get("terrain_layers",[ { "depth": 5, "block": "Dirt" }, { "depth": LANE_LENGTH, "block": "Stone" } ])
-	for depth in range(LANE_LENGTH):
-		var tile_coord = _calculate_grid_coord(lane, depth)
-		var cell_pos = Vector3i(tile_coord.x, 0, tile_coord.y)
-		if grid_map.get_cell_item(cell_pos) != GridMap.INVALID_CELL_ITEM: continue
-		var block_to_place = "Stone"
-		for layer in terrain_layers:
-			if depth <= layer.depth:
-				block_to_place = layer.block
-				break
-		if block_name_to_id_map.has(block_to_place):
-			grid_map.set_cell_item(cell_pos, block_name_to_id_map[block_to_place])
-
-func _generate_clutter() -> void:
-	if not GameManager.current_level_config.has("clutter"): return
-	var level_clutter = GameManager.current_level_config.get("clutter",[])
-	if level_clutter.is_empty(): return
-	
-	var root = get_tree().current_scene
-	var parent_node = root.get_node_or_null("Buildings")
-	if not parent_node: parent_node = root
-	
-	_generate_guaranteed_clutter(level_clutter, parent_node)
-	for lane in range(num_lanes):
-		_generate_clutter_for_lane(lane)
-
-func _generate_clutter_for_lane(lane: int) -> void:
-	var level_clutter = GameManager.current_level_config.get("clutter",[])
-	if level_clutter.is_empty(): return
-	var root = get_tree().current_scene
-	var parent_node = root.get_node_or_null("Buildings")
-	if not parent_node: parent_node = root
-
-	for depth in range(0, LANE_LENGTH):
-		var tile_coord = _calculate_grid_coord(lane, depth)
-		if get_entity_at(tile_coord, "building"): continue
-		if get_ore_at_world_pos(tile_to_world(tile_coord)): continue
-		
-		var valid_clutter =[]
-		for c_conf in level_clutter:
-			if depth >= c_conf.get("min_depth", 0) and depth <= c_conf.get("max_depth", 30):
-				valid_clutter.append(c_conf)
-		
-		if valid_clutter.is_empty(): continue
-		valid_clutter.shuffle()
-		
-		var picked_conf = null
-		for c_conf in valid_clutter:
-			if randf() < c_conf.get("rarity", 0.1):
-				picked_conf = c_conf
-				break
-		
-		if picked_conf:
-			var c_res = _get_clutter_resource(picked_conf["id"])
-			if c_res:
-				_spawn_clutter_at(tile_coord, c_res, parent_node)
-
-func _generate_guaranteed_clutter(level_clutter: Array, parent_node: Node) -> void:
-	for c_conf in level_clutter:
-		var guaranteed = c_conf.get("guaranteed", 0)
-		if guaranteed <= 0: continue
-		
-		var c_res = _get_clutter_resource(c_conf["id"])
-		if not c_res: continue
-		
-		var placed = 0
-		var attempts = 0
-		var min_d = c_conf.get("min_depth", 0)
-		var max_d = c_conf.get("max_depth", 30)
-		
-		while placed < guaranteed and attempts < 1000:
-			attempts += 1
-			var lane = randi() % num_lanes
-			var act_max = min(max_d, LANE_LENGTH - 1)
-			if act_max < min_d: continue
-			var depth = randi_range(min_d, act_max)
-			var tile_coord = _calculate_grid_coord(lane, depth)
-			
-			if get_entity_at(tile_coord, "building"): continue
-			if get_ore_at_world_pos(tile_to_world(tile_coord)): continue
-			
-			_spawn_clutter_at(tile_coord, c_res, parent_node)
-			placed += 1
-
-func _spawn_clutter_at(coord: Vector2i, clutter: ClutterResource, parent: Node) -> void:
-	var inst = clutter.scene.instantiate()
-	if inst is ClutterObject:
-		inst.clutter_resource = clutter
-	parent.add_child(inst)
-	inst.global_position = tile_to_world(coord) + building_offset + Vector3(0, 1.0, 0)
-
 func register_entity(entity: Node, coord: Vector2i, layer: String) -> void:
 	if not grid_state.has(coord): grid_state[coord] = {}
 	grid_state[coord][layer] = entity
 	if layer == "building":
-		# Use group check to bypass GDScript type verification failures
 		var is_clutter = entity.is_in_group("clutter")
 		if not is_clutter:
 			astar.set_point_solid(coord, true)
@@ -369,7 +250,6 @@ func unregister_entity(coord: Vector2i, layer: String) -> void:
 		var should_be_solid_field = false
 		if grid_state.has(coord) and grid_state[coord].has("building"):
 			var e = grid_state[coord]["building"]
-			# Use group check to bypass GDScript type verification failures
 			if is_instance_valid(e):
 				should_be_solid_field = true
 				if not e.is_in_group("clutter"):
@@ -401,7 +281,6 @@ func get_path_world(from_pos: Vector3, to_pos: Vector3, is_ally: bool = false) -
 	var start_tile = world_to_tile(from_pos)
 	var end_tile = world_to_tile(to_pos)
 	
-	# Prevent pathing to self
 	if start_tile == end_tile:
 		return[]
 	
@@ -479,10 +358,9 @@ func consume_ore_at(tile: Vector2i) -> bool:
 	var block_id = grid_map.get_cell_item(cell_pos)
 	
 	if block_id == GridMap.INVALID_CELL_ITEM or not block_id_to_item_map.has(block_id):
-		return true # Not an ore or empty
+		return true 
 		
 	if not active_ore_deposits.has(tile):
-		# Fallback if placed manually outside level configs
 		active_ore_deposits[tile] = 5
 		
 	active_ore_deposits[tile] -= 1
@@ -490,20 +368,19 @@ func consume_ore_at(tile: Vector2i) -> bool:
 	if active_ore_deposits[tile] <= 0:
 		active_ore_deposits.erase(tile)
 		
-		# Replace exhausted ore blocks with terrain layers configuration matching the tile's depth
 		var block_to_place = "Stone"
 		var depth = tile.x - generation_offset.x
 		var terrain_layers = GameManager.current_level_config.get("terrain_layers",[ { "depth": 5, "block": "Dirt" }, { "depth": LANE_LENGTH, "block": "Stone" } ])
 		for layer in terrain_layers:
-			if depth <= layer.depth:
-				block_to_place = layer.block
+			if depth <= layer.get("depth", LANE_LENGTH):
+				block_to_place = layer.get("block", "Stone")
 				break
 				
 		var bg_id = block_name_to_id_map.get(block_to_place, 0)
 		grid_map.set_cell_item(cell_pos, bg_id)
-		return true # Depleted
+		return true 
 		
-	return false # More left
+	return false 
 
 func scan_for_spawners(dev_map: GridMap) -> void:
 	if not dev_map or not dev_map.mesh_library: return
@@ -511,7 +388,6 @@ func scan_for_spawners(dev_map: GridMap) -> void:
 	var lib = dev_map.mesh_library
 	var spawner_id = -1
 	for id in lib.get_item_list():
-		# Match dev map's debug spawner definition from manifest
 		if lib.get_item_name(id) == "Spawner":
 			spawner_id = id
 			break
@@ -533,7 +409,6 @@ func scan_for_spawners(dev_map: GridMap) -> void:
 				ref_x = world_pos.x
 				ref_y = world_pos.y
 				
-	# Auto-fill missing spawners for all dynamic lanes up to num_lanes
 	if ref_x != -INF:
 		for i in range(num_lanes):
 			if not spawners_by_lane.has(i):
@@ -568,7 +443,6 @@ func get_enemies_at(tile: Vector2i) -> Array: return enemy_spatial_map.get(tile,
 func get_enemies_in_lane(lane_id: int) -> Array: return enemies_by_lane.get(lane_id,[])
 func is_valid_tile(tile_coord: Vector2i) -> bool: return _tile_to_logical_map.has(tile_coord)
 
-## Returns the X coordinate of the building placed deepest into the level.
 func get_furthest_building_depth() -> int:
 	var max_x = 0
 	for coord in grid_state.keys():
@@ -577,23 +451,24 @@ func get_furthest_building_depth() -> int:
 				max_x = coord.x
 	return max_x
 
-## Returns a random world position for a field spawn that does not collide with existing buildings.
 func get_valid_field_spawn_pos(min_d: int, max_d: int, safe_buffer: int) -> Vector3:
-	var limit = get_furthest_building_depth() + safe_buffer
-	# Ensure we spawn deeper than the furthest building (+buffer)
+	var cam_x = 0
+	var cam = get_viewport().get_camera_3d()
+	if cam:
+		cam_x = int(cam.global_position.x / GRID_SCALE)
+		
+	var limit = max(get_furthest_building_depth(), cam_x) + safe_buffer
 	var start = max(min_d, limit)
+	var active_max = min(max_d, start + 25) 
 	
-	if start >= max_d: 
-		# No room between buildings and max depth
+	if start >= max_d or start >= active_max: 
 		return Vector3.ZERO 
 	
-	# Attempt to find a clear tile
 	for i in range(10):
-		var depth = randi_range(start, max_d)
+		var depth = randi_range(start, active_max)
 		var lane = randi() % num_lanes
 		var tile = _calculate_grid_coord(lane, depth)
 		
-		# Check if occupied by building
 		if not get_entity_at(tile, "building"):
 			return tile_to_world(tile)
 			
@@ -631,3 +506,4 @@ func get_nearby_valid_ally_spawn_pos(death_pos: Vector3) -> Vector3:
 					queue.append(next_t)
 					
 	return get_valid_ally_spawn_pos()
+

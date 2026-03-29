@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BuildableResource" format=3 uid="uid://cre15ma7kwikd"]
+
+[ext_resource type="Texture2D" uid="uid://bo6s6doxda3m2" path="res://assets/icons/cubby.png" id="1_svxqy"]
+[ext_resource type="PackedScene" uid="uid://bnpsh61amywux" path="res://scenes/buildables/cubby.tscn" id="2_h2uw8"]
+[ext_resource type="Script" uid="uid://qpm1dylmnjld" path="res://scripts/resources/buildable_resource.gd" id="3_iwe0q"]
+
+[resource]
+script = ExtResource("3_iwe0q")
+buildable_name = "Cubby"
+description = "High-capacity storage unit."
+icon = ExtResource("1_svxqy")
+has_input = false
+has_output = false
+default_output_mask = 4
+scene = ExtResource("2_h2uw8")

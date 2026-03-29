@@ -3,7 +3,14 @@
   "name": "Back to Basics",
   "scene_id": "b2b",
   "day_duration": 120.0,
-  "day_phases":[120, 240, 120, 120, 120, 240, 240, 240],
+  "day_phases":[
+	{ "duration": 120, "pool": "easy", "fog_depth": 15 },
+	{ "duration": 240, "pool": "medium", "fog_depth": 25 },
+	{ "duration": 120, "pool": "medium", "fog_depth": 35 },
+	{ "duration": 120, "pool": "hard", "fog_depth": 45 },
+	{ "duration": 120, "pool": "hard", "fog_depth": 60 },
+	{ "duration": 240, "pool": "boss", "fog_depth": 80 }
+  ],
   "starting_currency": 4,
   "starting_items":[
 	{"id": "hand_drill", "count": 1},
@@ -14,9 +21,12 @@
 	{ "type": "meteor_shower", "chance": 0.05 },
 	{ "type": "scrap_drop", "chance": 0.1 }
   ],
+  "loot_buildings":[
+	{"id": "cubby", "min_depth": 10, "max_depth": 80, "rarity": 0.05, "guaranteed": 2, "loot_pool": "basic_loot"}
+  ],
   "ores":[
-	{"block_id": 11, "min_depth": 0, "max_depth": 15, "rarity": 0.05, "guaranteed": 3, "yield_min": 5, "yield_max": 10},
-	{"block_id": 12, "min_depth": 0, "max_depth": 15, "rarity": 0.05, "guaranteed": 3, "yield_min": 4, "yield_max": 8},
+	{"block_id": 11, "min_depth": 0, "max_depth": 15, "rarity": 0.05, "guaranteed": 3, "yield_min": 5, "yield_max": 10, "generation_method": "cluster", "cluster_min": 1, "cluster_max": 4},
+	{"block_id": 12, "min_depth": 0, "max_depth": 15, "rarity": 0.05, "guaranteed": 3, "yield_min": 4, "yield_max": 8, "generation_method": "cluster", "cluster_min": 2, "cluster_max": 4},
 	{"block_id": 13, "min_depth": 10, "max_depth": 25, "rarity": 0.01, "guaranteed": 3, "yield_min": 4, "yield_max": 8},
 	{"block_id": 14, "min_depth": 15, "max_depth": 30, "rarity": 0.003, "guaranteed": 2, "yield_min": 2, "yield_max": 5},
 	{"block_id": 15, "min_depth": 15, "max_depth": 30, "rarity": 0.0083, "guaranteed": 2, "yield_min": 2, "yield_max": 5},
@@ -26,6 +36,12 @@
   "clutter":[
 	{"id": "rock", "min_depth": 25, "max_depth": 50, "rarity": 0.00, "guaranteed": 0}
   ],
+  "item_pools": {
+	"basic_loot":[
+	  { "item": "stone", "weight": 10, "min": 1, "max": 3 },
+	  { "item": "iron", "weight": 5, "min": 1, "max": 2 }
+	]
+  },
   "field_enemies":[
 	{
 	  "id": "roomdog",
@@ -40,18 +56,37 @@
 	  "idle_time": 2.0
 	}
   ],
+  "wave_pools": {
+	"easy":[
+	  { "wave_id": "wave_1", "weight": 1.0 },
+	  { "wave_id": "wave_2", "weight": 0.5, "event_id": "scrap_drop" }
+	],
+	"medium":[
+	  { "wave_id": "wave_3", "weight": 1.0 },
+	  { "wave_id": "wave_4", "weight": 1.0, "event_id": "meteor_shower" }
+	],
+	"hard":[
+	  { "wave_id": "wave_5", "weight": 1.0 },
+	  { "wave_id": "wave_6", "weight": 1.0 }
+	],
+	"boss":[
+	  { "wave_id": "wave_7", "weight": 1.0 },
+	  { "wave_id": "wave_8", "weight": 1.0 }
+	]
+  },
   "waves":[
 	{
 	  "id": "wave_1",
 	  "groups":[
-		{"enemy_id": "roomdog", "count": 3, "interval": 2.0}
+		{"enemy_id": "roomdog", "count": 3, "interval": 1.0, "interval_max": 2.5, "capacity": 2}
 	  ]
 	},
 	{
 	  "id": "wave_2",
 	  "groups":[
-		{"enemy_id": "roomdog", "count": 5, "interval": 1.5},
-		{"enemy_id": "proller", "count": 2, "interval": 1.0}
+		{"enemy_id": "roomdog", "count": 5, "interval": 1.5, "capacity": 3},
+		{"type": "pause", "duration": 4.0},
+		{"enemy_id": "proller", "count": 2, "interval": 1.0, "interval_max": 3.0}
 	  ]
 	},
 	{

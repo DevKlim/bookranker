@@ -69,6 +69,15 @@ func _build_ui() -> void:
 	btn_start.pressed.connect(_on_spawn_wave_button_pressed)
 	hbox.add_child(btn_start)
 	
+	var btn_skip = Button.new()
+	btn_skip.text = "Skip Day"
+	btn_skip.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn_skip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn_skip.add_theme_stylebox_override("normal", btn_style)
+	btn_skip.add_theme_color_override("font_color", Color(0.2, 0.2, 0.2))
+	btn_skip.pressed.connect(_on_skip_day_pressed)
+	hbox.add_child(btn_skip)
+	
 	var btn_stop = Button.new()
 	btn_stop.text = "Stop"
 	btn_stop.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -105,8 +114,14 @@ func _on_spawn_wave_button_pressed() -> void:
 		if idx == -1: idx = 0
 		WaveManager.start_wave(idx)
 
+func _on_skip_day_pressed() -> void:
+	if GameManager.current_state == GameManager.GameState.DAY_PLANNING:
+		GameManager.day_timer = 0.0
+
 func _on_stop_wave_button_pressed() -> void:
 	WaveManager.stop_wave()
+	if GameManager.current_state == GameManager.GameState.NIGHT_WAVE:
+		GameManager._on_wave_cleared()
 
 func _on_reload_pressed() -> void:
 	WaveManager._load_waves_config()

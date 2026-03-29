@@ -156,10 +156,10 @@ func get_recipes() -> Array[RecipeResource]:
 		return[]
 	
 	var filtered: Array[RecipeResource] =[]
+	var current_wave = GameManager.game_data.get("wave", 1)
 	for r in all_recipes:
-		if r.category == "assembly":
+		if r.category == "assembly" and r.tier <= current_wave:
 			filtered.append(r)
 	
 	print("Asourcer: Found %d valid recipes (assembly) out of %d total." %[filtered.size(), all_recipes.size()])
 	return filtered
-

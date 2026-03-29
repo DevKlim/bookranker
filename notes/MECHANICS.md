@@ -164,7 +164,13 @@ To handle high enemy counts, wide-area reactions (like **Conduct**) use a multi-
 1. Upon starting a new level, the shop will only offer core mods.
 2. After initial shops, remaining shops will contain all kinds of mods in the pool.
 
-## 10. The Origami Factory (Manufacturing Mechanics)
+## 10. Crafting Tiers
+Recipes possess a `tier` rating which represents when they become available during a level's progression.
+*   **Tier 1:** Unlocked initially at the start of Phase 1 (Wave 1).
+*   **Tier 2+:** Unlocked after clearing subsequent phases. For example, Tier 2 recipes become available upon entering Phase 2 (Wave 2).
+Building UI panels dynamically update to reveal newly unlocked recipes when players advance through the level's waves.
+
+## 11. The Origami Factory (Manufacturing Mechanics)
 
 In the "Back to Basics" level, players manufacture their own projectiles dynamically using an assembly line:
 1. **Paper Generation:** A `Printer` consumes energy and raw materials to constantly produce `Paper`.
@@ -181,7 +187,72 @@ Folds have specific traversal rules based on their design:
     *   **Slipstream (Water):** Fast travel. Deals 1 instance of damage.
     *   **Tarstream (Ink):** Slow travel. Enables multi-hit properties due to the stickiness. **Walking on a Tarstream naturally applies the Slime reaction to enemies.**
 
-## 11. The Number Cruncher (RNG Mechanic)
+## 12. The Number Cruncher (RNG Mechanic)
 To introduce unpredictability and high-ceiling synergies, an RNG Number (1-9) is periodically generated during the level. 
 *   **Condition:** If any instance of damage dealt to an enemy exactly matches this active number, the damage is immediately **doubled**.
 *   **Synergy:** Weapons like the `Picasso`, which deals highly variable damage based on user inventory consumption, perfectly synergize to snipe the active multiplier.
+
+## 13. Customizing Building UI & Inventories
+
+Base Zero dynamically generates the player-facing interface for buildings based on the presence of certain Components and Methods in the building's script.
+
+### Controlling the Grid UI vs. Machine UI
+By default, if a building has an `InventoryComponent`, clicking the building opens the **Generic Grid UI**.
+*   **Machine UI:** If you want a structured Input/Output layout (like Smelters), your script must implement `get_processing_icon()`. This triggers `inventory_gui.gd` to render the machine layout.
+*   **Generic Grid UI:** Used for chests or assembly stations like `Foldgami`. 
+*   **No Inventory UI:** If you omit the `InventoryComponent` completely (or set its max_slots to 0), the main inventory grid is hidden. **However**, the Mod Chip grid will still appear, allowing the building to be modded! Example: `Box Fan`.
+
+### Customizing Generic Slots (The Foldgami Method)
+If you rely on the Generic Grid UI but want specific slots to behave and look distinctly, override these methods in your building's script:
+
+1.  **Slot Labels (Text overlay on the slot):**
+    ```gdscript
+    func get_slot_label(idx: int) -> String:
+        if idx == 0: return "IN"
+        if idx == 1: return "OUT"
+        return ""
+    ```
+2.  **Slot Tooltips (Hover descriptions):**
+    ```gdscript
+    func get_slot_tooltip(idx: int) -> String:
+        if idx == 0: return "Raw Materials"
+        return ""
+    ```
+3.  **Strict Slot Filtering (Preventing wrong items):**
+    To restrict specific items to specific slots dynamically (e.g. slot 1 *must* be stamps), bind a custom filter directly to the `InventoryComponent` in `_ready()`:
+    ```gdscript
+    func _ready() -> void:
+        super._ready()
+        if inventory_component:
+            inventory_component.slot_filter = _my_slot_filter
+
+    func _my_slot_filter(item: Resource, index: int) -> bool:
+        var id = item.resource_path.get_file().get_basename()
+        if index == 1: return id.begins_with("stamp_")
+        return true
+    ```
+
+## 14. Troubleshooting & Modding Pitfalls
+
+Recent structural fixes highlighted a few common modding pitfalls to watch out for:
+
+*   **Scene Script Linking (`.tscn` setup):** When creating a specific building (like `Printer` or `Box Fan`), ensure the root node of the `.tscn` file points to its specialized script (e.g., `res://scripts/entities/buildings/printer.gd`), not the generic `base_building.gd`. Otherwise, custom `_physics_process` and logic will not execute.
+*   **Targeting & Groups:** For AOE attacks or buffs (like the Box Fan blowing `Aero`) to recognize a building as a valid target, the building must be in the `"buildings"` group. `BaseBuilding` now automatically registers itself to this group in its `_ready()` function.
+*   **UI Mod Grids (Fallback Logic):** Buildings do not require a standard `InventoryComponent` to use Mod Chips. If a building only has a `mod_inventory` (like the Box Fan), the UI gracefully adapts to show only the Mod Slots and the stats overlay.
+*   **Creative Mode Trash:** To discard items quickly while in Creative mode, players can drag and drop items from their player inventory directly back into the creative item catalog grids. The grids have been assigned native drop logic (`_can_drop_trash`, `_drop_trash`).
+
+## 15. Random Events (EventManager)
+Base Zero includes a dynamic `EventManager` to introduce run-altering modifiers.
+*   **Triggers:** Events can be triggered natively via the Level JSON (`random_events` pool) or directly during a specific Wave phase.
+*   **Effects:** An event can grant items, apply global stat multipliers, or alter how enemies spawn.
+*   **Duration:** Events with a duration > 0 will persist until the timer expires. The `EventManager` automatically rolls back temporary modifications (like Stat Multipliers) when the event ends.
+
+## 16. Loot Buildings
+In levels, `loot_buildings` can be configured to generate functional structures (like a `Cubby`) that act as clutter. They spawn populated with resources from an item pool. Players can either destroy them to drop items or open them to loot normally.
+*   **Loot Component:** These buildings automatically rename themselves to "Loot" in the UI. Once all items are extracted, they automatically deconstruct themselves to clear space on the grid.
+
+## 17. The Mist (Fog of War)
+To create a sense of progression and claustrophobia, unexplored depths are covered in a dense Mist.
+*   **Vision & Interaction:** The Mist completely smothers tiles. Players cannot place buildings, select entities, or interact with anything inside the Mist.
+*   **Wave Spawning:** Wave enemies will continuously spawn from the exact edge of the Mist.
+*   **Recession:** Upon completing a wave phase, the Mist dynamically recedes based on the `fog_depth` configuration in the level's JSON, revealing new ores, clutter, and space to build.

@@ -1,0 +1,21 @@
+[  {
+    "id": "meteor_shower",
+    "name": "Meteor Shower",
+    "description": "Meteors fall from the sky giving you stone.",
+    "effect_type": "give_item",
+    "parameters": {
+      "item_id": "stone",
+      "count": 50
+    }
+  },
+  {
+    "id": "scrap_drop",
+    "name": "Scrap Drop",
+    "description": "A pile of scrap metal drops nearby.",
+    "effect_type": "give_item",
+    "parameters": {
+      "item_id": "iron",
+      "count": 20
+    }
+  }
+]

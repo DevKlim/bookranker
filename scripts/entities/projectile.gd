@@ -77,7 +77,7 @@ func _physics_process(delta: float) -> void:
 		var stream = null
 		if is_instance_valid(wire) and "display_name" in wire and wire.display_name in["Slipstream", "Tarstream"]:
 			stream = wire
-		elif is_instance_valid(building) and "display_name" in building and building.display_name in ["Slipstream", "Tarstream"]:
+		elif is_instance_valid(building) and "display_name" in building and building.display_name in["Slipstream", "Tarstream"]:
 			stream = building
 		
 		if is_instance_valid(stream):
@@ -231,7 +231,16 @@ func _color_meshes(node: Node, col: Color) -> void:
 			mat = StandardMaterial3D.new()
 		else: 
 			mat = mat.duplicate()
-		mat.albedo_color = col
+		
+		if "albedo_color" in mat:
+			mat.albedo_color = col
+		elif mat is ShaderMaterial:
+			mat.set_shader_parameter("albedo_color", col)
+		
+		if has_meta("fold_type"):
+			# Add to the Highlight Viewport pass mask
+			node.layers = 1025
+			
 		node.set_surface_override_material(0, mat)
 	for child in node.get_children():
 		_color_meshes(child, col)
@@ -290,3 +299,4 @@ func _apply_damage_to(body: Node3D) -> bool:
 			
 		return true
 	return false
+

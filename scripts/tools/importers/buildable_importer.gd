@@ -172,12 +172,12 @@ func _generate_building_scene(data: Dictionary, save_path: String) -> void:
 		_add_component(inst, COMP_CRAFTER, "CrafterComponent")
 
 	if logic.get("emit_projectile", false) or logic.get("shooting", false) or logic.has("attack_config"):
-		var attacker = _add_component(inst, COMP_SHOOTER, "AttackerComponent") 
+		var attacker = _add_component(inst, "res://scripts/components/attacker_component.gd", "AttackerComponent") 
 		
 		if logic.has("attack_config"):
 			var atk_path = "res://resources/attacks/" + str(logic["attack_config"]) + ".tres"
 			if ResourceLoader.exists(atk_path):
-				attacker.basic_attack = load(atk_path)
+				attacker.set("basic_attack", load(atk_path))
 
 		var marker = Marker3D.new()
 		marker.name = "ProjectileOrigin"
