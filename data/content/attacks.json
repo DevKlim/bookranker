@@ -1,7 +1,10 @@
-[	{
-		"id": "pipe_swing",
+[{		"id": "pipe_swing",
 		"cooldown": 3.0,
 		"damage": 2.0,
+		"formulas": {
+			"damage_equation": "(base_damage + (attack_damage * attack_damage_weight) + (weight * weight_weight) + global_flat_damage) * (1.0 + damage_mult)"
+		},
+		"stat_weights": { "attack_damage": 1.0, "weight": 0.2 },
 		"visual_scene": "res://scenes/attacks/pipe_swing.tscn",
 		"attach_to_source": true,
 		"min_range": 1, "max_range": 1, "is_aoe": true,
@@ -13,6 +16,10 @@
 		"id": "turret_shot",
 		"cooldown": 1.0,
 		"damage": 5.0,
+		"formulas": {
+			"damage_equation": "(base_damage + (attack_damage * attack_damage_weight) + global_flat_damage) * (1.0 + damage_mult)"
+		},
+		"stat_weights": { "attack_damage": 1.0 },
 		"spawn_projectile": true,
 		"projectile_speed": 200.0
 	},
@@ -20,6 +27,10 @@
 		"id": "projectile_shot",
 		"cooldown": 1.0,
 		"damage": 5.0,
+		"formulas": {
+			"damage_equation": "(base_damage + (attack_damage * attack_damage_weight) + global_flat_damage) * (1.0 + damage_mult)"
+		},
+		"stat_weights": { "attack_damage": 1.0 },
 		"spawn_projectile": true,
 		"projectile_speed": 200.0
 	},
@@ -27,6 +38,10 @@
 		"id": "picasso_shot",
 		"cooldown": 2.0,
 		"damage": 1.0,
+		"formulas": {
+			"damage_equation": "(base_damage + (lux_stat * lux_stat_weight) + global_flat_damage) * (1.0 + damage_mult)"
+		},
+		"stat_weights": { "lux_stat": 1.5 },
 		"spawn_projectile": true,
 		"projectile_speed": 150.0
 	},
@@ -34,6 +49,10 @@
 		"id": "yardstick_swing",
 		"cooldown": 1.0,
 		"damage": 3.0,
+		"formulas": {
+			"damage_equation": "(base_damage + (attack_damage * attack_damage_weight) + global_flat_damage) * (1.0 + damage_mult)"
+		},
+		"stat_weights": { "attack_damage": 0.8 },
 		"min_range": 1, "max_range": 2, "is_aoe": true,
 		"spawn_point": 0,
 		"offset":[0, 0.5, 0],
@@ -43,18 +62,30 @@
 		"id": "dull_pencil_stab",
 		"cooldown": 2.0,
 		"damage": 1.0,
+		"formulas": {
+			"damage_equation": "(base_damage + (attack_damage * attack_damage_weight) + global_flat_damage) * (1.0 + damage_mult)"
+		},
+		"stat_weights": { "attack_damage": 0.5 },
 		"min_range": 1, "max_range": 1, "is_aoe": false
 	},
 	{
 		"id": "sharp_pencil_stab",
 		"cooldown": 1.0,
 		"damage": 2.0,
+		"formulas": {
+			"damage_equation": "(base_damage + (attack_damage * attack_damage_weight) + global_flat_damage) * (1.0 + damage_mult)"
+		},
+		"stat_weights": { "attack_damage": 1.2 },
 		"min_range": 1, "max_range": 1, "is_aoe": false
 	},
 	{
 		"id": "fan_blow",
 		"cooldown": 1.0,
 		"damage": 0.0,
+		"formulas": {
+			"damage_equation": "(base_damage + (lux_stat * lux_stat_weight) + global_flat_damage) * (1.0 + damage_mult)"
+		},
+		"stat_weights": { "lux_stat": 0.5 },
 		"min_range": 1, "max_range": 3, "is_aoe": true,
 		"spawn_point": 0,
 		"offset":[0, 0.5, 0],
@@ -64,6 +95,10 @@
 		"id": "boss_slam",
 		"cooldown": 3.0,
 		"damage": 500.0,
+		"formulas": {
+			"damage_equation": "(base_damage + (weight * weight_weight) + global_flat_damage) * (1.0 + damage_mult)"
+		},
+		"stat_weights": { "weight": 2.0 },
 		"min_range": 1, "max_range": 1, "is_aoe": true,
 		"hitbox_extents":[2.0, 2.0, 2.0]
 	},
@@ -71,6 +106,10 @@
 		"id": "cranefold_shot",
 		"cooldown": 3.0,
 		"damage": 3.0,
+		"formulas": {
+			"damage_equation": "(base_damage + (attack_damage * attack_damage_weight) + global_flat_damage) * (1.0 + damage_mult)"
+		},
+		"stat_weights": { "attack_damage": 1.0 },
 		"spawn_projectile": true,
 		"projectile_speed": 300.0,
 		"range_width": 0
@@ -79,6 +118,10 @@
 		"id": "crumpledfold_shot",
 		"cooldown": 2.0,
 		"damage": 1.0,
+		"formulas": {
+			"damage_equation": "(base_damage + (weight * weight_weight) + global_flat_damage) * (1.0 + damage_mult)"
+		},
+		"stat_weights": { "weight": 0.5 },
 		"spawn_projectile": true,
 		"projectile_speed": 150.0,
 		"range_width": 0
@@ -87,6 +130,10 @@
 		"id": "lotusfold_shot",
 		"cooldown": 2.0,
 		"damage": 2.0,
+		"formulas": {
+			"damage_equation": "(base_damage + (lux_stat * lux_stat_weight) + global_flat_damage) * (1.0 + damage_mult)"
+		},
+		"stat_weights": { "lux_stat": 1.0 },
 		"spawn_projectile": true,
 		"projectile_speed": 200.0,
 		"is_aoe": true,
@@ -96,6 +143,10 @@
 		"id": "planefold_shot",
 		"cooldown": 2.0,
 		"damage": 2.0,
+		"formulas": {
+			"damage_equation": "(base_damage + (attack_damage * attack_damage_weight) + global_flat_damage) * (1.0 + damage_mult)"
+		},
+		"stat_weights": { "attack_damage": 1.0 },
 		"spawn_projectile": true,
 		"projectile_speed": 300.0,
 		"range_width": 0
@@ -104,6 +155,10 @@
 		"id": "shurikenfold_shot",
 		"cooldown": 2.0,
 		"damage": 1.0,
+		"formulas": {
+			"damage_equation": "(base_damage + (speed * speed_weight) + global_flat_damage) * (1.0 + damage_mult)"
+		},
+		"stat_weights": { "speed": 0.2 },
 		"spawn_projectile": true,
 		"projectile_speed": 400.0,
 		"range_width": 0
@@ -112,6 +167,10 @@
 		"id": "swanfold_shot",
 		"cooldown": 2.0,
 		"damage": 2.0,
+		"formulas": {
+			"damage_equation": "(base_damage + (lux_stat * lux_stat_weight) + global_flat_damage) * (1.0 + damage_mult)"
+		},
+		"stat_weights": { "lux_stat": 0.8 },
 		"spawn_projectile": true,
 		"projectile_speed": 250.0,
 		"range_width": 0

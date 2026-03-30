@@ -38,10 +38,12 @@ const ENTITY_CLUTTER_SCRIPT = "res://scripts/entities/clutter_object.gd"
 
 var target_item_id: String = "All"
 var overwrite_existing: bool = false
+var only_update_resources: bool = false
 
-func _init(p_target_id: String = "All", p_overwrite: bool = false) -> void:
+func _init(p_target_id: String = "All", p_overwrite: bool = false, p_only_update_resources: bool = false) -> void:
 	target_item_id = p_target_id
 	overwrite_existing = p_overwrite
+	only_update_resources = p_only_update_resources
 
 func _get_or_create_resource(path: String, script_class: Object) -> Resource:
 	if ResourceLoader.exists(path):
@@ -56,10 +58,8 @@ func _should_process(id: String, file_path: String) -> bool:
 	return overwrite_existing
 
 func _resolve_resource_id(id_str: String) -> Resource:
-	# Check Item
 	var item_path = RESOURCE_BASE_PATH + "items/" + id_str + ".tres"
 	if ResourceLoader.exists(item_path): return load(item_path)
-	# Check Buildable
 	var build_path = RESOURCE_BASE_PATH + "buildables/" + id_str + ".tres"
 	if ResourceLoader.exists(build_path): return load(build_path)
 	return null
@@ -94,8 +94,27 @@ func _apply_logic_params(inst: Node, data: Dictionary) -> void:
 	if logic.has("power_cost"):
 		if "power_consumption" in inst: _apply_param(inst, "power_consumption", logic["power_cost"])
 		elif inst.has_node("PowerConsumerComponent"): _apply_param(inst, "PowerConsumerComponent:power_consumption", logic["power_cost"])
+	
+	# Apply formulas and weights to scene if they exist
+	if logic.has("formulas") and logic["formulas"] is Dictionary:
+		var forms = logic["formulas"]
+		for k in forms.keys():
+			_apply_param(inst, k, forms[k])
+	if logic.has("stat_weights") and logic["stat_weights"] is Dictionary:
+		_apply_param(inst, "stat_weights", logic["stat_weights"])
+
 	if data.has("params"):
 		for k in data["params"]: _apply_param(inst, k, data["params"][k])
+
+func _apply_formulas_and_weights(res: Resource, data: Dictionary) -> void:
+	if data.has("formulas") and data["formulas"] is Dictionary:
+		var forms = data["formulas"]
+		for k in forms.keys():
+			if k in res:
+				res.set(k, forms[k])
+	if data.has("stat_weights") and data["stat_weights"] is Dictionary:
+		if "stat_weights" in res:
+			res.stat_weights = data["stat_weights"]
 
 func _save_scene(root_node: Node, path: String) -> void:
 	_set_owner_recursive(root_node, root_node)
@@ -109,7 +128,6 @@ func _set_owner_recursive(node: Node, root: Node) -> void:
 	for c in node.get_children(): _set_owner_recursive(c, root)
 
 # --- VISUAL HELPERS ---
-
 func _add_visuals(parent: Node, vdata: Dictionary) -> void:
 	var visual_type = vdata.get("type", "sprite")
 	if visual_type == "block":
@@ -207,8 +225,6 @@ func _process_3d_sprite_frames(anim_sprite: AnimatedSprite3D, vdata: Dictionary)
 			at.atlas = tex
 			at.region = Rect2(row_idx * h, i * w, w, h)
 			frames.add_frame(anim, at)
-	
-	# Fix: Actually assign the created frames to the sprite
 	anim_sprite.sprite_frames = frames
 
 func _parse_io_mask(directions_array: Array) -> int:
@@ -222,4 +238,3 @@ func _parse_io_mask(directions_array: Array) -> int:
 			"front", "up": mask |= (1 << 2)
 			"right": mask |= (1 << 3)
 	return mask
-

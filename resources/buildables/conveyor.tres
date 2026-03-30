@@ -7,7 +7,10 @@
 [resource]
 script = ExtResource("3_43ptq")
 buildable_name = "Conveyor"
+description = "Moves items."
 icon = ExtResource("1_souto")
+has_input = false
+has_output = false
 default_input_mask = 1
 default_output_mask = 4
 scene = ExtResource("2_souto")

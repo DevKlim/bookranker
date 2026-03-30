@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AllyResource" format=3 uid="uid://bsay7j8nsb48"]
+
+[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="1_lkgge"]
+[ext_resource type="Script" uid="uid://c1irnf603307x" path="res://scripts/resources/ally_resource.gd" id="2_hvqv4"]
+
+[resource]
+script = ExtResource("2_hvqv4")
+ally_name = "Bonegear"
+icon = ExtResource("1_lkgge")
+health = 30.0
+speed = 8.0
+inventory_slots = 5
+respawns_count = 1
+respawns_cooldown = 10.0

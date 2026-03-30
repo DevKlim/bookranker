@@ -16,14 +16,6 @@ var right_vbox: VBoxContainer
 
 var machine_container: VBoxContainer 
 var status_hbox: HBoxContainer
-var input_slot: Panel
-var input_icon: TextureRect
-var input_count: Label
-var fuel_slot: Panel 
-var fuel_icon: TextureRect 
-var output_slot: Panel
-var output_icon: TextureRect
-var output_count: Label
 var cancel_recipe_btn: Button
 
 # Recipe UI Elements
@@ -48,6 +40,9 @@ var current_context: Object = null
 
 var scale_root: Control
 var base_min_size: Vector2 = Vector2(550, 400)
+
+var content_bg_ref: PanelContainer
+var _is_resizing: bool = false
 
 # Dragging Variables
 var dragging: bool = false
@@ -155,6 +150,7 @@ func _ready() -> void:
 	scale_root.add_child(frame_margin)
 	
 	var content_bg = PanelContainer.new()
+	content_bg_ref = content_bg
 	content_bg.name = "ContentBG"
 	var cbg_style = StyleBoxFlat.new()
 	cbg_style.bg_color = Color.WHITE
@@ -233,42 +229,6 @@ func _ready() -> void:
 	status_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	status_hbox.add_theme_constant_override("separation", 15)
 	machine_container.add_child(status_hbox)
-	
-	input_slot = _create_slot_panel()
-	status_hbox.add_child(input_slot)
-	input_icon = input_slot.get_node("Center/Icon")
-	input_count = input_slot.get_node("Count")
-
-	fuel_slot = _create_slot_panel()
-	fuel_slot.modulate = Color(0.8, 0.7, 0.6)
-	fuel_slot.visible = false
-	status_hbox.add_child(fuel_slot)
-	fuel_icon = fuel_slot.get_node("Center/Icon")
-	
-	var arrow = TextureRect.new()
-	arrow.custom_minimum_size = Vector2(32, 32)
-	arrow.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	arrow.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	var grad = Gradient.new()
-	grad.colors =[Color.WHITE, Color.WHITE]
-	var grad_tex = GradientTexture2D.new()
-	grad_tex.gradient = grad
-	grad_tex.width = 32
-	grad_tex.height = 32
-	grad_tex.fill = GradientTexture2D.FILL_LINEAR
-	grad_tex.fill_from = Vector2(0, 0)
-	grad_tex.fill_to = Vector2(1, 0.5) 
-	if ResourceLoader.exists("res://assets/ui/arrowright.png"):
-		arrow.texture = load("res://assets/ui/arrowright.png")
-	else:
-		arrow.texture = grad_tex
-		arrow.modulate = Color(0.6, 0.6, 0.6)
-	status_hbox.add_child(arrow)
-	
-	output_slot = _create_slot_panel()
-	status_hbox.add_child(output_slot)
-	output_icon = output_slot.get_node("Center/Icon")
-	output_count = output_slot.get_node("Count")
 	
 	var spacer = Control.new()
 	spacer.custom_minimum_size = Vector2(0, 15)
@@ -767,15 +727,74 @@ func _update_display(_arg = null) -> void:
 			var recipe = current_context.get("current_recipe")
 			if not recipe and "active_recipe" in current_context: recipe = current_context.active_recipe
 
-			_update_machine_io(input_slot, input_icon, input_count, current_context.get("input_inventory"), recipe, true)
-			_update_machine_io(output_slot, output_icon, output_count, current_context.get("output_inventory"), recipe, false)
-			
+			for child in status_hbox.get_children():
+				child.queue_free()
+				
+			var input_inv = current_context.get("input_inventory")
+			if not input_inv and current_context.get("inventory_component"):
+				input_inv = current_context.get("inventory_component")
+				
+			if recipe and recipe.inputs.size() > 0:
+				for i in range(recipe.inputs.size()):
+					var slot = _create_slot_panel()
+					status_hbox.add_child(slot)
+					var icon = slot.get_node("Center/Icon")
+					var count_lbl = slot.get_node("Count")
+					_update_machine_io_multi(slot, icon, count_lbl, input_inv, recipe, true, i)
+			else:
+				var slot = _create_slot_panel()
+				status_hbox.add_child(slot)
+				var icon = slot.get_node("Center/Icon")
+				var count_lbl = slot.get_node("Count")
+				_update_machine_io_multi(slot, icon, count_lbl, input_inv, recipe, true, 0)
+
 			var fuel_inv = current_context.get("fuel_inventory")
 			if fuel_inv:
-				fuel_slot.visible = true
-				_update_machine_io(fuel_slot, fuel_icon, null, fuel_inv, null, true)
+				var f_slot = _create_slot_panel()
+				f_slot.modulate = Color(0.8, 0.7, 0.6)
+				status_hbox.add_child(f_slot)
+				var f_icon = f_slot.get_node("Center/Icon")
+				_update_machine_io_multi(f_slot, f_icon, null, fuel_inv, null, true, 0)
+
+			var arrow = TextureRect.new()
+			arrow.custom_minimum_size = Vector2(32, 32)
+			arrow.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			arrow.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			var grad = Gradient.new()
+			grad.colors =[Color.WHITE, Color.WHITE]
+			var grad_tex = GradientTexture2D.new()
+			grad_tex.gradient = grad
+			grad_tex.width = 32
+			grad_tex.height = 32
+			grad_tex.fill = GradientTexture2D.FILL_LINEAR
+			grad_tex.fill_from = Vector2(0, 0)
+			grad_tex.fill_to = Vector2(1, 0.5) 
+			if ResourceLoader.exists("res://assets/ui/arrowright.png"):
+				arrow.texture = load("res://assets/ui/arrowright.png")
 			else:
-				fuel_slot.visible = false
+				arrow.texture = grad_tex
+				arrow.modulate = Color(0.6, 0.6, 0.6)
+			status_hbox.add_child(arrow)
+
+			var output_inv = current_context.get("output_inventory")
+			if not output_inv and current_context.get("inventory_component"):
+				output_inv = current_context.get("inventory_component")
+				
+			if recipe and recipe.outputs.size() > 0:
+				for i in range(recipe.outputs.size()):
+					var out_slot = _create_slot_panel()
+					status_hbox.add_child(out_slot)
+					var out_icon = out_slot.get_node("Center/Icon")
+					var out_count = out_slot.get_node("Count")
+					_update_machine_io_multi(out_slot, out_icon, out_count, output_inv, recipe, false, i)
+			else:
+				var out_slot = _create_slot_panel()
+				status_hbox.add_child(out_slot)
+				var out_icon = out_slot.get_node("Center/Icon")
+				var out_count = out_slot.get_node("Count")
+				_update_machine_io_multi(out_slot, out_icon, out_count, output_inv, recipe, false, 0)
+				
+		_check_and_apply_resize()
 		return
 
 	machine_container.hide()
@@ -785,6 +804,7 @@ func _update_display(_arg = null) -> void:
 	
 	if not current_inventory: 
 		generic_grid.hide()
+		_check_and_apply_resize()
 		return
 
 	var is_core = (current_context and current_context.is_in_group("core"))
@@ -894,44 +914,59 @@ func _update_display(_arg = null) -> void:
 			)
 			
 			generic_grid.add_child(btn)
+			
+	_check_and_apply_resize()
 
-func _update_machine_io(panel: Panel, icon_rect: TextureRect, count_lbl: Label, inv: InventoryComponent, recipe: RecipeResource, is_input: bool) -> void:
-	var current_amount = 0
-	if inv and inv.slots.size() > 0 and inv.slots[0] != null:
-		current_amount = inv.slots[0].count
-	
-	if panel and inv:
-		panel.set_drag_forwarding(
-			Callable(self, "_get_slot_drag_data").bind({"inv": inv, "slot": 0}), 
-			Callable(self, "_on_slot_can_drop").bind(inv), 
-			Callable(self, "_on_slot_drop").bind(inv, 0)
-		)
-	elif panel:
-		panel.set_drag_forwarding(Callable(), Callable(), Callable())
-	
+func _update_machine_io_multi(panel: Panel, icon_rect: TextureRect, count_lbl: Label, inv: InventoryComponent, recipe: RecipeResource, is_input: bool, input_idx: int) -> void:
 	var target_icon = null
 	var target_color = Color.WHITE
 	var required_amount = 0
 	var item_name = "Empty"
+	var target_item = null
 	
 	if recipe:
 		if is_input:
-			if recipe.inputs.size() > 0:
-				var entry = recipe.inputs[0] # Simplification
+			if recipe.inputs.size() > input_idx:
+				var entry = recipe.inputs[input_idx]
+				target_item = entry.resource
 				target_icon = entry.resource.icon
 				required_amount = entry.count
 				if "item_name" in entry.resource: item_name = entry.resource.item_name
 				elif "buildable_name" in entry.resource: item_name = entry.resource.buildable_name
 		else:
-			if recipe.outputs.size() > 0:
-				var entry = recipe.outputs[0]
+			if recipe.outputs.size() > input_idx:
+				var entry = recipe.outputs[input_idx]
+				target_item = entry.resource
 				target_icon = entry.resource.icon
 				required_amount = entry.count
 				if "item_name" in entry.resource: item_name = entry.resource.item_name
 				elif "buildable_name" in entry.resource: item_name = entry.resource.buildable_name
+				
+	var current_amount = 0
+	if inv and target_item:
+		for slot in inv.slots:
+			if slot and slot.item == target_item:
+				current_amount += slot.count
+	elif inv and inv.slots.size() > 0 and inv.slots[0] and not recipe:
+		current_amount = inv.slots[0].count
+		target_icon = inv.slots[0].item.icon
+		if "item_name" in inv.slots[0].item: item_name = inv.slots[0].item.item_name
 	
-	if current_amount > 0 and inv.slots[0] != null:
-		icon_rect.texture = inv.slots[0].item.icon
+	if panel and inv:
+		var bound_slot = 0
+		if inv.slots.size() > input_idx: bound_slot = input_idx
+		
+		panel.set_drag_forwarding(
+			Callable(self, "_get_slot_drag_data").bind({"inv": inv, "slot": bound_slot}), 
+			Callable(self, "_on_slot_can_drop").bind(inv), 
+			Callable(self, "_on_slot_drop").bind(inv, bound_slot)
+		)
+	elif panel:
+		panel.set_drag_forwarding(Callable(), Callable(), Callable())
+		
+	if current_amount > 0 and (current_amount >= required_amount or not is_input):
+		icon_rect.texture = target_icon
+		icon_rect.modulate = Color.WHITE
 		icon_rect.modulate.a = 1.0
 	elif target_icon:
 		icon_rect.texture = target_icon
@@ -939,6 +974,7 @@ func _update_machine_io(panel: Panel, icon_rect: TextureRect, count_lbl: Label, 
 		icon_rect.modulate.a = 0.4
 	else:
 		icon_rect.texture = null
+		icon_rect.modulate = Color.WHITE
 	
 	if count_lbl:
 		if is_input and target_icon:
@@ -1021,3 +1057,33 @@ func close() -> void:
 	_disconnect_context_signals()
 	current_inventory = null
 	current_context = null
+
+func _check_and_apply_resize() -> void:
+	if not is_inside_tree(): return
+	if _is_resizing: return
+	_is_resizing = true
+	
+	await get_tree().process_frame
+	
+	if is_instance_valid(content_bg_ref):
+		var min_content = content_bg_ref.get_combined_minimum_size()
+		var target_x = max(base_min_size.x, min_content.x + 20)
+		var target_y = max(base_min_size.y, min_content.y + 60)
+		
+		var changed = false
+		var new_size = size
+		
+		if new_size.x < target_x:
+			new_size.x = target_x
+			changed = true
+		if new_size.y < target_y:
+			new_size.y = target_y
+			changed = true
+			
+		if changed:
+			size = new_size
+			var vp_size = get_viewport_rect().size
+			position = (vp_size - size) / 2.0
+			emit_signal("resized")
+			
+	_is_resizing = false

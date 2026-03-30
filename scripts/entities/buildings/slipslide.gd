@@ -18,12 +18,44 @@ func _physics_process(delta: float) -> void:
 			_try_pass_item()
 		_update_visual()
 	else:
-		if inventory_component and inventory_component.has_item():
+		_try_pull_from_cubby()
+		
+		if not stored_item and inventory_component and inventory_component.has_item():
 			var it = inventory_component.get_first_item()
 			inventory_component.remove_item(it, 1)
 			stored_item = it
 			progress = 0.0
 			_create_visual()
+
+func _try_pull_from_cubby() -> void:
+	var tile = LaneManager.world_to_tile(global_position)
+	var offset = Vector2i.ZERO
+	match input_direction:
+		Direction.DOWN: offset = Vector2i(0, 1)
+		Direction.UP:   offset = Vector2i(0, -1)
+		Direction.LEFT: offset = Vector2i(-1, 0)
+		Direction.RIGHT:offset = Vector2i(1, 0)
+		
+	var target_tile = tile + offset
+	var neighbor = LaneManager.get_entity_at(target_tile, "building")
+	if is_instance_valid(neighbor) and "cubby" in neighbor.name.to_lower():
+		var cubby_to_slipslide = Vector2i.ZERO
+		if "input_direction" in neighbor:
+			match neighbor.input_direction:
+				Direction.DOWN: cubby_to_slipslide = Vector2i(0, 1)
+				Direction.UP:   cubby_to_slipslide = Vector2i(0, -1)
+				Direction.LEFT: cubby_to_slipslide = Vector2i(-1, 0)
+				Direction.RIGHT:cubby_to_slipslide = Vector2i(1, 0)
+				
+		var expected_tile = target_tile + cubby_to_slipslide
+		if expected_tile == tile:
+			var cubby_inv = neighbor.get("inventory_component")
+			if cubby_inv and cubby_inv.has_item():
+				var it = cubby_inv.get_first_item()
+				cubby_inv.remove_item(it, 1)
+				stored_item = it
+				progress = 0.0
+				_create_visual()
 
 func _update_visual():
 	if is_instance_valid(visual_node):

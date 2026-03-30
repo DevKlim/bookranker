@@ -470,7 +470,9 @@ func get_valid_field_spawn_pos(min_d: int, max_d: int, safe_buffer: int) -> Vect
 		var tile = _calculate_grid_coord(lane, depth)
 		
 		if not get_entity_at(tile, "building"):
-			return tile_to_world(tile)
+			var world_pos = tile_to_world(tile)
+			world_pos.y = 3.0
+			return world_pos
 			
 	return Vector3.ZERO
 
@@ -480,10 +482,10 @@ func get_valid_ally_spawn_pos() -> Vector3:
 			var tile = Vector2i(x, z)
 			if not get_entity_at(tile, "building"):
 				var world_pos = tile_to_world(tile)
-				world_pos.y = 1.0
+				world_pos.y = 3.0
 				return world_pos
 	var world_base = tile_to_world(Vector2i(0, 0))
-	world_base.y = 1.0
+	world_base.y = 3.0
 	return world_base
 
 func get_nearby_valid_ally_spawn_pos(death_pos: Vector3) -> Vector3:
@@ -495,7 +497,7 @@ func get_nearby_valid_ally_spawn_pos(death_pos: Vector3) -> Vector3:
 		var curr = queue.pop_front()
 		if is_valid_tile(curr) and not get_entity_at(curr, "building"):
 			var world_pos = tile_to_world(curr)
-			world_pos.y = death_pos.y
+			world_pos.y = max(death_pos.y, 3.0)
 			return world_pos
 			
 		for n in[Vector2i(0,1), Vector2i(0,-1), Vector2i(1,0), Vector2i(-1,0)]:
@@ -506,4 +508,3 @@ func get_nearby_valid_ally_spawn_pos(death_pos: Vector3) -> Vector3:
 					queue.append(next_t)
 					
 	return get_valid_ally_spawn_pos()
-

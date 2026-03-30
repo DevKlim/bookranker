@@ -7,6 +7,10 @@
 script = ExtResource("1")
 id = "fan_blow"
 base_damage = 0.0
+damage_equation = "(base_damage + (lux_stat * lux_stat_weight) + global_flat_damage) * (1.0 + damage_mult)"
+stat_weights = {
+"lux_stat": 0.5
+}
 element = ExtResource("2")
 min_range = 1
 max_range = 3

@@ -43,6 +43,8 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_PASS
 	
 	GameManager.run_data_changed.connect(_update_byts_label)
+	if not GameManager.shop_requested.is_connected(open):
+		GameManager.shop_requested.connect(open)
 	
 	var positioning_layer = Control.new()
 	positioning_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -352,6 +354,8 @@ func _update_byts_label() -> void:
 func _on_close_pressed() -> void:
 	hide()
 	emit_signal("closed")
+	if GameManager.current_state == GameManager.GameState.NIGHT_WAVE or GameManager.current_state == GameManager.GameState.IDLE:
+		GameManager.start_day_phase()
 
 func _populate_shop(wave_idx: int) -> void:
 	for c in items_container.get_children():
@@ -485,4 +489,3 @@ func _create_shop_item(item: ItemResource) -> void:
 	
 	vbox.add_child(buy_btn)
 	items_container.add_child(vbox)
-

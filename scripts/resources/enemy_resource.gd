@@ -32,6 +32,12 @@ enum FieldMovement {
 @export var elemental_resistances: Dictionary = {}
 @export var innate_element: ElementResource
 
+@export_group("Formulas")
+@export var speed_equation: String = ""
+@export var health_equation: String = ""
+@export var defense_equation: String = ""
+@export var stat_weights: Dictionary = {}
+
 @export_group("Movement")
 @export var wave_movement: WaveMovement = WaveMovement.BLOCK_BY_BLOCK
 @export var field_movement: FieldMovement = FieldMovement.WANDER

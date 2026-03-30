@@ -1,6 +1,15 @@
-[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://ct6hg0wslbukp"][ext_resource type="Script" path="res://scripts/resources/attack_resource.gd" id="1"]
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://d34d2sgp0kmlh"]
+
+[ext_resource type="Script" uid="uid://dj7657xb6odwr" path="res://scripts/resources/attack_resource.gd" id="1"]
+
 [resource]
 script = ExtResource("1")
 id = "shurikenfold_shot"
+cooldown = 2.0
+base_damage = 1.0
+damage_equation = "(base_damage + (speed * speed_weight) + global_flat_damage) * (1.0 + damage_mult)"
+stat_weights = {
+"speed": 0.2
+}
 spawn_projectile = true
 projectile_speed = 400.0

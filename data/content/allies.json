@@ -1,16 +1,61 @@
-[
-{
+[    {
         "id": "drone",
         "name": "Drone",
         "texture": "res://icon.svg",
-        "logic": { "health": 100, "speed": 60, "inventory_slots": 8 },
+        "logic": { 
+            "health": 100, "speed": 60, "inventory_slots": 8, "weight": 20,
+            "formulas": {
+                "health_equation": "base_health * max(0.1, 1.0 + health_mult)",
+                "speed_equation": "max(1.0, base_speed * max(0.1, 1.0 + speed_mult) - (weight * weight_weight))",
+                "defense_equation": "base_defense + defense"
+            },
+            "stat_weights": { "health_mult": 1.0, "speed_mult": 1.0, "weight": 0.1, "defense": 1.0 }
+        },
         "respawns": { "count": 3, "unlimited": false, "cooldown": 5.0 }
     },
     {
         "id": "player",
         "name": "Player",
         "texture": "res://icon.svg",
-        "logic": { "health": 100, "speed": 5.0, "inventory_slots": 40 },
+        "logic": { 
+            "health": 50, "speed": 5.0, "inventory_slots": 50, "weight": 30,
+            "formulas": {
+                "health_equation": "base_health * max(0.1, 1.0 + health_mult)",
+                "speed_equation": "max(1.0, base_speed * max(0.1, 1.0 + speed_mult) - (weight * weight_weight))",
+                "defense_equation": "base_defense + defense"
+            },
+            "stat_weights": { "health_mult": 1.0, "speed_mult": 1.0, "weight": 0.02, "defense": 1.0 }
+        },
         "respawns": { "count": 0, "unlimited": true, "cooldown": 2.0 }
+    },
+    {
+        "id": "bonegear",
+        "name": "Bonegear",
+        "texture": "res://icon.svg",
+        "logic": { 
+            "health": 30, "speed": 8.0, "inventory_slots": 5, "weight": 30,
+            "formulas": {
+                "health_equation": "base_health * max(0.1, 1.0 + health_mult)",
+                "speed_equation": "max(1.0, base_speed * max(0.1, 1.0 + speed_mult) - (weight * weight_weight))",
+                "defense_equation": "base_defense + defense"
+            },
+            "stat_weights": { "health_mult": 1.0, "speed_mult": 1.0, "weight": 0.05, "defense": 1.0 }
+        },
+        "respawns": { "count": 1, "unlimited": false, "cooldown": 10.0 }
+    },
+    {
+        "id": "dokabyt",
+        "name": "Dokabyt",
+        "texture": "res://icon.svg",
+        "logic": { 
+            "health": 20, "speed": 5.0, "inventory_slots": 5, "weight": 10,
+            "formulas": {
+                "health_equation": "base_health * max(0.1, 1.0 + health_mult)",
+                "speed_equation": "max(1.0, base_speed * max(0.1, 1.0 + speed_mult) - (weight * weight_weight))",
+                "defense_equation": "base_defense + defense"
+            },
+            "stat_weights": { "health_mult": 1.0, "speed_mult": 1.0, "weight": 0.05, "defense": 1.0 }
+        },
+        "respawns": { "count": 1, "unlimited": false, "cooldown": 10.0 }
     }
 ]

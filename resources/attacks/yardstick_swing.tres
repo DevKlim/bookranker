@@ -6,6 +6,10 @@
 script = ExtResource("1_8nx1q")
 id = "yardstick_swing"
 base_damage = 3.0
+damage_equation = "(base_damage + (attack_damage * attack_damage_weight) + global_flat_damage) * (1.0 + damage_mult)"
+stat_weights = {
+"attack_damage": 0.8
+}
 min_range = 1
 max_range = 2
 is_aoe = true

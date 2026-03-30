@@ -1,7 +1,8 @@
 shader_type sky;
 
-uniform sampler2D cross_tex : filter_linear, source_color;
+uniform sampler2D cross_tex : filter_nearest, source_color;
 uniform float exposure : hint_range(0.01, 10.0) = 1.0;
+uniform float color_depth : hint_range(1.0, 256.0) = 15.0; // 15-bit color like DS
 
 void sky() {
     vec3 d = EYEDIR;
@@ -44,12 +45,13 @@ void sky() {
     
     // Clamp the local UV slightly to prevent bilinear filtering from bleeding 
     // into the "empty" black cells of the 4x3 cross format.
-    // 0.001 is roughly half a pixel on a 512x512 face (2048x1536 total).
     uv = clamp(uv, 0.001, 0.999);
-    
-    // Scale UV to fit one 1/4 by 1/3 cell and apply offset
     uv = uv * vec2(0.25, 0.3333333) + offset;
     
     vec3 col = texture(cross_tex, uv).rgb;
+    
+    // N64 / DS Retro Color Banding (Posterization)
+    col = floor(col * color_depth + 0.5) / color_depth;
+    
     COLOR = col * exposure;
-}
+}

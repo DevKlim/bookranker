@@ -31,6 +31,13 @@ var grid_component: Node
 @export var lux_stat: float = 0.0 
 @export var luck_stat: float = 0.0
 
+@export_group("Formulas")
+@export var health_equation: String = ""
+@export var defense_equation: String = ""
+@export var power_usage_equation: String = ""
+@export var processing_speed_equation: String = ""
+@export var stat_weights: Dictionary = {}
+
 @export_group("I/O Configuration")
 var input_mask: int = 0
 var output_mask: int = 0
@@ -180,7 +187,19 @@ func _update_power_consumption() -> void:
 	if not power_consumer: return
 	var eff = get_stat("efficiency", efficiency)
 	if eff <= 0.1: eff = 0.1
-	power_consumer.power_consumption = power_consumption / eff
+	var final_power = power_consumption / eff
+	
+	if power_usage_equation != "":
+		if ClassDB.class_exists("FormulaHelper") or ResourceLoader.exists("res://scripts/utils/formula_helper.gd"):
+			var fh = load("res://scripts/utils/formula_helper.gd")
+			if fh:
+				var vars = {"power_consumption": power_consumption, "efficiency": eff, "final_power": final_power}
+				for k in stat_weights.keys():
+					vars[k+"_weight"] = stat_weights[k]
+					vars[k] = get_stat(k, 0.0)
+				final_power = fh.evaluate(self, power_usage_equation, vars, final_power)
+				
+	power_consumer.power_consumption = final_power
 
 func _setup_health_component() -> void:
 	health_component = get_node_or_null("HealthComponent")
@@ -258,16 +277,49 @@ func _recalculate_stats() -> void:
 	if health_component:
 		var base_max_hp = max_health * GameManager.get_stat_multiplier("building_health")
 		var hp_mult = mod_handler.get_stat_modifier("max_health_mult")
-		health_component.max_health = base_max_hp * (1.0 + hp_mult)
+		var final_hp = base_max_hp * (1.0 + hp_mult)
+		
+		if health_equation != "":
+			if ClassDB.class_exists("FormulaHelper") or ResourceLoader.exists("res://scripts/utils/formula_helper.gd"):
+				var fh = load("res://scripts/utils/formula_helper.gd")
+				if fh:
+					var vars = {"base_health": max_health, "final_health": final_hp, "hp_mult": hp_mult}
+					for k in stat_weights.keys(): vars[k+"_weight"] = stat_weights[k]; vars[k] = get_stat(k, 0.0)
+					final_hp = fh.evaluate(self, health_equation, vars, final_hp)
+					
+		health_component.max_health = final_hp
 		if health_component.current_health > health_component.max_health:
 			health_component.current_health = health_component.max_health
+			
+		var def_val = get_stat("defense", 0.0)
+		if defense_equation != "":
+			if ClassDB.class_exists("FormulaHelper") or ResourceLoader.exists("res://scripts/utils/formula_helper.gd"):
+				var fh = load("res://scripts/utils/formula_helper.gd")
+				if fh:
+					var vars = {"base_defense": def_val}
+					for k in stat_weights.keys(): vars[k+"_weight"] = stat_weights[k]; vars[k] = get_stat(k, 0.0)
+					def_val = fh.evaluate(self, defense_equation, vars, def_val)
+		health_component.defense = def_val
 
 		var base_max_energy = max_energy
 		var energy_flat = mod_handler.get_stat_modifier("max_energy_flat")
 		health_component.max_energy = base_max_energy + energy_flat
 		if health_component.current_energy > health_component.max_energy:
 			health_component.current_energy = health_component.max_energy
-
+			
+	if has_node("CrafterComponent"):
+		var crafter = get_node("CrafterComponent")
+		var pspeed = get_stat("processing_speed", 1.0)
+		if processing_speed_equation != "":
+			if ClassDB.class_exists("FormulaHelper") or ResourceLoader.exists("res://scripts/utils/formula_helper.gd"):
+				var fh = load("res://scripts/utils/formula_helper.gd")
+				if fh:
+					var vars = {"base_speed": pspeed}
+					for k in stat_weights.keys(): vars[k+"_weight"] = stat_weights[k]; vars[k] = get_stat(k, 0.0)
+					pspeed = fh.evaluate(self, processing_speed_equation, vars, pspeed)
+		crafter.processing_speed_mult = pspeed
+		
+	_update_power_consumption()
 	emit_signal("stats_updated")
 
 func _on_power_status_changed(has_power: bool) -> void:
@@ -383,11 +435,10 @@ func receive_item(item: Resource, from_node: Node3D = null, _extra_data: Diction
 		if incoming_dir != -1 and not (input_mask & (1 << incoming_dir)):
 			return false 
 
-	var i = item as ItemResource
-	if not i: return false
+	if not item: return false
 	if inventory_component:
 		if not inventory_component.can_receive: return false
-		var remainder = inventory_component.add_item(i, 1)
+		var remainder = inventory_component.add_item(item, 1)
 		return remainder == 0
 	return false
 

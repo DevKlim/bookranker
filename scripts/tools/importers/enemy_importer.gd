@@ -19,7 +19,9 @@ func import_enemies(list: Array) -> void:
 				new_scene_path = raw_path
 			else:
 				new_scene_path = SCENE_ENEMIES_PATH + str(entry.get("id")) + ".tscn"
-			_generate_enemy_scene(entry, new_scene_path)
+				
+			if not only_update_resources:
+				_generate_enemy_scene(entry, new_scene_path)
 		
 		res.enemy_name = str(entry.get("name", "Enemy"))
 		
@@ -48,6 +50,8 @@ func import_enemies(list: Array) -> void:
 
 		if entry.has("drops") and entry["drops"] is Array:
 			res.drops = entry["drops"]
+			
+		_apply_formulas_and_weights(res, entry)
 		ResourceSaver.save(res, path)
 
 func _generate_enemy_scene(data: Dictionary, save_path: String) -> void:

@@ -25,6 +25,7 @@ extends Node
 
 var target_item_id: String = "All"
 @export var overwrite_existing: bool = false
+@export var only_update_resources: bool = false
 @export var mesh_library_path: String = "res://resources/mesh_library.tres"
 
 const IMPORTER_BASE = "res://scripts/tools/importers/"
@@ -84,7 +85,7 @@ func _get_importer(script_name: String):
 	var script = load(script_path)
 	if script is Script:
 		if script.can_instantiate():
-			return script.new(target_item_id, overwrite_existing)
+			return script.new(target_item_id, overwrite_existing, only_update_resources)
 		else:
 			printerr("Importer script cannot be instantiated (syntax error?): " + script_name)
 	else:
@@ -189,4 +190,3 @@ func _run_cleanup() -> void:
 	print("--- Cleanup Complete ---")
 	if Engine.is_editor_hint():
 		EditorInterface.get_resource_filesystem().scan()
-

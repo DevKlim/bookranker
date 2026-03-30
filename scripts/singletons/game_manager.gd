@@ -217,7 +217,7 @@ func start_day_phase() -> void:
 		
 	day_timer = day_duration
 	emit_signal("state_changed", current_state)
-	print("GameManager: Day Planning Started. Level %d, Wave %d" % [game_data["level"], game_data["wave"]])
+	print("GameManager: Day Planning Started. Level %d, Wave %d" %[game_data["level"], game_data["wave"]])
 
 func start_night_phase() -> void:
 	current_state = GameState.NIGHT_WAVE
@@ -268,7 +268,9 @@ func _on_wave_cleared() -> void:
 
 func reset_state() -> void:
 	_recipes.clear()
-	game_data = { "level": 1, "wave": 1, "max_waves": 3, "currency": 0, "explored_depth": 15 }
+	var prev_max = game_data.get("max_waves", 3)
+	var prev_lvl = game_data.get("level", 1)
+	game_data = { "level": prev_lvl, "wave": 1, "max_waves": prev_max, "currency": 0, "explored_depth": 15 }
 	run_data["artifacts"].clear()
 	run_data["global_stat_multipliers"].clear()
 	current_state = GameState.IDLE
@@ -337,7 +339,7 @@ func _try_spawn_field_enemy(res: EnemyResource, config: Dictionary) -> void:
 	if spawn_pos == Vector3.ZERO:
 		return 
 	
-	spawn_pos.y = 0.5 
+	spawn_pos.y = max(spawn_pos.y, 1.0) # Always guarantee we aren't buried
 		
 	var enemy = res.scene.instantiate()
 	if enemy is Enemy:
@@ -356,4 +358,3 @@ func _try_spawn_field_enemy(res: EnemyResource, config: Dictionary) -> void:
 				_active_field_spawns[id] -= 1
 				if _active_field_spawns[id] < 0: _active_field_spawns[id] = 0
 		)
-

@@ -1,28 +1,41 @@
-[    {
-        "id": "roomdog",
+[{        "id": "roomdog",
         "name": "Roomdog",
         "scene_path": "res://scenes/enemies/roomdog.tscn",
-        "logic": { "health": 10, "speed": 40, "defense": 0, "magical_defense": 0.2, "elemental_cd": 0.0 },
+        "logic": { 
+            "health": 10, "speed": 40, "defense": 0, "magical_defense": 0.2, "elemental_cd": 0.0, "weight": 10,
+            "formulas": {
+                "speed_equation": "max(5.0, base_speed * max(0.1, 1.0 + speed_mult) - (weight * weight_weight))"
+            },
+            "stat_weights": { "speed_mult": 1.0, "weight": 0.5 }
+        },
         "params": { "attack_damage": 2, "attack_speed": 1.0 },
-        "drops":[
-            { "pool": "basic_loot", "chance": 0.5 }
-        ]
+        "drops":[ { "pool": "basic_loot", "chance": 0.5 } ]
     },
     {
         "id": "proller",
         "name": "Proller",
         "scene_path": "res://scenes/enemies/proller.tscn",
-        "logic": { "health": 15, "speed": 25, "defense": 0, "magical_defense": 0.0 },
+        "logic": { 
+            "health": 15, "speed": 25, "defense": 0, "magical_defense": 0.0, "weight": 15,
+            "formulas": {
+                "speed_equation": "max(5.0, base_speed * max(0.1, 1.0 + speed_mult) - (weight * weight_weight))"
+            },
+            "stat_weights": { "speed_mult": 1.0, "weight": 0.5 }
+        },
         "params": { "attack_damage": 3, "attack_speed": 0.8 },
-        "drops":[
-            { "pool": "basic_loot", "chance": 0.8 }
-        ]
+        "drops":[ { "pool": "basic_loot", "chance": 0.8 } ]
     },
     {
         "id": "inkhog",
         "name": "Inkhog",
         "scene_path": "res://scenes/enemies/inkhog.tscn",
-        "logic": { "health": 3, "speed": 60, "defense": 0 },
+        "logic": { 
+            "health": 3, "speed": 60, "defense": 0, "weight": 5,
+            "formulas": {
+                "speed_equation": "max(5.0, base_speed * max(0.1, 1.0 + speed_mult) - (weight * weight_weight))"
+            },
+            "stat_weights": { "speed_mult": 1.0, "weight": 0.5 }
+        },
         "params": { "attack_damage": 1, "attack_speed": 1.5, "attack_range": 1 }
     },
     {
@@ -30,7 +43,13 @@
         "name": "Ecaker",
         "scene_path": "res://scenes/enemies/ecaker.tscn",
         "tags": ["wipes_liquids"],
-        "logic": { "health": 30, "speed": 20, "defense": 2 },
+        "logic": { 
+            "health": 30, "speed": 20, "defense": 2, "weight": 40,
+            "formulas": {
+                "speed_equation": "max(5.0, base_speed * max(0.1, 1.0 + speed_mult) - (weight * weight_weight))"
+            },
+            "stat_weights": { "speed_mult": 1.0, "weight": 0.5 }
+        },
         "params": { "attack_damage": 5, "attack_speed": 0.5, "attack_range": 1 }
     },
     {
@@ -38,14 +57,26 @@
         "name": "Enormous Ecaker",
         "scene_path": "res://scenes/enemies/enormous_ecaker.tscn",
         "tags":["wipes_liquids"],
-        "logic": { "health": 100, "speed": 15, "defense": 5 },
+        "logic": { 
+            "health": 100, "speed": 15, "defense": 5, "weight": 120,
+            "formulas": {
+                "speed_equation": "max(5.0, base_speed * max(0.1, 1.0 + speed_mult) - (weight * weight_weight))"
+            },
+            "stat_weights": { "speed_mult": 1.0, "weight": 0.5 }
+        },
         "params": { "attack_damage": 500, "attack_speed": 0.5, "attack_range": 2 }
     },
     {
         "id": "inkage",
         "name": "Inkage",
         "scene_path": "res://scenes/enemies/inkage.tscn",
-        "logic": { "health": 80, "speed": 12, "defense": 2, "magical_defense": 0.5 },
+        "logic": { 
+            "health": 80, "speed": 12, "defense": 2, "magical_defense": 0.5, "weight": 50,
+            "formulas": {
+                "speed_equation": "max(5.0, base_speed * max(0.1, 1.0 + speed_mult) - (weight * weight_weight))"
+            },
+            "stat_weights": { "speed_mult": 1.0, "weight": 0.5 }
+        },
         "params": { "attack_damage": 8, "attack_speed": 0.6, "attack_range": 5 }
     }
 ]

@@ -80,6 +80,7 @@ func import_items(list: Array) -> void:
 					else:
 						atk_res.projectile_scene = load("res://scenes/entities/projectile.tscn")
 				
+				_apply_formulas_and_weights(atk_res, ac_data)
 				res.attack_config = atk_res
 		
 		# Equipment Type

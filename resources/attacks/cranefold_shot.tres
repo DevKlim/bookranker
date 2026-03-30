@@ -5,5 +5,11 @@
 [resource]
 script = ExtResource("1")
 id = "cranefold_shot"
+cooldown = 3.0
+base_damage = 3.0
+damage_equation = "(base_damage + (attack_damage * attack_damage_weight) + global_flat_damage) * (1.0 + damage_mult)"
+stat_weights = {
+"attack_damage": 1.0
+}
 spawn_projectile = true
 projectile_speed = 300.0

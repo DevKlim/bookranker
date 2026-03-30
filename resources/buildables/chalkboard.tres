@@ -9,7 +9,6 @@ script = ExtResource("2_67ejo")
 buildable_name = "Chalkboard"
 description = "Tier 1 Crafter."
 icon = ExtResource("1_67ejo")
-width = 2.0
 has_input = false
 has_output = false
 default_output_mask = 4

@@ -83,7 +83,16 @@ Entities have implicit mass based on their Element/Type. Upon entering the "Grav
 
 The heart of Base Zero's replayability relies on combining modular traits. Elements act as **Quantifiable Substances** measured in **Units**, and Mod Chips alter their fundamental execution.
 
-Finding new "builds" means combining **Elements**, **Mod Chips**, and **Reactions** intelligently.
+### Reaction Priority Logic
+When an Incoming Element **(I)** hits a target with multiple Active Elements **(A, B, ..., N)**:
+
+1.  **Product Check:**
+    *   Does `I + A` form a new **Product** (Tier 2 Element)?
+    *   If only one forms a Product, prioritize that. If both do, proceed to Step 2.
+2.  **Unit Check:**
+    *   Compare `A.units` vs `B.units`.
+    *   **Higher Wins:** If `A > B`, react with `A`.
+    *   **Equality:** If `A == B`, react with **BOTH** simultaneously (Trigger `I+A` and `I+B`).
 
 ### Units (U)
 *   **Application:** Projectiles apply `U` units (default 1).
@@ -96,52 +105,27 @@ Unlike standard upgrades, Mod Chips radically change how a building functions—
 *   **The Overheat Mod:** Applies the `Igni` property to a building. Output is increased drastically, but the building constantly loses health and will melt if not paired with a `Coolant (Aqua)` mod or an automated repair system.
 *   **Combinations:** Stacking a `Light` Reaction with a `Spotlight` mod chip ensures stealth enemies are not only revealed but take highly scaled amplified damage. 
 
-### Reaction Priority Logic
-When an Incoming Element **(I)** hits a target with multiple Active Elements **(A, B, ..., N)**:
-
-1.  **Product Check:**
-    *   Does `I + A` form a new **Product** (Tier 2 Element)?
-    *   If only one forms a Product, prioritize that. If both do, proceed to Step 2.
-2.  **Unit Check:**
-    *   Compare `A.units` vs `B.units`.
-    *   **Higher Wins:** If `A > B`, react with `A`.
-    *   **Equality:** If `A == B`, react with **BOTH** simultaneously (Trigger `I+A` and `I+B`).
-
 ---
 
-## 7. Stat Reference
+## 7. Unified Stat System & Formulas
 
-Elements and Mods modify stats dynamically.
+Base Zero uses a unified stat vocabulary across Allies, Enemies, and Buildings. This allows "Mod Chips" and "Artifacts" to be completely universal, affecting entities differently based on their mechanical role. The calculations themselves are exposed in JSON strings, evaluated at runtime by Godot's `Expression` class.
 
-### Enemy Stats
-| Stat Key | Description |
-| :--- | :--- |
-| `speed_mult` | Multiplier. `0.1` = +10% Movement Speed. Negative slows. |
-| `evasive_mult` | Multiplier. `0.1` = +10% Evasiveness. Negative makes target more likely to be critted. |
-| `luck_stat` | Flat. Subtracts against both crit chance and crit damage of incoming attacks. |
-| `damage_mult` | Multiplier. Affects Attack Damage output. |
-| `incoming_damage_mult` | Multiplier. `0.1` = Enemy takes 10% *more* damage. |
-| `defense_flat` | Flat addition to Defense (Armor). |
-
-### Building Stats (Via Mod Chips)
-| Stat Key | Description |
-| :--- | :--- |
-| `speed_mult` | Multiplier. `0.1` = +10% Movement speed if building has movement component. |
-| `damage_mult` | Multiplier. Affects Attack Damage output. |
-| `incoming_damage_mult` | Multiplier. `0.1` = Building takes 10% *more* damage. |
-| `attack_speed_mult` | Multiplier. `0.1` = +10% Building Working Speed. |
-| `efficiency` | Divisor. `2.0` = Uses 50% Power. |
-| `processing_speed` | Multiplier. Speed of Crafting/Smelting ticks. |
-| `output_chance` | Percentage. Chance to produce extra items. |
-| `lux_stat` | Flat. Increases Magic Damage scaling of emitted projectiles, attacks. |
-
-### Ally Stats (Combat & Equips)
-| Stat Key | Description |
-| :--- | :--- |
-| `attack_damage` | Flat. Increases Base Damage of equipped weapons. |
-| `attack_speed_mult` | Multiplier. `0.1` = +10% Attack Speed. |
-| `damage_mult` | Multiplier. Affects final Attack Damage output. |
-| `lux_stat` | Flat. Magic Damage scaling for weapons utilizing Lux traits. |
+### Universal Stats
+| Stat Key | Effect on Allies/Enemies | Effect on Buildings |
+| :--- | :--- | :--- |
+| `max_health` & `health_mult` | Maximum HP capacity. | Maximum structural integrity. |
+| `speed` & `speed_mult` | Walking / Movement Speed. | Conveyor belt / transport stream speed. |
+| `attack_speed` & `attack_speed_mult` | Rate of weapon fire or melee strikes. | Machine crafting/processing tick speed. |
+| `attack_damage` & `damage_mult` | Flat bonus/Multiplier to physical attacks. | Flat bonus/Multiplier to emitted projectiles (turrets/fans). |
+| `defense` & `defense_mult` | Armor rating (flat damage reduction). | Structural reinforcement (damage reduction). |
+| `magical_defense` | Multiplier scaling resistance to elemental debuffs. | Resistance to environmental hazards. |
+| `lux_stat` | Magic damage scaling for spells, reactions, and ticks. | Overcharges magic-based machines and arrays. |
+| `shields` | Gives a separate flat health bar that can regenerate. | Gives a separate flat health bar that can regenerate. |
+| `weight` & `weight_mult` | Physics mass. High weight resists ragdolling. | Base inertia (prevents moving structures). |
+| `luck_stat` | Critical hit chance and dodge percentage. | Percentage chance to produce double outputs. |
+| `efficiency` | Stamina / Energy consumption rate. | Power grid drain divisor (2.0 = uses 50% power). |
+| `incoming_damage_mult` | Vulnerability (+10% extra damage taken). | Vulnerability (+10% extra damage taken). |
 
 ### Ally Combat (Attack Mode)
 Allies in `ATTACK` mode will continuously fire their equipped weapon in the direction they are facing (their last movement direction). 

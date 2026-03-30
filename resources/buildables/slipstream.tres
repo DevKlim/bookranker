@@ -11,4 +11,6 @@ description = "Water puddle stream for fast travel."
 icon = ExtResource("1_0xbl8")
 has_input = false
 has_output = false
+default_input_mask = 1
+default_output_mask = 4
 scene = ExtResource("2_xwdlp")

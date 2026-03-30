@@ -1,6 +1,15 @@
-[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://swanfolduid"][ext_resource type="Script" path="res://scripts/resources/attack_resource.gd" id="1"]
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://dj1cpqvqqyrmc"]
+
+[ext_resource type="Script" uid="uid://dj7657xb6odwr" path="res://scripts/resources/attack_resource.gd" id="1"]
+
 [resource]
 script = ExtResource("1")
 id = "swanfold_shot"
+cooldown = 2.0
+base_damage = 2.0
+damage_equation = "(base_damage + (lux_stat * lux_stat_weight) + global_flat_damage) * (1.0 + damage_mult)"
+stat_weights = {
+"lux_stat": 0.8
+}
 spawn_projectile = true
 projectile_speed = 250.0

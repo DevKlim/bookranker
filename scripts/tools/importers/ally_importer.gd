@@ -9,9 +9,9 @@ func import_allies(list: Array) -> void:
 		var path = RESOURCE_BASE_PATH + "allies/" + str(entry.get("id", "unknown")) + ".tres"
 		if not _should_process(str(entry.get("id")), path): continue
 		
-		# Generate Ally Scene
 		var new_scene_path = SCENE_ALLIES_PATH + str(entry.get("id")) + ".tscn"
-		_generate_ally_scene(entry, new_scene_path)
+		if not only_update_resources:
+			_generate_ally_scene(entry, new_scene_path)
 		
 		var res = _get_or_create_resource(path, script)
 		res.ally_name = str(entry.get("name", "Ally"))
@@ -34,6 +34,8 @@ func import_allies(list: Array) -> void:
 		res.respawns_count = int(respawns.get("count", 0))
 		res.respawns_unlimited = bool(respawns.get("unlimited", false))
 		res.respawns_cooldown = float(respawns.get("cooldown", 5.0))
+		
+		_apply_formulas_and_weights(res, entry)
 		
 		ResourceSaver.save(res, path)
 

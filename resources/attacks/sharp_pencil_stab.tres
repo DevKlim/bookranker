@@ -6,4 +6,8 @@
 script = ExtResource("1_vwewu")
 id = "sharp_pencil_stab"
 base_damage = 2.0
+damage_equation = "(base_damage + (attack_damage * attack_damage_weight) + global_flat_damage) * (1.0 + damage_mult)"
+stat_weights = {
+"attack_damage": 1.2
+}
 min_range = 1

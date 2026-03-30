@@ -12,6 +12,10 @@ extends Resource
 @export var scaling_stat: String = "attack_damage"
 @export var scaling_factor: float = 1.0
 
+@export_group("Formulas & Scaling")
+@export var damage_equation: String = ""
+@export var stat_weights: Dictionary = {}
+
 @export_group("Elemental")
 @export var element: ElementResource
 @export var element_units: int = 1

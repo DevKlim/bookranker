@@ -18,4 +18,6 @@ func import_elements(list: Array) -> void:
 		res.reaction_rules = entry.get("reactions", {})
 		res.stat_modifiers = entry.get("effects", {})
 		
+		_apply_formulas_and_weights(res, entry)
+		
 		ResourceSaver.save(res, path)

@@ -7,4 +7,8 @@ script = ExtResource("1_klv6h")
 id = "dull_pencil_stab"
 cooldown = 2.0
 base_damage = 1.0
+damage_equation = "(base_damage + (attack_damage * attack_damage_weight) + global_flat_damage) * (1.0 + damage_mult)"
+stat_weights = {
+"attack_damage": 0.5
+}
 min_range = 1

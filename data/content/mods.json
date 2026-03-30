@@ -1,12 +1,215 @@
-[
-    { "id": "mod_path_not_taken", "name": "Path Not Taken (Mod)", "texture": "res://icon.svg", "cost": 8, "type": "core", "effects": {} },
-    { "id": "mod_byt_miner", "name": "Byt Miner (Mod)", "texture": "res://icon.svg", "cost": 4, "type": "core", "effects": {} },
-    { "id": "mod_airdrop", "name": "Airdrop (Mod)", "texture": "res://icon.svg", "cost": 2, "type": "core", "effects": {} },
-    { "id": "mod_double_ping", "name": "Double Ping! (Mod)", "texture": "res://icon.svg", "cost": 2, "type": "core", "effects": {} },
-    { "id": "mod_kernal_corns", "name": "Kernal Corns (Mod)", "texture": "res://icon.svg", "cost": 4, "type": "core", "effects": {} },
-    { "id": "mod_overheat", "name": "Overheat (Mod)", "texture": "res://icon.svg", "cost": 2, "type": "building", "effects": {} },
-    { "id": "mod_battery", "name": "Battery (Mod)", "texture": "res://icon.svg", "cost": 2, "type": "building", "effects": {} },
-    { "id": "mod_shield", "name": "Shield (Mod)", "texture": "res://icon.svg", "cost": 2, "type": "building", "effects": {} },
-    { "id": "mod_coolant", "name": "Coolant (Mod)", "texture": "res://icon.svg", "cost": 2, "type": "building", "effects": {} },
-    { "id": "mod_harden", "name": "Harden (Mod)", "texture": "res://icon.svg", "cost": 2, "type": "building", "effects": {} }
+[    {
+        "id": "mod_overclock",
+        "name": "Overclock Core",
+        "texture": "res://icon.svg",
+        "type": "building",
+        "effects": {
+            "attack_speed_mult": 0.5,
+            "efficiency": -0.5
+        }
+    },
+    {
+        "id": "mod_heavy_plating",
+        "name": "Heavy Plating",
+        "texture": "res://icon.svg",
+        "type": "building",
+        "effects": {
+            "health_mult": 1.0,
+            "defense": 5.0,
+            "weight": 50.0,
+            "speed_mult": -0.2
+        }
+    },
+    {
+        "id": "mod_featherweight",
+        "name": "Featherweight Frame",
+        "texture": "res://icon.svg",
+        "type": "building",
+        "effects": {
+            "speed_mult": 0.3,
+            "weight": -20.0
+        }
+    },
+    {
+        "id": "mod_arcane_core",
+        "name": "Arcane Core",
+        "texture": "res://icon.svg",
+        "type": "building",
+        "effects": {
+            "lux_stat": 20.0,
+            "magical_defense": 0.5
+        }
+    },
+    {
+        "id": "mod_lucky_charm",
+        "name": "Lucky Charm",
+        "texture": "res://icon.svg",
+        "type": "building",
+        "effects": {
+            "luck_stat": 15.0
+        }
+    },
+    {
+        "id": "mod_glass_cannon",
+        "name": "Glass Cannon Setup",
+        "texture": "res://icon.svg",
+        "type": "building",
+        "effects": {
+            "damage_mult": 1.0,
+            "health_mult": -0.5,
+            "incoming_damage_mult": 0.5
+        }
+    },
+    {
+        "id": "mod_path_not_taken",
+        "name": "Path Not Taken",
+        "texture": "res://icon.svg",
+        "type": "core",
+        "cost": 8,
+        "effects": {
+            "extra_lanes": 1
+        }
+    },
+    {
+        "id": "mod_gumball",
+        "name": "Gumball",
+        "texture": "res://icon.svg",
+        "type": "core",
+        "cost": 6,
+        "effects": {
+            "stun_on_slime": 1
+        }
+    },
+    {
+        "id": "mod_crayon_cuisine",
+        "name": "Crayon Cuisine",
+        "texture": "res://icon.svg",
+        "type": "core",
+        "cost": 4,
+        "effects": {
+            "pellet_cost_mult": -0.5
+        }
+    },
+    {
+        "id": "mod_coolant",
+        "name": "Coolant",
+        "texture": "res://icon.svg",
+        "type": "building",
+        "cost": 3,
+        "effects": {
+            "heat_generation": -1
+        }
+    },
+    {
+        "id": "mod_overheat",
+        "name": "Overheat",
+        "texture": "res://icon.svg",
+        "type": "building",
+        "cost": 2,
+        "effects": {
+            "damage_mult": 0.2,
+            "heat_generation": 1
+        }
+    },
+    {
+        "id": "mod_byt_miner",
+        "name": "Byt Miner",
+        "texture": "res://icon.svg",
+        "type": "core",
+        "cost": 4,
+        "effects": {
+            "spawn_ally": "dokabyt"
+        }
+    },
+    {
+        "id": "mod_airdrop",
+        "name": "Airdrop",
+        "texture": "res://icon.svg",
+        "type": "core",
+        "cost": 2,
+        "effects": {
+            "starting_items_mult": 1.0
+        }
+    },
+    {
+        "id": "mod_double_ping",
+        "name": "Double Ping!",
+        "texture": "res://icon.svg",
+        "type": "core",
+        "cost": 2,
+        "effects": {
+            "global_flat_damage": 2.0
+        }
+    },
+    {
+        "id": "mod_kernal_corns",
+        "name": "Kernal Corns",
+        "texture": "res://icon.svg",
+        "type": "core",
+        "cost": 4,
+        "effects": {
+            "core_shield": 120
+        }
+    },
+    {
+        "id": "mod_battery",
+        "name": "Battery",
+        "texture": "res://icon.svg",
+        "type": "building",
+        "cost": 2,
+        "effects": {
+            "energy_capacity": 500
+        }
+    },
+    {
+        "id": "mod_shield",
+        "name": "Shield",
+        "texture": "res://icon.svg",
+        "type": "building",
+        "cost": 2,
+        "effects": {
+            "regen_shield": 10
+        }
+    },
+    {
+        "id": "mod_harden",
+        "name": "Harden",
+        "texture": "res://icon.svg",
+        "type": "building",
+        "cost": 2,
+        "effects": {
+            "health_mult": 0.2,
+            "weight": 9999
+        }
+    },
+    {
+        "id": "mod_vent",
+        "name": "Vent",
+        "texture": "res://icon.svg",
+        "type": "building",
+        "cost": 2,
+        "effects": {
+            "share_stats_percent": 0.01
+        }
+    },
+    {
+        "id": "mod_catalyst",
+        "name": "Catalyst",
+        "texture": "res://icon.svg",
+        "type": "building",
+        "cost": 2,
+        "effects": {
+            "duration_mult": 0.05
+        }
+    },
+    {
+        "id": "mod_prism",
+        "name": "Prism",
+        "texture": "res://icon.svg",
+        "type": "building",
+        "cost": 2,
+        "effects": {
+            "lux_scaling": 1.0
+        }
+    }
 ]

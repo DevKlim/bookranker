@@ -16,7 +16,7 @@ func import_buildables(list: Array, _category: String) -> void:
 		var expected_scene_path = SCENE_BUILDABLES_PATH + str(entry.get("id")) + ".tscn"
 		
 		# Always generate if structure, visuals or template exists.
-		if entry.has("visuals") or entry.has("structure") or entry.has("template"):
+		if not only_update_resources and (entry.has("visuals") or entry.has("structure") or entry.has("template")):
 			new_scene_path = expected_scene_path
 			_generate_building_scene(entry, new_scene_path)
 		elif ResourceLoader.exists(expected_scene_path):
@@ -65,6 +65,9 @@ func import_buildables(list: Array, _category: String) -> void:
 		res.display_offset = Vector2.ZERO 
 		if new_scene_path != "":
 			res.scene = ResourceLoader.load(new_scene_path, "", ResourceLoader.CACHE_MODE_REPLACE)
+			
+		_apply_formulas_and_weights(res, entry)
+		
 		ResourceSaver.save(res, path)
 
 func _generate_building_scene(data: Dictionary, save_path: String) -> void:

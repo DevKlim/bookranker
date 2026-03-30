@@ -116,6 +116,17 @@ func take_energy_damage(amount: float) -> void:
 
 func stagger(base_duration: float) -> void:
 	var effective_duration = base_duration * (1.0 - purity)
+	
+	if _elemental_component:
+		for id in _elemental_component.get_active_element_names():
+			var res = ElementManager.get_element(id)
+			if res and res.cc_scaling_equation != "":
+				if ClassDB.class_exists("FormulaHelper") or ResourceLoader.exists("res://scripts/utils/formula_helper.gd"):
+					var fh = load("res://scripts/utils/formula_helper.gd")
+					if fh:
+						var vars = {"base_duration": effective_duration, "purity": purity}
+						effective_duration = fh.evaluate(res, res.cc_scaling_equation, vars, effective_duration)
+						
 	if effective_duration < 0.1: effective_duration = 0.1
 	
 	emit_signal("staggered", effective_duration)

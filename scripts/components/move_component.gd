@@ -42,37 +42,52 @@ func move_to(target_pos: Vector3) -> void:
 func stop_moving() -> void:
 	path.clear()
 	is_moving = false
-	_body.velocity = Vector3.ZERO
+	_body.velocity.x = 0
+	_body.velocity.z = 0
+	_body.velocity.y = 0
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
+	# 1. Base X/Z Movement
 	if not is_moving or path.is_empty():
-		_body.velocity = Vector3.ZERO
-		return
-	
-	if current_path_index >= path.size():
-		stop_moving()
-		return
-		
-	var target = path[current_path_index]
-	# Ignore Y for planar movement checks
-	var pos_flat = Vector3(_body.global_position.x, 0, _body.global_position.z)
-	var target_flat = Vector3(target.x, 0, target.z)
-	
-	var dist = pos_flat.distance_to(target_flat)
-	
-	if dist < stop_distance:
-		current_path_index += 1
-		return
-	
-	var direction = (_body.global_position.direction_to(target)).normalized()
-	# Keep Y velocity 0 for top-down, or handle gravity if needed (usually 0 for these units)
-	direction.y = 0 
-	
-	_body.velocity = direction * move_speed
-	_body.move_and_slide()
-	
-	# Look at
-	if direction.length_squared() > 0.01:
-		var look_target = _body.global_position + direction
-		_body.look_at(look_target, Vector3.UP)
+		_body.velocity.x = move_toward(_body.velocity.x, 0.0, move_speed)
+		_body.velocity.z = move_toward(_body.velocity.z, 0.0, move_speed)
+		_body.velocity.y = 0
+		_body.move_and_slide()
+	else:
+		if current_path_index >= path.size():
+			stop_moving()
+		else:
+			var target = path[current_path_index]
+			# Ignore Y for planar movement checks
+			var pos_flat = Vector3(_body.global_position.x, 0, _body.global_position.z)
+			var target_flat = Vector3(target.x, 0, target.z)
+			
+			var dist = pos_flat.distance_to(target_flat)
+			
+			if dist < stop_distance:
+				current_path_index += 1
+			else:
+				var direction = (_body.global_position.direction_to(target)).normalized()
+				direction.y = 0 
+				
+				if direction.length_squared() > 0.01:
+					direction = direction.normalized()
+					_body.velocity.x = direction.x * move_speed
+					_body.velocity.z = direction.z * move_speed
+					_body.velocity.y = 0
+					
+					# Look at
+					var look_target = _body.global_position + direction
+					look_target.y = _body.global_position.y
+					_body.look_at(look_target, Vector3.UP)
+				else:
+					_body.velocity = Vector3.ZERO
+					
+				_body.move_and_slide()
 
+	# 2. Smart Floor Snap (The New Method)
+	# Since the game takes place on a flat grid, we can just smoothly clamp the entity 
+	# to the ground coordinate (y=1.0) rather than relying on physics gravity. 
+	# This guarantees no clipping through the floor and prevents infinite falling into the void.
+	if not is_equal_approx(_body.global_position.y, 1.0):
+		_body.global_position.y = lerp(_body.global_position.y, 1.0, 15.0 * delta)

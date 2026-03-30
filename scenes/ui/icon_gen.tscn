@@ -4,5 +4,5 @@
 
 [node name="IconGen" type="Node3D" unique_id=500568755]
 script = ExtResource("1_7evvi")
-target_building_id = "cubby"
-target_building_id = "cubby"
+target_building_id = "drill"
+target_building_id = "drill"

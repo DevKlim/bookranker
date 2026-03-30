@@ -1,6 +1,15 @@
-[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://planefolduid"][ext_resource type="Script" path="res://scripts/resources/attack_resource.gd" id="1"]
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://b2l1ep0h0fwie"]
+
+[ext_resource type="Script" uid="uid://dj7657xb6odwr" path="res://scripts/resources/attack_resource.gd" id="1"]
+
 [resource]
 script = ExtResource("1")
 id = "planefold_shot"
+cooldown = 2.0
+base_damage = 2.0
+damage_equation = "(base_damage + (attack_damage * attack_damage_weight) + global_flat_damage) * (1.0 + damage_mult)"
+stat_weights = {
+"attack_damage": 1.0
+}
 spawn_projectile = true
 projectile_speed = 300.0

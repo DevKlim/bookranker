@@ -11,6 +11,12 @@ extends Resource
 @export var defense: float = 0.0
 @export var weight: float = 10.0
 
+@export_group("Formulas")
+@export var speed_equation: String = ""
+@export var health_equation: String = ""
+@export var defense_equation: String = ""
+@export var stat_weights: Dictionary = {}
+
 @export_group("Inventory")
 @export var inventory_slots: int = 8
 @export var has_tool_slot: bool = true
@@ -25,4 +31,3 @@ extends Resource
 
 @export_group("Visuals")
 @export var texture: Texture2D
-

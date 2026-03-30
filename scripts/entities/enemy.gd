@@ -57,7 +57,6 @@ var current_attack_target: Node3D = null
 # Physics / Gravity Status
 var has_gravity_effect: bool = false
 var _ragdoll_recovery_timer: float = 0.0
-var _spawn_settle_timer: float = 2.0 
 
 # Pathfinding
 var current_path_queue: Array[Vector3] =[]
@@ -213,8 +212,6 @@ func set_as_wave_enemy() -> void:
 	is_field_enemy = false
 	current_state = State.MOVE
 	
-	# NEW ECS-FRIENDLY METHOD: Dynamically add physical exceptions for all clutter objects
-	# Ensures physics engine ignores them regardless of sub-node mesh static bodies
 	var clutters = get_tree().get_nodes_in_group("clutter")
 	for c in clutters:
 		if is_instance_valid(c):
@@ -252,6 +249,14 @@ func _process_tint(delta: float) -> void:
 		_apply_tint(Color.WHITE)
 
 func _physics_process(delta: float) -> void:
+	# Failsafe kill-Z plane (prevents soft-locks if spawning outside of terrain bounds incorrectly)
+	if global_position.y < -10.0:
+		if health_component:
+			health_component.take_damage(999999.0)
+		else:
+			queue_free()
+		return
+
 	var new_tile = LaneManager.world_to_tile(global_position)
 	if new_tile != _current_tile_coords:
 		var old_tile = _current_tile_coords
@@ -285,14 +290,11 @@ func _physics_process(delta: float) -> void:
 	if current_state == State.RAGDOLL:
 		set_collision_mask_value(1, true)
 		if not is_on_floor(): velocity.y -= 20.0 * delta
-	elif _spawn_settle_timer > 0:
-		set_collision_mask_value(1, true)
-		_spawn_settle_timer -= delta
-		if not is_on_floor(): velocity.y -= 20.0 * delta
-		else: velocity.y = 0
 	else:
 		set_collision_mask_value(1, true)
 		velocity.y = 0.0
+		if not is_equal_approx(global_position.y, 1.0):
+			global_position.y = lerp(global_position.y, 1.0, 15.0 * delta)
 
 	match current_state:
 		State.MOVE:
@@ -639,11 +641,34 @@ func _stop_attacking_sequence() -> void:
 			if enemy_movement_component:
 				enemy_movement_component.reset_target()
 
+func get_stat(stat_name: String, default_value: float = 0.0) -> float:
+	var val = default_value
+	if stat_name == "health": val = health_component.max_health if health_component else enemy_resource.health
+	elif stat_name == "speed": val = base_speed
+	elif stat_name == "defense": val = health_component.defense if health_component else enemy_resource.defense
+	elif stat_name == "attack_damage": val = attacker_component.basic_attack.base_damage if attacker_component and attacker_component.basic_attack else enemy_resource.attack_damage
+	
+	if elemental_component:
+		val *= (1.0 + elemental_component.get_stat_modifier(stat_name + "_mult"))
+		val += elemental_component.get_stat_modifier(stat_name + "_flat")
+	return val
+
 func _update_stats() -> void:
 	var final_speed = base_speed
 	if elemental_component:
 		var spd_mult = elemental_component.get_stat_modifier("speed_mult")
 		final_speed *= (1.0 + spd_mult)
+		
+	if enemy_resource and enemy_resource.speed_equation != "":
+		if ClassDB.class_exists("FormulaHelper") or ResourceLoader.exists("res://scripts/utils/formula_helper.gd"):
+			var fh = load("res://scripts/utils/formula_helper.gd")
+			if fh:
+				var vars = {"base_speed": base_speed, "final_speed": final_speed}
+				for k in enemy_resource.stat_weights.keys():
+					vars[k+"_weight"] = enemy_resource.stat_weights[k]
+					vars[k] = get_stat(k, 0.0)
+				final_speed = fh.evaluate(enemy_resource, enemy_resource.speed_equation, vars, final_speed)
+				
 	if move_component:
 		move_component.move_speed = max(0, final_speed)
 

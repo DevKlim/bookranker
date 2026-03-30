@@ -91,10 +91,26 @@ func apply_element(target: Node, element: ElementResource, source_attacker: Node
 	if not ignore_cd and comp.is_on_cooldown(incoming_id):
 		return
 	
-	comp.set_cooldown(incoming_id, element.application_cooldown)
+	var final_cd = element.application_cooldown
+	if ClassDB.class_exists("FormulaHelper") or ResourceLoader.exists("res://scripts/utils/formula_helper.gd"):
+		var fh = load("res://scripts/utils/formula_helper.gd")
+		if fh and element.cooldown_equation != "":
+			var vars = {"base_cooldown": element.application_cooldown}
+			for k in element.stat_weights.keys(): vars[k+"_weight"] = element.stat_weights[k]; vars[k] = target.get_stat(k, 0.0) if target.has_method("get_stat") else 0.0
+			final_cd = fh.evaluate(element, element.cooldown_equation, vars, element.application_cooldown)
+
+	comp.set_cooldown(incoming_id, final_cd)
 	
 	var reaction_occurred = false
 	var incoming_units_for_reaction = units 
+	
+	if ClassDB.class_exists("FormulaHelper") or ResourceLoader.exists("res://scripts/utils/formula_helper.gd"):
+		var fh = load("res://scripts/utils/formula_helper.gd")
+		if fh and element.unit_equation != "":
+			var vars = {"base_units": units, "damage_snapshot": damage_snapshot}
+			for k in element.stat_weights.keys(): vars[k+"_weight"] = element.stat_weights[k]; vars[k] = target.get_stat(k, 0.0) if target.has_method("get_stat") else 0.0
+			incoming_units_for_reaction = int(fh.evaluate(element, element.unit_equation, vars, float(units)))
+			
 	var current_statuses = comp.get_active_element_names().duplicate()
 	
 	for active_id in current_statuses:
@@ -133,11 +149,19 @@ func apply_element(target: Node, element: ElementResource, source_attacker: Node
 			comp.add_or_refresh_status(element, units)
 
 func _trigger_reaction(target: Node, _id_a: String, _id_b: String, result_id: String, source: Node, _dmg: float) -> void:
+	var res_element = get_element(result_id)
+	var reaction_dmg = _dmg
+	if ClassDB.class_exists("FormulaHelper") or ResourceLoader.exists("res://scripts/utils/formula_helper.gd"):
+		var fh = load("res://scripts/utils/formula_helper.gd")
+		if fh and res_element and res_element.reaction_damage_equation != "":
+			var vars = {"base_damage": _dmg}
+			reaction_dmg = fh.evaluate(res_element, res_element.reaction_damage_equation, vars, _dmg)
+			
 	match result_id:
-		"fuse": _handle_fuse_reaction(target, source)
+		"fuse": _handle_fuse_reaction(target, source, reaction_dmg)
 		"extinguish": _handle_extinguish(target)
 		"ground": _handle_ground(target)
-		"tailwind": _handle_tailwind(target, _id_a, _id_b, source) 
+		"tailwind": _handle_tailwind(target, _id_a, _id_b, source, reaction_dmg) 
 
 ## --- DAMAGE HOOK ---
 
@@ -228,13 +252,13 @@ func apply_chain_damage(start_node: Node, damage: float, source: Node, bounce_ra
 		previous = current
 		current = next_target
 
-func _handle_fuse_reaction(target: Node, source: Node) -> void:
+func _handle_fuse_reaction(target: Node, source: Node, reaction_dmg: float = 50.0) -> void:
 	# Cleanse statuses for Fuse
 	var ec = target.get_node_or_null("ElementalComponent")
 	if ec: ec.remove_all_statuses()
 	
 	# Apply standard Fuse explosion (50 damage, 2.5 radius, 300 impulse) using generic AoE
-	apply_aoe_damage(target, 2.5, 50.0, source, false, 300.0)
+	apply_aoe_damage(target, 2.5, max(50.0, reaction_dmg), source, false, 300.0)
 
 ## New Generic AoE Function for modular reaction damage
 func apply_aoe_damage(center_node: Node, radius: float, damage: float, source: Node, falloff: bool = false, impulse: float = 0.0) -> void:
@@ -279,7 +303,7 @@ func _handle_ground(target: Node) -> void:
 	var ec = target.get_node_or_null("ElementalComponent")
 	if ec: ec.remove_status("volt")
 
-func _handle_tailwind(target: Node, id1: String, id2: String, source: Node) -> void:
+func _handle_tailwind(target: Node, id1: String, id2: String, source: Node, reaction_dmg: float = 5.0) -> void:
 	var ec = target.get_node_or_null("ElementalComponent")
 	if ec: ec.remove_status("aero")
 	
@@ -295,9 +319,9 @@ func _handle_tailwind(target: Node, id1: String, id2: String, source: Node) -> v
 			if primitive_res:
 				apply_element(t, primitive_res, source, 0.0, 1)
 			if t.has_method("take_damage"):
-				t.take_damage(5.0, null, source)
+				t.take_damage(reaction_dmg, null, source)
 			elif t.has_node("HealthComponent"):
-				t.get_node("HealthComponent").take_damage(5.0, null, source)
+				t.get_node("HealthComponent").take_damage(reaction_dmg, null, source)
 
 ## --- PUBLIC UTILITIES ---
 

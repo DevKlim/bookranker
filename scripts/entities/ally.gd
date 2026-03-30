@@ -443,6 +443,16 @@ func _apply_stats_from_resource() -> void:
 		else:
 			inventory_component.set_capacity(stats.inventory_slots)
 
+func get_stat(stat_name: String, default_value: float = 0.0) -> float:
+	if stat_name == "attack_damage": return attack_damage
+	elif stat_name == "lux_stat": return lux_stat
+	elif stat_name == "attack_speed_mult": return attack_speed_mult
+	elif stat_name == "damage_mult": return damage_mult
+	elif stat_name == "health": return health_component.max_health if health_component else (stats.health if stats else default_value)
+	elif stat_name == "speed": return move_component.move_speed if move_component else (stats.speed if stats else default_value)
+	elif stat_name == "defense": return health_component.defense if health_component else (stats.defense if stats else default_value)
+	return default_value
+
 func _recalculate_stats(_arg = null) -> void:
 	var base_hp = 10.0
 	var base_spd = 5.0
@@ -495,6 +505,23 @@ func _recalculate_stats(_arg = null) -> void:
 		base_spd *= GameManager.get_stat_multiplier("ally_speed")
 		attack_speed_mult += GameManager.get_global_stat("ally_attack_speed_mult", 0.0)
 		damage_mult += GameManager.get_global_stat("ally_damage_mult", 0.0)
+
+	if stats:
+		if ClassDB.class_exists("FormulaHelper") or ResourceLoader.exists("res://scripts/utils/formula_helper.gd"):
+			var fh = load("res://scripts/utils/formula_helper.gd")
+			if fh:
+				if stats.health_equation != "":
+					var vars = {"base_health": base_hp}
+					for k in stats.stat_weights.keys(): vars[k+"_weight"] = stats.stat_weights[k]; vars[k] = get_stat(k, 0.0)
+					base_hp = fh.evaluate(stats, stats.health_equation, vars, base_hp)
+				if stats.speed_equation != "":
+					var vars = {"base_speed": base_spd}
+					for k in stats.stat_weights.keys(): vars[k+"_weight"] = stats.stat_weights[k]; vars[k] = get_stat(k, 0.0)
+					base_spd = fh.evaluate(stats, stats.speed_equation, vars, base_spd)
+				if stats.defense_equation != "":
+					var vars = {"base_defense": total_def}
+					for k in stats.stat_weights.keys(): vars[k+"_weight"] = stats.stat_weights[k]; vars[k] = get_stat(k, 0.0)
+					total_def = fh.evaluate(stats, stats.defense_equation, vars, total_def)
 
 	if health_component:
 		health_component.max_health = base_hp

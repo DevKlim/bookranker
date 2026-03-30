@@ -6,9 +6,10 @@
 
 [resource]
 script = ExtResource("3_xgtfc")
-buildable_name = "Mining Drill"
+buildable_name = "Drill"
+description = "Extracts resources from the ground."
 icon = ExtResource("1_iwtn5")
 has_input = false
-default_input_mask = 0
-default_output_mask = 4
+has_output = false
+default_output_mask = 1
 scene = ExtResource("2_iwtn5")

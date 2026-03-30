@@ -6,5 +6,9 @@
 script = ExtResource("1_y0t8i")
 id = "projectile_shot"
 base_damage = 5.0
+damage_equation = "(base_damage + (attack_damage * attack_damage_weight) + global_flat_damage) * (1.0 + damage_mult)"
+stat_weights = {
+"attack_damage": 1.0
+}
 spawn_projectile = true
 projectile_speed = 200.0

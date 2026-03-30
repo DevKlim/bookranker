@@ -7,5 +7,10 @@ script = ExtResource("1_hlghw")
 id = "boss_slam"
 cooldown = 3.0
 base_damage = 500.0
+damage_equation = "(base_damage + (weight * weight_weight) + global_flat_damage) * (1.0 + damage_mult)"
+stat_weights = {
+"weight": 2.0
+}
 min_range = 1
 is_aoe = true
+hitbox_extents = Vector3(2, 2, 2)

@@ -180,7 +180,16 @@ func _process(delta: float) -> void:
 		
 		if _health_component:
 			var res = data.resource
+			var dmg = 0.0
 			if res.stat_modifiers.has("damage_per_second"):
-				var dmg = res.stat_modifiers["damage_per_second"] * delta
-				_health_component.take_damage(dmg, res)
-
+				dmg = res.stat_modifiers["damage_per_second"]
+			
+			if res.damage_equation != "":
+				if ClassDB.class_exists("FormulaHelper") or ResourceLoader.exists("res://scripts/utils/formula_helper.gd"):
+					var fh = load("res://scripts/utils/formula_helper.gd")
+					if fh:
+						var vars = {"base_damage": dmg, "units": data.units}
+						dmg = fh.evaluate(res, res.damage_equation, vars, dmg)
+					
+			if dmg > 0:
+				_health_component.take_damage(dmg * delta, res)

@@ -27,13 +27,21 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	if is_wave_active and _spawning_done:
-		# Clean up nulls from active enemies
+		# Clean up nulls and fallen entities from active enemies
 		for i in range(active_enemies.size() - 1, -1, -1):
-			if not is_instance_valid(active_enemies[i]) or active_enemies[i].is_queued_for_deletion():
+			var e = active_enemies[i]
+			if not is_instance_valid(e) or e.is_queued_for_deletion():
+				active_enemies.remove_at(i)
+			elif e.global_position.y < -15.0:
+				e.queue_free()
 				active_enemies.remove_at(i)
 				
 		for i in range(active_bosses.size() - 1, -1, -1):
-			if not is_instance_valid(active_bosses[i]) or active_bosses[i].is_queued_for_deletion():
+			var b = active_bosses[i]
+			if not is_instance_valid(b) or b.is_queued_for_deletion():
+				active_bosses.remove_at(i)
+			elif b.global_position.y < -15.0:
+				b.queue_free()
 				active_bosses.remove_at(i)
 				
 		var wave_clear_condition_met = false
@@ -207,10 +215,11 @@ func _spawn_single_with_lane(res: EnemyResource, spawn_lane: Variant, is_boss: b
 	var spawn_pos = Vector3.ZERO
 	if LaneManager.spawners_by_lane.has(chosen_lane):
 		spawn_pos = LaneManager.spawners_by_lane[chosen_lane]
+		spawn_pos.y = max(spawn_pos.y, 1.0) # Elevated to prevent floor intersecting immediately on spawn
 	else:
 		var tile = Vector2i(LaneManager.LANE_LENGTH - 1 + LaneManager.generation_offset.x, chosen_lane + LaneManager.generation_offset.y)
 		spawn_pos = LaneManager.tile_to_world(tile)
-		spawn_pos.y = 0.5
+		spawn_pos.y = 1.0 
 		
 	return _spawn_enemy(res, chosen_lane, spawn_pos, is_boss)
 
@@ -258,4 +267,3 @@ func _get_enemy_resource(id: String) -> EnemyResource:
 			enemy_cache[id] = res
 			return res
 	return null
-

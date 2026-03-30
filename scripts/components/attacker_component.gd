@@ -202,6 +202,25 @@ func _calculate_damage(source: Node, atk: AttackResource) -> float:
 		var artifact = source.active_weapon_item.get_artifact_instance()
 		if artifact and artifact.has_method("modify_damage"):
 			dmg = artifact.modify_damage(dmg, source, atk)
+			
+	# FORMULA EVALUATION OVERRIDE
+	if atk.damage_equation != "":
+		var vars = {
+			"base_damage": atk.base_damage,
+			"damage_mult": d_mult,
+			"scaling_stat_val": stat_val,
+			"global_flat_damage": GameManager.get_global_stat("global_flat_damage", 0.0) if get_tree().root.has_node("GameManager") else 0.0
+		}
+		for k in atk.stat_weights.keys():
+			vars[k+"_weight"] = atk.stat_weights[k]
+			var val = 0.0
+			if source.has_method("get_stat"): val = source.get_stat(k, 0.0)
+			elif source.get(k) != null: val = float(source.get(k))
+			vars[k] = val
+		
+		if ClassDB.class_exists("FormulaHelper") or ResourceLoader.exists("res://scripts/utils/formula_helper.gd"):
+			var fh = load("res://scripts/utils/formula_helper.gd")
+			if fh: dmg = fh.evaluate(atk, atk.damage_equation, vars, dmg)
 		
 	return dmg
 
@@ -441,7 +460,7 @@ func _spawn_debug_hitbox(target_pos: Vector3, atk: AttackResource, source: Node,
 	if not get_tree().root.has_node("LaneManager"): return
 	
 	var source_valid = is_instance_valid(source) and source.is_inside_tree()
-	var meshes_to_spawn = []
+	var meshes_to_spawn =[]
 
 	if atk.is_aoe:
 		var s = LaneManager.GRID_SCALE if "GRID_SCALE" in LaneManager else 2.0

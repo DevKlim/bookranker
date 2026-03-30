@@ -4,6 +4,12 @@ class_name MainLevel
 ## The main script for the primary game scene in 3D.
 ## Refactored into separate controllers for camera, building, and selection.
 
+@export_category("Rendering (Retro Aesthetic)")
+@export var render_scale: float = 0.55
+@export var enable_msaa: Viewport.MSAA = Viewport.MSAA_DISABLED
+@export var enable_ssaa: Viewport.ScreenSpaceAA = Viewport.SCREEN_SPACE_AA_DISABLED
+
+@export_category("Camera Settings")
 @export var camera_speed: float = 10.0
 @export var zoom_step: float = 1.0
 @export var min_zoom: float = 5.0
@@ -38,32 +44,37 @@ var selection_controller
 var level_mechanics: Node
 
 func _ready() -> void:
+	# --- Retro Aesthetic Settings ---
+	get_viewport().scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
+	get_viewport().scaling_3d_scale = render_scale
+	get_viewport().msaa_3d = enable_msaa
+	get_viewport().screen_space_aa = enable_ssaa
+	# --------------------------------
+
 	var env_node = get_node_or_null("WorldEnvironment")
 	if env_node and env_node.environment:
 		var env = env_node.environment
-		env.background_mode = Environment.BG_SKY
-		
-		var sky = Sky.new()
-		var sky_mat = ShaderMaterial.new()
-		var sky_shader = load("res://shaders/skybox_cross.gdshader")
-		
-		if sky_shader:
-			sky_mat.shader = sky_shader
-		
-		# Allows a user-placed skybox texture in a 4x3 Cross format (e.g., 2048x1536)
-		# Mapping:
-		# [Empty, Top, Empty, Empty]
-		# [Left, Center, Right, Back]
-		# [Empty, Bottom, Empty, Empty]
-		var tex = load("res://assets/textures/Daylight Box UV.png")
-		if tex:
-			sky_mat.set_shader_parameter("cross_tex", tex)
-			
-		sky.sky_material = sky_mat
-		env.sky = sky
-		
+		# Use Canvas mode to bypass orthographic projection skybox distortion
+		env.background_mode = Environment.BG_CANVAS
 		env.volumetric_fog_enabled = true
 		env.volumetric_fog_density = 0.0
+
+	# Instantiate the Y2K Screen-Space Background
+	var bg_layer = CanvasLayer.new()
+	bg_layer.layer = -100
+	bg_layer.name = "Y2KBackground"
+	add_child(bg_layer)
+
+	var bg_rect = ColorRect.new()
+	bg_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	
+	var bg_mat = ShaderMaterial.new()
+	var bg_shader = load("res://shaders/y2k_polkadot.gdshader")
+	if bg_shader:
+		bg_mat.shader = bg_shader
+	bg_rect.material = bg_mat
+	bg_layer.add_child(bg_rect)
 
 	var mech_path = "res://scripts/levels/level_1_mechanics.gd"
 	if ResourceLoader.exists(mech_path):

@@ -10,6 +10,14 @@ extends Resource
 ## e.g. Super Plasma might have 0.5s to prevent instant re-proc.
 @export var application_cooldown: float = 0.0
 
+@export_group("Formulas")
+@export var damage_equation: String = ""
+@export var cooldown_equation: String = ""
+@export var unit_equation: String = ""
+@export var reaction_damage_equation: String = ""
+@export var cc_scaling_equation: String = ""
+@export var stat_weights: Dictionary = {}
+
 @export var reaction_rules: Dictionary = {}
 @export var stat_modifiers: Dictionary = {}
 @export var effect_script: Script

@@ -8,6 +8,11 @@ script = ExtResource("1_t1x8r")
 id = "pipe_swing"
 cooldown = 3.0
 base_damage = 2.0
+damage_equation = "(base_damage + (attack_damage * attack_damage_weight) + (weight * weight_weight) + global_flat_damage) * (1.0 + damage_mult)"
+stat_weights = {
+"attack_damage": 1.0,
+"weight": 0.2
+}
 min_range = 1
 is_aoe = true
 visual_scene = ExtResource("2_n5m4x")

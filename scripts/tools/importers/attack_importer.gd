@@ -62,4 +62,6 @@ func import_attacks(list: Array) -> void:
 			
 		res.visual_duration = float(entry.get("visual_duration", 0.5))
 		
+		_apply_formulas_and_weights(res, entry)
+		
 		ResourceSaver.save(res, path)
