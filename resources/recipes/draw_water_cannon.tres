@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://bdx63ijmw0x1b"]
+
+[ext_resource type="Resource" uid="uid://dom6dpbqvf46m" path="res://resources/items/aquachalk.tres" id="1_th2ti"]
+[ext_resource type="Resource" uid="uid://bufkycpx6nel1" path="res://resources/items/marble.tres" id="2_eheet"]
+[ext_resource type="Resource" uid="uid://byw567vieem02" path="res://resources/items/rubber.tres" id="3_u1ll8"]
+[ext_resource type="Resource" uid="uid://b33s4q3u6ihxb" path="res://resources/buildables/water_cannon.tres" id="4_pvti2"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="5_oisrm"]
+
+[resource]
+script = ExtResource("5_oisrm")
+category = "chalkboard"
+recipe_name = "Water Cannon"
+tier = 2
+craft_time = 4.0
+inputs = [{
+"count": 16,
+"resource": ExtResource("1_th2ti")
+}, {
+"count": 8,
+"resource": ExtResource("2_eheet")
+}, {
+"count": 4,
+"resource": ExtResource("3_u1ll8")
+}]
+outputs = [{
+"count": 1,
+"resource": ExtResource("4_pvti2")
+}]

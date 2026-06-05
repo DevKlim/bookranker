@@ -1,0 +1,32 @@
+[gd_scene format=3 uid="uid://h1wfp4vrom4e"]
+
+[ext_resource type="Script" uid="uid://c4a0lhmg6q1yg" path="res://scripts/entities/buildings/lily_bubba.gd" id="1_ao674"]
+[ext_resource type="Script" uid="uid://dad3f8h2j4k5l" path="res://scripts/components/inventory_component.gd" id="3_r230q"]
+[ext_resource type="PackedScene" uid="uid://cq0vlj26du8bq" path="res://assets/buildables/lily_bubba/lily bubba.gltf" id="4_ao674"]
+[ext_resource type="Script" uid="uid://dg4gfri6lu5o2" path="res://scripts/components/elemental_component.gd" id="4_udhu4"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_f4hvk"]
+
+[node name="Lily Bubba" type="StaticBody3D" unique_id=616041786]
+script = ExtResource("1_ao674")
+unpowered_color = Color(1, 1, 1, 1)
+max_health = 30.0
+power_consumption = 2.0
+default_output_mask = 4
+layout_config = [Vector2i(0, 0)]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=665429845]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("BoxShape3D_f4hvk")
+
+[node name="InventoryComponent" type="Node" parent="." unique_id=22016548]
+script = ExtResource("3_r230q")
+max_slots = 0
+can_receive = false
+can_output = false
+
+[node name="ElementalComponent" type="Node" parent="." unique_id=703643162]
+script = ExtResource("4_udhu4")
+
+[node name="blockbench_export" parent="." unique_id=1988624504 instance=ExtResource("4_ao674")]
+transform = Transform3D(-3, 0, -2.6226832e-07, 0, 3, 0, 2.6226832e-07, 0, -3, 0, 0, 0)

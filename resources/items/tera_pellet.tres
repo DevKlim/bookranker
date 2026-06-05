@@ -8,5 +8,8 @@
 script = ExtResource("3_1oqf5")
 item_name = "Tera Pellet"
 icon = ExtResource("2_0k0n6")
+stack_size = 64.0
+rarity = "F"
+item_category = "Item: Material"
 damage = 2.0
 element = ExtResource("1_e5xjf")

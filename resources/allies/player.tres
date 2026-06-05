@@ -7,9 +7,10 @@
 [resource]
 script = ExtResource("3_a7i87")
 ally_name = "Player"
-scene = ExtResource("2_oryay")
 icon = ExtResource("1_oryay")
-health = 50.0
+max_health = 50.0
+speed = 2.0
+space = 5.0
 inventory_slots = 50
 respawns_unlimited = true
 respawns_cooldown = 2.0

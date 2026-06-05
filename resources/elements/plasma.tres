@@ -7,7 +7,11 @@
 script = ExtResource("1_8eih5")
 element_name = "Plasma"
 icon = ExtResource("1_dej7p")
+color = Color(1, 0.078431375, 0.5764706, 1)
+duration = 8.0
 application_cooldown = 0.5
-stat_modifiers = {
-"incoming_damage_mult": 0.25
+reaction_rules = {
+"igni": "ionize",
+"light": "ionize",
+"volt": "ionize"
 }

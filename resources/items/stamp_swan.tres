@@ -7,4 +7,5 @@
 script = ExtResource("2_kobei")
 item_name = "Swan Stamp"
 icon = ExtResource("1_vhii6")
-stack_size = 1
+stack_size = 1.0
+item_category = "Item: Material"

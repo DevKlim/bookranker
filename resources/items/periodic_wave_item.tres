@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://cwrk2jxxrgfqm"]
+
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="1_rrkes"]
+[ext_resource type="Resource" uid="uid://c5878q58hbg8i" path="res://resources/attacks/periodic_wave.tres" id="1_v50il"]
+[ext_resource type="Texture2D" uid="uid://c1jt74tbp2pq3" path="res://assets/items/rod.png" id="2_5aw7n"]
+
+[resource]
+script = ExtResource("1_rrkes")
+item_name = "Periodic Wave"
+icon = ExtResource("2_5aw7n")
+stack_size = 1
+attack_config = ExtResource("1_v50il")
+metadata/_custom_type_script = "uid://b8q2k7l3m5oap"

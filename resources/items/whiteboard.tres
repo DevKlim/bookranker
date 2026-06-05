@@ -1,11 +1,12 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://b8qpnslwvjs35"]
 
-[ext_resource type="Texture2D" uid="uid://dup0o0ewxtgtw" path="res://assets/icons/whiteboard.png" id="1_k1pg6"]
+[ext_resource type="Texture2D" uid="uid://dup0o0ewxtgtw" path="res://assets/items/whiteboard.png" id="1_k1pg6"]
 [ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="2_gmgbk"]
 
 [resource]
 script = ExtResource("2_gmgbk")
 item_name = "Whiteboard"
 icon = ExtResource("1_k1pg6")
-stack_size = 10
+stack_size = 1.0
+item_category = "Item: Material"
 damage = 5.0

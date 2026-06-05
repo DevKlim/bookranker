@@ -1,14 +1,16 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://dbvkaka7j8068"]
 
-[ext_resource type="Resource" uid="uid://dxgrgiah56yli" path="res://resources/elements/chem.tres" id="1_mbche"]
-[ext_resource type="Texture2D" uid="uid://dj3malavfemr7" path="res://assets/icons/picasso.png" id="2_mbche"]
-[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="3_lnu5b"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="1_item"]
+[ext_resource type="Texture2D" uid="uid://dj3malavfemr7" path="res://assets/items/picasso.png" id="2_tex"]
+[ext_resource type="Resource" uid="uid://bh0dudb5ejoy3" path="res://resources/attacks/picasso_shot.tres" id="3_atk"]
 
 [resource]
-script = ExtResource("3_lnu5b")
+script = ExtResource("1_item")
 item_name = "Picasso"
-icon = ExtResource("2_mbche")
-stack_size = 1
+icon = ExtResource("2_tex")
+stack_size = 1.0
 equipment_type = 2
+rarity = "SS"
+item_category = "Item: Weapon"
+attack_config = ExtResource("3_atk")
 damage = 1.0
-element = ExtResource("1_mbche")

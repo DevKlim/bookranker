@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://cxundi00000"]
+
+[ext_resource type="Texture2D" uid="uid://cg5mdisetuxd3" path="res://assets/icons/undine.png" id="1_4ue35"]
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_und"]
+
+[resource]
+script = ExtResource("1_und")
+element_name = "Undine"
+icon = ExtResource("1_4ue35")
+color = Color(0, 0.80784315, 0.81960785, 1)
+duration = 20.0

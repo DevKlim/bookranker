@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://1uckad6v513s" path="res://scripts/entities/projectile.gd" id="1_script"]
 [ext_resource type="PackedScene" uid="uid://hhob26q0uw3u" path="res://assets/buildables/lotus/lotus.gltf" id="2_mesh"]
+[ext_resource type="Script" uid="uid://p7nrchkroanc" path="res://scripts/components/highlight_component.gd" id="3_ig15i"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_lotus"]
 
@@ -15,3 +16,6 @@ shape = SubResource("BoxShape3D_lotus")
 
 [node name="lotus" parent="Model" unique_id=615079847 instance=ExtResource("2_mesh")]
 transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0)
+
+[node name="HighlightComponent" type="Node" parent="." unique_id=1532620713]
+script = ExtResource("3_ig15i")

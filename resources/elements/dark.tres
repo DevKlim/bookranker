@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://bq4u2yuym3lir"]
+
+[ext_resource type="Texture2D" uid="uid://ca4et4qgrr0tt" path="res://assets/icons/dark.png" id="1_eywre"]
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_q573n"]
+
+[resource]
+script = ExtResource("1_q573n")
+element_name = "Dark"
+icon = ExtResource("1_eywre")
+color = Color(0.18431373, 0, 0.30980393, 1)
+application_cooldown = 0.5
+reaction_rules = {
+"aero": "ghost",
+"aqua": "abyss"
+}
+stat_modifiers = {
+"luck_stat": -10.0
+}

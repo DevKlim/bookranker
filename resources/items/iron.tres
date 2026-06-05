@@ -8,6 +8,9 @@
 script = ExtResource("1_script")
 item_name = "Iron Ore"
 icon = ExtResource("1_hklni")
+stack_size = 64.0
+rarity = "F"
+item_category = "Item: Resource"
 damage = 3.0
 element = ExtResource("1_mvne0")
 is_ore = true

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://da8si4cb4y8oh"]
+
+[ext_resource type="Resource" uid="uid://bq4u2yuym3lir" path="res://resources/elements/dark.tres" id="1_eawov"]
+[ext_resource type="Script" uid="uid://dj7657xb6odwr" path="res://scripts/resources/attack_resource.gd" id="2_578rl"]
+
+[resource]
+script = ExtResource("2_578rl")
+id = "inkage_plane"
+cast_time = 1.0
+base_damage = 50.0
+damage_equation = "(base_damage + (attack_damage * attack_damage_weight) + global_flat_damage) * (1.0 + damage_mult)"
+stat_weights = {
+"attack_damage": 1.0
+}
+element = ExtResource("1_eawov")

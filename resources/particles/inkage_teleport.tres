@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ParticleResource" format=3 uid="uid://d2q1k4ts30ppo"]
+
+[ext_resource type="PackedScene" uid="uid://dw2h4geiog68u" path="res://scenes/particles/inkage_teleport.tscn" id="1_mja10"]
+[ext_resource type="Script" uid="uid://cx7aidq5y2yns" path="res://scripts/resources/particle_resource.gd" id="2_em7be"]
+
+[resource]
+script = ExtResource("2_em7be")
+id = "inkage_teleport"
+scene = ExtResource("1_mja10")

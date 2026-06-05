@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://cxghostrail"][ext_resource type="Script" uid="uid://ghostrail1" path="res://scripts/entities/particles/ghost_trail.gd" id="1_gt"][sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gt"]
+shading_mode = 0
+albedo_color = Color(0.8, 0.8, 1.0, 0.8)
+transparency = 1[sub_resource type="SphereMesh" id="SphereMesh_gt"]
+material = SubResource("StandardMaterial3D_gt")
+radius = 0.2
+height = 0.4[node name="GhostTrail" type="Node3D"]
+script = ExtResource("1_gt")[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("SphereMesh_gt")[node name="OmniLight3D" type="OmniLight3D" parent="."]
+light_color = Color(0.8, 0.8, 1, 1)
+omni_range = 2.0

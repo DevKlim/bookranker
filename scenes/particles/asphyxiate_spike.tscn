@@ -1,0 +1,109 @@
+[gd_scene format=3 uid="uid://c52r4vpqhuwk1"]
+
+[sub_resource type="Shader" id="Shader_spike"]
+code = "shader_type spatial;
+render_mode blend_add, depth_draw_opaque, cull_disabled, unshaded;
+uniform vec4 color1 : source_color = vec4(0.8, 0.1, 0.9, 1.0);
+uniform vec4 color2 : source_color = vec4(0.1, 0.9, 0.8, 1.0);
+uniform float speed = 10.0;
+
+void fragment() {
+    float pattern = sin(UV.y * 30.0 - TIME * speed) * 0.5 + 0.5;
+    vec3 col = mix(color1.rgb, color2.rgb, pattern);
+    
+    // Y2K neon edge glow
+    float edge = pow(1.0 - abs(dot(NORMAL, VIEW)), 2.0);
+    ALBEDO = col * (1.0 + edge * 2.0);
+    ALPHA = mix(0.5, 1.0, edge) * COLOR.a; 
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_spike"]
+render_priority = 0
+shader = SubResource("Shader_spike")
+shader_parameter/color1 = Color(0.8, 0.1, 0.9, 1)
+shader_parameter/color2 = Color(0.1, 0.9, 0.8, 1)
+shader_parameter/speed = 10.0
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_spike"]
+top_radius = 0.0
+bottom_radius = 0.3
+height = 4.0
+radial_segments = 8
+rings = 1
+
+[sub_resource type="Animation" id="Animation_stab"]
+length = 0.6
+step = 0.05
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("MeshInstance3D:position")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.15),
+"transitions": PackedFloat32Array(0.3, 1),
+"update": 0,
+"values": [Vector3(0, 5, 0), Vector3(0, 1.5, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("MeshInstance3D:scale")
+tracks/1/interp = 2
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.15, 0.25, 0.5),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Vector3(0.2, 1.5, 0.2), Vector3(1.2, 0.8, 1.2), Vector3(1.5, 1, 1.5), Vector3(0.01, 1.5, 0.01)]
+}
+tracks/2/type = "method"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath(".")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0.6),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"queue_free"
+}]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("OmniLight3D:light_energy")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0, 0.15, 0.5),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 3.0, 0.0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_spike"]
+_data = {
+&"stab": SubResource("Animation_stab")
+}
+
+[node name="AsphyxiateSpike" type="Node3D" unique_id=212292568]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=223122492]
+transform = Transform3D(0.01, 0, 0, 0, -1.5, 8.7422775e-10, 0, -1.3113416e-07, -0.01, 0, 1.5, 0)
+material_override = SubResource("ShaderMaterial_spike")
+mesh = SubResource("CylinderMesh_spike")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=437339298]
+libraries/ = SubResource("AnimationLibrary_spike")
+autoplay = &"stab"
+
+[node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=1768358976]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+light_color = Color(0.8, 0.1, 0.9, 1)
+light_energy = 0.0
+omni_range = 4.0

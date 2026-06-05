@@ -7,9 +7,9 @@ script = ExtResource("1")
 id = "swanfold_shot"
 cooldown = 2.0
 base_damage = 2.0
-damage_equation = "(base_damage + (lux_stat * lux_stat_weight) + global_flat_damage) * (1.0 + damage_mult)"
+damage_equation = "(base_damage + (luck_stat * luck_stat_weight) + global_flat_damage) * (1.0 + damage_mult)"
 stat_weights = {
-"lux_stat": 0.8
+"luck_stat": 0.5
 }
 spawn_projectile = true
 projectile_speed = 250.0

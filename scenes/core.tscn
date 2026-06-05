@@ -1,9 +1,11 @@
-[gd_scene load_steps=6 format=3 uid="uid://wdsglfb2b83d"]
+[gd_scene load_steps=8 format=3 uid="uid://wdsglfb2b83d"]
 
-[ext_resource type="Script" uid="uid://cep2y827y6dan" path="res://scripts/entities/core.gd" id="1_d8i7k"]
-[ext_resource type="Script" uid="uid://duudv3f6u8n6m" path="res://scripts/components/health_component.gd" id="2_8jts7"]
-[ext_resource type="Texture2D" uid="uid://cpyhv22s1c1xt" path="res://assets/mechs/coretop.png" id="2_qapo8"]
-[ext_resource type="Script" uid="uid://cgqs7pvpbdrdo" path="res://scripts/components/power_provider_component.gd" id="3_x2l5v"]
+[ext_resource type="Script" path="res://scripts/entities/core.gd" id="1_d8i7k"]
+[ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2_8jts7"]
+[ext_resource type="Texture2D" path="res://assets/mechs/coretop.png" id="2_qapo8"]
+[ext_resource type="Script" path="res://scripts/components/power_provider_component.gd" id="3_x2l5v"]
+[ext_resource type="Script" path="res://scripts/components/inventory_component.gd" id="5_inv"]
+[ext_resource type="Script" path="res://scripts/components/mod_handler_component.gd" id="6_mod"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_qapo8"]
 radius = 68.0294
@@ -26,3 +28,13 @@ max_health = 500.0
 [node name="PowerProviderComponent" type="Node" parent="."]
 script = ExtResource("3_x2l5v")
 power_generation = 20.0
+
+[node name="ModInventory" type="Node" parent="."]
+script = ExtResource("5_inv")
+max_slots = 3
+can_receive = false
+can_output = false
+
+[node name="ModHandlerComponent" type="Node" parent="."]
+script = ExtResource("6_mod")
+

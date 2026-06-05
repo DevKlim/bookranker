@@ -1,0 +1,64 @@
+[gd_scene format=3 uid="uid://cxarcbounce"]
+
+[ext_resource type="Script" uid="uid://m0xei750wyvf" path="res://scripts/entities/particles/arc_bounce.gd" id="1_ab"]
+
+[sub_resource type="Shader" id="Shader_arc"]
+code = "shader_type spatial;
+render_mode unshaded, blend_add, cull_disabled;
+
+uniform vec4 arc_color : source_color = vec4(0.4, 0.9, 1.0, 1.0);
+uniform float speed = 15.0;
+uniform vec2 uv_scale = vec2(1.0, 1.0);
+uniform float alpha_mult = 1.0;
+
+float random(vec2 uv) {
+    return fract(sin(dot(uv.xy, vec2(12.9898,78.233))) * 43758.5453123);
+}
+
+float noise(vec2 uv) {
+    vec2 i = floor(uv);
+    vec2 f = fract(uv);
+    float a = random(i);
+    float b = random(i + vec2(1.0, 0.0));
+    float c = random(i + vec2(0.0, 1.0));
+    float d = random(i + vec2(1.0, 1.0));
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(a, b, u.x) + (c - a)* u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
+}
+
+void fragment() {
+    vec2 scaled_uv = UV * uv_scale;
+    scaled_uv.y -= TIME * speed;
+    
+    float n = noise(scaled_uv * 10.0);
+    
+    float center_dist = abs(UV.x - 0.5) * 2.0;
+    float bolt = smoothstep(0.3, 0.0, abs(center_dist - (n - 0.5) * 0.8));
+    
+    ALBEDO = arc_color.rgb * 1.5;
+    ALPHA = bolt * arc_color.a * alpha_mult;
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_arc"]
+render_priority = 10
+shader = SubResource("Shader_arc")
+shader_parameter/arc_color = Color(0.3, 0.9, 1, 1)
+shader_parameter/speed = 10.0
+shader_parameter/uv_scale = Vector2(1, 1)
+shader_parameter/alpha_mult = 1.0
+
+[sub_resource type="BoxMesh" id="BoxMesh_arc"]
+material = SubResource("ShaderMaterial_arc")
+size = Vector3(0.3, 0.3, 1)
+
+[node name="ArcBounce" type="Node3D" unique_id=262320306]
+script = ExtResource("1_ab")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=2138838193]
+mesh = SubResource("BoxMesh_arc")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=1527477436]
+light_color = Color(0.3, 0.9, 1, 1)
+light_energy = 2.0
+omni_range = 4.0

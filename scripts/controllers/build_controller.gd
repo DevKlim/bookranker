@@ -19,12 +19,22 @@ func update(mouse_world_pos: Vector3) -> void:
 		if not main.is_mouse_over_ui():
 			var cell = BuildManager.get_grid_cell(mouse_world_pos)
 			var current_coord = Vector2i(cell.x, cell.z)
+			
+			var cd_ms = main.build_cooldown_ms
+			if BuildManager.selected_buildable and "build_cooldown" in BuildManager.selected_buildable:
+				var b_cd = BuildManager.selected_buildable.build_cooldown
+				if b_cd > cd_ms: cd_ms = int(b_cd)
+				
+			var current_time = Time.get_ticks_msec()
+			var time_ok = (current_time - _last_build_time >= cd_ms)
+			var global_time_ok = (current_time - _last_build_time >= main.build_cooldown_ms)
+			var moved_tile = (current_coord != _last_build_coord)
+
 			if Input.is_action_just_pressed("build_place"):
-				_perform_build(mouse_world_pos, current_coord)
+				if time_ok:
+					_perform_build(mouse_world_pos, current_coord)
 			elif Input.is_action_pressed("build_place"):
-				var cooldown_ok = (Time.get_ticks_msec() - _last_build_time > main.build_cooldown_ms)
-				var moved_tile = (current_coord != _last_build_coord)
-				if cooldown_ok or moved_tile:
+				if moved_tile and global_time_ok:
 					_perform_build(mouse_world_pos, current_coord)
 	else:
 		_clear_delete_highlight()
@@ -32,6 +42,7 @@ func update(mouse_world_pos: Vector3) -> void:
 	_update_arrow_indicator()
 
 func _perform_build(pos: Vector3, coord: Vector2i) -> void:
+	if not BuildManager.can_build_at(pos): return
 	_last_build_time = Time.get_ticks_msec()
 	_last_build_coord = coord
 	BuildManager.place_buildable(pos)
@@ -77,6 +88,7 @@ func update_build_preview(world_pos: Vector3):
 	var tile_pos = LaneManager.tile_to_world(Vector2i(cell.x, cell.z))
 	var layer_name = "building"
 	if buildable.layer == BuildableResource.BuildLayer.WIRING: layer_name = "wire"
+	elif buildable.layer == BuildableResource.BuildLayer.ADDON: layer_name = "addon"
 	var layer_offset = LaneManager.get_layer_offset(layer_name)
 	var final_pos = tile_pos + layer_offset
 	var display_offset_3d = Vector3(buildable.display_offset.x, buildable.display_offset.y, 0)
@@ -157,7 +169,7 @@ func _update_arrow_indicator() -> void:
 	
 	if BuildManager.is_building and main.build_preview_container.visible and BuildManager.selected_buildable:
 		if not main.build_preview_container.is_inside_tree(): return
-		if BuildManager.selected_buildable.layer == BuildableResource.BuildLayer.MECH:
+		if BuildManager.selected_buildable.layer in [BuildableResource.BuildLayer.MECH, BuildableResource.BuildLayer.ADDON]:
 			is_preview_mode = true
 			pivot_world_pos = main.build_preview_container.global_position
 			var vo = BuildManager.selected_buildable.display_offset

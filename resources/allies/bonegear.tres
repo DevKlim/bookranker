@@ -7,8 +7,9 @@
 script = ExtResource("2_hvqv4")
 ally_name = "Bonegear"
 icon = ExtResource("1_lkgge")
-health = 30.0
+max_health = 30.0
 speed = 8.0
+space = 30.0
 inventory_slots = 5
 respawns_count = 1
 respawns_cooldown = 10.0

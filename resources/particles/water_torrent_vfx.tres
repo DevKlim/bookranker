@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ParticleResource" format=3 uid="uid://dy33x46uqwmt1"]
+
+[ext_resource type="PackedScene" uid="uid://c7i45nwmry784" path="res://scenes/particles/water_torrent_vfx.tscn" id="1_lq5hu"]
+[ext_resource type="Script" uid="uid://cx7aidq5y2yns" path="res://scripts/resources/particle_resource.gd" id="2_tiioe"]
+
+[resource]
+script = ExtResource("2_tiioe")
+id = "water_torrent_vfx"
+scene = ExtResource("1_lq5hu")

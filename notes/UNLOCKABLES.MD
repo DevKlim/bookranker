@@ -40,10 +40,10 @@ Types of unlockables:
 ### Crayon Cuisine
 - Rarity: CPU (Common).
 - Type: Core (HDD)
-- Unlock: Craft 50 items using elemental pellets.
+- Unlock: Craft 50 items using elemental chalk.
 - Get: Shop / Drops.
 - Cost: 4b | Sell: 2b
-- Effect: All elemental pellets in recipes will require half as much (rounded down).
+- Effect: All elemental chalk in recipes will require half as much (rounded down).
 
 ### Coolant
 - Type: Building (Disk)

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://cggotrr211850"]
+
+[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="1_c3a0t"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="2_8wucf"]
+
+[resource]
+script = ExtResource("2_8wucf")
+item_name = "Prism"
+icon = ExtResource("1_c3a0t")
+equipment_type = 5
+rarity = "A"
+item_category = "Mod: Building"
+modifiers = {
+"cost": 2.0,
+"effects": {
+"lux_scaling": 1.0
+},
+"permanent": false,
+"type": "building"
+}

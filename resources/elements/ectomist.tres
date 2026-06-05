@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://cxecto00000"]
+
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_ecto"]
+
+[resource]
+script = ExtResource("1_ecto")
+element_name = "Ectomist"
+color = Color(0.48235294, 0.40784314, 0.93333334, 1)
+duration = 8.0

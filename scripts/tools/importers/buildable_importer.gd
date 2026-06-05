@@ -16,7 +16,7 @@ func import_buildables(list: Array, _category: String) -> void:
 		var expected_scene_path = SCENE_BUILDABLES_PATH + str(entry.get("id")) + ".tscn"
 		
 		# Always generate if structure, visuals or template exists.
-		if not only_update_resources and (entry.has("visuals") or entry.has("structure") or entry.has("template")):
+		if not only_update_resources and (entry.has("visuals") or entry.has("structure") or entry.has("template") or entry.has("logic")):
 			new_scene_path = expected_scene_path
 			_generate_building_scene(entry, new_scene_path)
 		elif ResourceLoader.exists(expected_scene_path):
@@ -27,7 +27,9 @@ func import_buildables(list: Array, _category: String) -> void:
 		res.description = str(entry.get("description", ""))
 		
 		var tex_path = ""
-		if entry.has("structure") and not entry["structure"].is_empty():
+		if entry.has("icon"):
+			tex_path = entry["icon"]
+		elif entry.has("structure") and not entry["structure"].is_empty():
 			tex_path = entry["structure"][0].get("texture", "")
 		elif entry.has("texture"): tex_path = entry["texture"]
 		elif entry.has("visuals") and entry["visuals"].has("texture"): tex_path = entry["visuals"]["texture"]
@@ -55,26 +57,63 @@ func import_buildables(list: Array, _category: String) -> void:
 			res.width = max(1, int(w_px / 32))
 			res.height = max(1, int(h_px / 32))
 			
-		if entry.has("logic") and entry["logic"] is Dictionary:
-			res.has_input = entry["logic"].get("has_input", false)
-			res.has_output = entry["logic"].get("has_output", false)
-			var io_config = entry["logic"].get("io_config", {})
+		var logic = entry.get("logic", {})
+		if not logic.is_empty():
+			res.has_input = logic.get("has_input", false)
+			res.has_output = logic.get("has_output", false)
+			var io_config = logic.get("io_config", {})
 			res.default_input_mask = _parse_io_mask(io_config.get("input",["all"]))
 			res.default_output_mask = _parse_io_mask(io_config.get("output", ["all"]))
+			
+			res.max_health = float(logic.get("max_health", logic.get("health", 100.0)))
+			res.security = float(logic.get("security", 0.0))
+			res.max_energy = float(logic.get("max_energy", 50.0))
+			res.power_consumption = float(logic.get("power_consumption", logic.get("power_cost", 5.0)))
+			res.speed = float(logic.get("speed", 5.0))
+			res.compute = float(logic.get("compute", 1.0))
+			res.networking = float(logic.get("networking", 0.0))
+			res.luck_stat = float(logic.get("luck_stat", 0.0))
+			res.attack_damage = float(logic.get("attack_damage", 0.0))
+			res.process_speed = float(logic.get("process_speed", logic.get("attack_speed", 1.0)))
+			res.defense = float(logic.get("defense", 0.0))
+			res.firewall = float(logic.get("firewall", logic.get("magical_defense", 0.0)))
+			res.space = float(logic.get("space", logic.get("weight", 10.0)))
+			res.scale = float(logic.get("scale", logic.get("size", 1.0)))
+			res.ping = float(logic.get("ping", 1.0))
+			res.malware = float(logic.get("malware", 0.0))
 		
 		res.display_offset = Vector2.ZERO 
 		if new_scene_path != "":
 			res.scene = ResourceLoader.load(new_scene_path, "", ResourceLoader.CACHE_MODE_REPLACE)
 			
 		_apply_formulas_and_weights(res, entry)
-		
+
+		res.set("rarity", str(entry.get("rarity", "C")))
+		if entry.has("category"):
+			res.set("build_category", str(entry["category"]))
+		else:
+			if logic.get("shooting", false) or logic.has("attack_config"): res.set("build_category", "Building: Offense")
+			elif logic.get("defense", 0.0) > 0 or logic.get("max_health", 0.0) > 100: res.set("build_category", "Building: Defense")
+			elif logic.get("processing", false): res.set("build_category", "Building: Assembly")
+			elif logic.get("has_output", false): res.set("build_category", "Building: Production")
+			else: res.set("build_category", "Building: Support")
+
+		if entry.has("tooltip_overrides") and entry["tooltip_overrides"] is Dictionary:
+			res.custom_tooltip_labels = entry["tooltip_overrides"]
+		else:
+			res.custom_tooltip_labels = {}
+
 		ResourceSaver.save(res, path)
 
 func _generate_building_scene(data: Dictionary, save_path: String) -> void:
 	var inst = StaticBody3D.new()
 	inst.name = str(data.get("name", "GeneratedBuilding"))
 	var template_path = data.get("template")
-	if template_path and ResourceLoader.exists(template_path):
+	var logic = data.get("logic", {})
+	
+	if logic.has("script_path") and ResourceLoader.exists(logic["script_path"]):
+		inst.set_script(load(logic["script_path"]))
+	elif template_path and ResourceLoader.exists(template_path):
 		var temp_res = load(template_path)
 		var temp_inst = temp_res.instantiate()
 		inst.set_script(temp_inst.get_script()) 
@@ -83,7 +122,6 @@ func _generate_building_scene(data: Dictionary, save_path: String) -> void:
 		inst.set_script(load("res://scripts/entities/base_building.gd"))
 	
 	var visual_parent = inst
-	var logic = data.get("logic", {})
 	if logic.get("rotates", false):
 		var rot = Node3D.new()
 		rot.name = "Rotatable"
@@ -211,17 +249,18 @@ func _generate_building_scene(data: Dictionary, save_path: String) -> void:
 	_add_component(inst, COMP_ELEMENTAL, "ElementalComponent")
 	
 	_apply_logic_params(inst, data)
-	if logic.has("power_cost"):
-		_apply_param(inst, "power_consumption", float(logic["power_cost"]))
-	if logic.has("health"):
-		_apply_param(inst, "max_health", float(logic["health"]))
+	
+	for stat in["power_consumption", "max_health", "speed", "security", "attack_damage", "defense", "ping", "malware", "compute", "networking", "luck_stat", "process_speed", "firewall", "space", "entity_scale"]:
+		if logic.has(stat):
+			_apply_param(inst, stat, float(logic[stat]))
+	
 	if logic.has("stats"):
 		_apply_param(inst, "stats", logic["stats"])
 		
 	if logic.has("io_config"):
 		var io = logic["io_config"]
-		var i_mask = _parse_io_mask(io.get("input", ["all"]))
-		var o_mask = _parse_io_mask(io.get("output", ["all"]))
+		var i_mask = _parse_io_mask(io.get("input",["all"]))
+		var o_mask = _parse_io_mask(io.get("output",["all"]))
 		_apply_param(inst, "default_input_mask", i_mask)
 		_apply_param(inst, "default_output_mask", o_mask)
 	_save_scene(inst, save_path)

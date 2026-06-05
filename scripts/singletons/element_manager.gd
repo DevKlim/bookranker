@@ -1,11 +1,11 @@
 extends Node
 
 ## Manages elemental reactions and application logic.
-## Handles Fuse (Cleanse + AoE), Conduct (Lightning Rod), and other complex reactions.
+## Fully data-driven Reaction System guided dynamically via elements.json imports.
 
 var elements: Dictionary = {}
 
-# Spatial Registry for optimization: { "element_id": { Vector2i: [Node] } }
+# Spatial Registry for optimization: { "element_id": { Vector2i:[Node] } }
 var status_registry: Dictionary = {} 
 # Global Count for "Is this element active anywhere?": { "element_id": int }
 var global_element_counts: Dictionary = {}
@@ -29,6 +29,17 @@ func _load_elements_cache() -> void:
 
 func get_element(element_name: String) -> ElementResource:
 	return elements.get(element_name.to_lower(), null)
+
+func get_reaction_result(id_a: String, id_b: String) -> String:
+	var res_a = get_element(id_a)
+	if res_a and res_a.reaction_rules.has(id_b):
+		return res_a.reaction_rules[id_b]
+	
+	var res_b = get_element(id_b)
+	if res_b and res_b.reaction_rules.has(id_a):
+		return res_b.reaction_rules[id_a]
+			
+	return ""
 
 ## --- GLOBAL TRACKING API ---
 
@@ -62,10 +73,8 @@ func unregister_spatial_status(id: String, entity: Node, tile: Vector2i) -> void
 	
 	if entity in status_registry[id][tile]:
 		status_registry[id][tile].erase(entity)
-		# Clean up empty tiles
 		if status_registry[id][tile].is_empty():
 			status_registry[id].erase(tile)
-			# Clean up empty IDs (OPTIMIZATION: Allows O(1) check if element exists spatially)
 			if status_registry[id].is_empty():
 				status_registry.erase(id)
 
@@ -78,6 +87,9 @@ func update_spatial_status_position(id: String, entity: Node, old_tile: Vector2i
 func apply_element(target: Node, element: ElementResource, source_attacker: Node = null, damage_snapshot: float = 0.0, units: int = 1, ignore_cd: bool = false) -> void:
 	if not is_instance_valid(target) or not element: return
 	
+	if target.has_node("AbyssShell") and element.element_name.to_lower() != "abyss" and element.element_name.to_lower() != "asphyxiate":
+		target = target.get_node("AbyssShell")
+		
 	var comp = null
 	if "elemental_component" in target and target.elemental_component:
 		comp = target.elemental_component
@@ -100,6 +112,11 @@ func apply_element(target: Node, element: ElementResource, source_attacker: Node
 			final_cd = fh.evaluate(element, element.cooldown_equation, vars, element.application_cooldown)
 
 	comp.set_cooldown(incoming_id, final_cd)
+
+	# Initialize dynamic catalyst extension step if this is a fresh application
+	# This ensures any base element sets its initial extension scalar to its own duration
+	if not comp.has_element(incoming_id):
+		target.set_meta(incoming_id + "_ext_step", element.duration)
 	
 	var reaction_occurred = false
 	var incoming_units_for_reaction = units 
@@ -112,56 +129,141 @@ func apply_element(target: Node, element: ElementResource, source_attacker: Node
 			incoming_units_for_reaction = int(fh.evaluate(element, element.unit_equation, vars, float(units)))
 			
 	var current_statuses = comp.get_active_element_names().duplicate()
+	var aqua_units_before = 0
+	if comp.has_element("aqua"):
+		aqua_units_before = comp.get_active_data("aqua").units
 	
 	for active_id in current_statuses:
-		var result_id = ""
-		if element.reaction_rules.has(active_id):
-			result_id = element.reaction_rules[active_id]
-		
-		if result_id == "":
-			if not comp.has_element(active_id): continue
-			var active_res = comp.get_active_data(active_id).resource
-			if active_res.reaction_rules.has(incoming_id):
-				result_id = active_res.reaction_rules[incoming_id]
+		var result_id = get_reaction_result(active_id, incoming_id)
 		
 		if result_id != "":
+			var script_path = "res://scripts/elements/reactions/%s.gd" % result_id
+			var reaction_script = load(script_path) if ResourceLoader.exists(script_path) else null
+			
 			var active_units = comp.get_active_data(active_id).units
 			var reaction_strength = min(active_units, incoming_units_for_reaction)
 			
-			_trigger_reaction(target, active_id, incoming_id, result_id, source_attacker, damage_snapshot)
+			var active_consume = reaction_strength
+			var incoming_consume = reaction_strength
 			
-			comp.consume_units(active_id, reaction_strength)
+			if reaction_script and reaction_script.has_method("get_catalysts"):
+				var catalysts = reaction_script.get_catalysts()
+				if active_id in catalysts: active_consume = 0
+				if incoming_id in catalysts: incoming_consume = 0
+				
+				# Generic Data-Driven Duration Extension:
+				# Any element identified as a catalyst in this specific reaction gets extended,
+				# and sets up its next extension to be halved.
+				for catalyst in catalysts:
+					if comp.has_element(catalyst):
+						var step = target.get_meta(catalyst + "_ext_step", 8.0)
+						comp.active_statuses[catalyst].duration += step
+						target.set_meta(catalyst + "_ext_step", step * 0.5)
+			
+			_trigger_reaction(target, active_id, incoming_id, result_id, source_attacker, damage_snapshot, reaction_strength, aqua_units_before)
+			
+			if comp.has_method("play_reaction_animation"):
+				comp.play_reaction_animation(active_id, incoming_id, result_id)
+			
+			comp.consume_units(active_id, active_consume)
+			
 			reaction_occurred = true
 			
 			var result_res = get_element(result_id)
 			if result_res:
 				apply_element(target, result_res, source_attacker, damage_snapshot, reaction_strength, true)
 			
-			incoming_units_for_reaction -= reaction_strength
+			incoming_units_for_reaction -= incoming_consume
 			if incoming_units_for_reaction <= 0:
 				break
+				
+	if reaction_occurred and get_tree().root.has_node("GameManager"):
+		var gm = get_tree().root.get_node("GameManager")
+		if gm.get("vfx_manager"):
+			gm.vfx_manager.play_vfx("y2k_reaction", target.global_position)
 	
-	if incoming_units_for_reaction > 0 and not reaction_occurred:
-		# Check for direct application of immediate-effect elements (like Fuse from a Bomb)
-		if incoming_id == "fuse":
-			_handle_fuse_reaction(target, source_attacker)
-		else:
-			comp.add_or_refresh_status(element, units)
+	if incoming_units_for_reaction > 0:
+		var script_path = "res://scripts/elements/reactions/%s.gd" % incoming_id
+		var handled_direct = false
+		if ResourceLoader.exists(script_path):
+			var direct_script = load(script_path)
+			if direct_script and direct_script.has_method("apply_direct"):
+				var arg_count = 3
+				for m in direct_script.get_script_method_list():
+					if m.name == "apply_direct":
+						arg_count = m.args.size()
+						break
+						
+				if arg_count >= 4:
+					handled_direct = direct_script.apply_direct(target, source_attacker, incoming_units_for_reaction, damage_snapshot)
+				else:
+					handled_direct = direct_script.apply_direct(target, source_attacker, incoming_units_for_reaction)
+				
+		if not handled_direct:
+			var is_aura = true
+			if element.duration <= 0.1:
+				is_aura = false
+			if is_aura:
+				comp.add_or_refresh_status(element, incoming_units_for_reaction)
+			
+	# Delay-propagate elements from host to proxy 1 second later
+	if target.has_node("UndineComponent") and target.name != "UndineComponent":
+		var undine = target.get_node("UndineComponent")
+		var u_ref = undine
+		var e_ref = element
+		var s_ref = source_attacker
+		var snap = damage_snapshot
+		var u_val = units
+		get_tree().create_timer(1.0).timeout.connect(func():
+			if is_instance_valid(u_ref):
+				var em = get_tree().root.get_node_or_null("ElementManager")
+				if em:
+					em.apply_element(u_ref, e_ref, s_ref, snap, u_val, true)
+		)
 
-func _trigger_reaction(target: Node, _id_a: String, _id_b: String, result_id: String, source: Node, _dmg: float) -> void:
+func _trigger_reaction(target: Node, id_a: String, id_b: String, result_id: String, source: Node, dmg: float, reaction_units: int, aqua_units_before: int) -> void:
+	if target is AbyssShellComponent:
+		target.on_reaction()
+	elif target.has_node("AbyssShell"):
+		target.get_node("AbyssShell").on_reaction()
+		
+	if target is UndineComponent:
+		target.on_reaction()
+	elif target.has_node("UndineComponent"):
+		target.get_node("UndineComponent").on_reaction()
+
 	var res_element = get_element(result_id)
-	var reaction_dmg = _dmg
+	var reaction_dmg = dmg
 	if ClassDB.class_exists("FormulaHelper") or ResourceLoader.exists("res://scripts/utils/formula_helper.gd"):
 		var fh = load("res://scripts/utils/formula_helper.gd")
 		if fh and res_element and res_element.reaction_damage_equation != "":
-			var vars = {"base_damage": _dmg}
-			reaction_dmg = fh.evaluate(res_element, res_element.reaction_damage_equation, vars, _dmg)
+			var vars = {"base_damage": dmg}
+			reaction_dmg = fh.evaluate(res_element, res_element.reaction_damage_equation, vars, dmg)
 			
-	match result_id:
-		"fuse": _handle_fuse_reaction(target, source, reaction_dmg)
-		"extinguish": _handle_extinguish(target)
-		"ground": _handle_ground(target)
-		"tailwind": _handle_tailwind(target, _id_a, _id_b, source, reaction_dmg) 
+	var ctx = {
+		"id_a": id_a,
+		"id_b": id_b,
+		"damage": dmg,
+		"reaction_damage": reaction_dmg,
+		"reaction_units": reaction_units,
+		"aqua_units_before": aqua_units_before
+	}
+	
+	var script_path = "res://scripts/elements/reactions/%s.gd" % result_id
+	if ResourceLoader.exists(script_path):
+		var reaction_script = load(script_path)
+		if reaction_script and reaction_script.has_method("execute"):
+			reaction_script.execute(target, source, ctx)
+		elif reaction_script and reaction_script.has_method("apply_direct"):
+			var arg_count = 3
+			for m in reaction_script.get_script_method_list():
+				if m.name == "apply_direct":
+					arg_count = m.args.size()
+					break
+			if arg_count >= 4:
+				reaction_script.apply_direct(target, source, reaction_units, reaction_dmg)
+			else:
+				reaction_script.apply_direct(target, source, reaction_units)
 
 ## --- DAMAGE HOOK ---
 
@@ -173,14 +275,8 @@ func on_damage_dealt(victim: Node, amount: float, source: Node) -> void:
 	else: victim_ec = victim.get_node_or_null("ElementalComponent")
 	
 	if not victim_ec: return
-	
-	# 1. Ripple Check (Uses Generic Chain Logic)
-	# Config: Range 2.0, Dmg 3.0, Max 4 bounces
-	# Rule: exclude_previous=true (Standard Ripple), exclude_visited=false (Can revisit old targets)
-	if victim_ec.has_element("ripple"):
-		apply_chain_damage(victim, 3.0, source, 2.0, 4, true, false)
 
-	# 2. Conduct Check (OPTIMIZED)
+	# Conduct Check
 	if status_registry.has("conduct"):
 		var victim_tile = LaneManager.world_to_tile(victim.global_position)
 		var conduct_neighbors = _get_registered_neighbors(victim_tile, "conduct")
@@ -190,48 +286,29 @@ func on_damage_dealt(victim: Node, amount: float, source: Node) -> void:
 				if neighbor.has_node("HealthComponent"):
 					neighbor.get_node("HealthComponent").take_damage_no_conduct(amount * 0.2, source)
 
-## --- INTERNAL HANDLERS ---
+## --- PUBLIC UTILITIES ---
 
-## Modular function for chain/bounce reactions.
-## @param start_node: The entity where the chain starts.
-## @param damage: Fixed damage per bounce.
-## @param source: The entity credited with damage.
-## @param bounce_range: Search radius for the next target.
-## @param max_bounces: Maximum number of hops.
-## @param exclude_previous: If true, prevents bouncing immediately back to the node that just hit (A->B->A blocked).
-## @param exclude_visited: If true, a node can only be hit once in the entire chain.
 func apply_chain_damage(start_node: Node, damage: float, source: Node, bounce_range: float, max_bounces: int, exclude_previous: bool = true, exclude_visited: bool = false) -> void:
 	var current = start_node
 	var previous = null
-	var visited = {} # Used only if exclude_visited is true
+	var visited = {} 
 	
 	if exclude_visited:
 		visited[start_node] = true
 	
 	for i in range(max_bounces):
-		# Find neighbors
 		var neighbors = _get_neighbors_in_radius(current, bounce_range)
-		
-		# Filter valid next targets
 		var candidates =[]
 		for n in neighbors:
 			if not is_instance_valid(n): continue
 			if n == current: continue
-			
-			# Logic Rule: Bounce Back Check
-			if exclude_previous and n == previous: 
-				continue 
-			
-			# Logic Rule: Unique Targets Check
-			if exclude_visited and visited.has(n):
-				continue
-				
+			if exclude_previous and n == previous: continue 
+			if exclude_visited and visited.has(n): continue
 			candidates.append(n)
 			
 		if candidates.is_empty():
 			break
 			
-		# Sort by distance (closest first) to simulate arcing/jumping
 		candidates.sort_custom(func(a, b):
 			return current.global_position.distance_squared_to(a.global_position) < \
 				   current.global_position.distance_squared_to(b.global_position)
@@ -239,34 +316,21 @@ func apply_chain_damage(start_node: Node, damage: float, source: Node, bounce_ra
 		
 		var next_target = candidates[0]
 		
-		# Deal Fixed Damage
 		if next_target.has_node("HealthComponent"):
-			next_target.get_node("HealthComponent").take_damage(damage, null, source)
-		elif next_target.has_method("take_damage"):
-			next_target.take_damage(damage, null, source)
+			next_target.get_node("HealthComponent").take_damage_no_conduct(damage, source)
+		elif next_target.has_method("take_damage_no_conduct"):
+			next_target.take_damage_no_conduct(damage, source)
 		
-		# Update State
 		if exclude_visited:
 			visited[next_target] = true
 			
 		previous = current
 		current = next_target
 
-func _handle_fuse_reaction(target: Node, source: Node, reaction_dmg: float = 50.0) -> void:
-	# Cleanse statuses for Fuse
-	var ec = target.get_node_or_null("ElementalComponent")
-	if ec: ec.remove_all_statuses()
-	
-	# Apply standard Fuse explosion (50 damage, 2.5 radius, 300 impulse) using generic AoE
-	apply_aoe_damage(target, 2.5, max(50.0, reaction_dmg), source, false, 300.0)
-
-## New Generic AoE Function for modular reaction damage
 func apply_aoe_damage(center_node: Node, radius: float, damage: float, source: Node, falloff: bool = false, impulse: float = 0.0) -> void:
 	var center_pos = center_node.global_position
-	# Fetch neighbors using existing optimized grid lookup
 	var victims = _get_neighbors_in_radius(center_node, radius)
 	
-	# Ensure the center target is included if it exists (neighbor lookup might skip self)
 	if is_instance_valid(center_node) and not victims.has(center_node):
 		victims.append(center_node)
 	
@@ -287,43 +351,11 @@ func apply_aoe_damage(center_node: Node, radius: float, damage: float, source: N
 		
 		if impulse > 0:
 			var dir = (v.global_position - center_pos).normalized()
-			dir.y = 0.5 # Add upward pop
+			dir.y = 0.5 
 			if v.has_method("apply_impulse"):
 				v.apply_impulse(dir.normalized() * impulse)
 			elif v.has_node("EnemyMovementComponent"):
 				v.get_node("EnemyMovementComponent").apply_displacement(dir.normalized() * impulse)
-
-func _handle_extinguish(target: Node) -> void:
-	var ec = target.get_node_or_null("ElementalComponent")
-	if ec:
-		ec.remove_status("igni")
-		ec.remove_status("aqua")
-
-func _handle_ground(target: Node) -> void:
-	var ec = target.get_node_or_null("ElementalComponent")
-	if ec: ec.remove_status("volt")
-
-func _handle_tailwind(target: Node, id1: String, id2: String, source: Node, reaction_dmg: float = 5.0) -> void:
-	var ec = target.get_node_or_null("ElementalComponent")
-	if ec: ec.remove_status("aero")
-	
-	var primitive_id = id1 if id1 != "aero" else id2
-	if primitive_id == "aero": return
-	
-	var targets = get_closest_enemies_behind(target, 1)
-	
-	if not targets.is_empty():
-		var primitive_res = get_element(primitive_id)
-		for t in targets:
-			if not is_instance_valid(t): continue
-			if primitive_res:
-				apply_element(t, primitive_res, source, 0.0, 1)
-			if t.has_method("take_damage"):
-				t.take_damage(reaction_dmg, null, source)
-			elif t.has_node("HealthComponent"):
-				t.get_node("HealthComponent").take_damage(reaction_dmg, null, source)
-
-## --- PUBLIC UTILITIES ---
 
 func get_closest_enemies_behind(reference_entity: Node, limit: int = 1) -> Array:
 	if not is_instance_valid(reference_entity): return[]

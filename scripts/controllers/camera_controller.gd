@@ -50,9 +50,30 @@ func handle_camera_movement(delta: float) -> void:
 	elif camera_locked and is_instance_valid(main.player):
 		current_focus = current_focus.lerp(main.player.global_position, delta * 5.0)
 
+	# Constrain camera focus to dynamically scale with the grid bounds + padding
+	current_focus = _clamp_focus_to_grid(current_focus)
+
 	# Apply final position based on currently active mode
 	var target_cam_pos = current_focus + (iso_offset if isometric_view else persp_offset)
 	main.camera.global_position = main.camera.global_position.lerp(target_cam_pos, delta * 15.0)
+
+func _clamp_focus_to_grid(focus: Vector3) -> Vector3:
+	if not is_instance_valid(LaneManager): return focus
+	
+	var padding = 10.0 * LaneManager.GRID_SCALE
+	
+	# X Bounds (Depth) -> Map generates from -50 up to LANE_LENGTH
+	var min_x = (-5.0 + LaneManager.generation_offset.x) * LaneManager.GRID_SCALE - padding
+	var max_x = (LaneManager.LANE_LENGTH + LaneManager.generation_offset.x) * LaneManager.GRID_SCALE + padding
+	
+	# Z Bounds (Width / Lanes) -> From origin lane up to num_lanes
+	var min_z = LaneManager.generation_offset.y * LaneManager.GRID_SCALE - padding
+	var max_z = (LaneManager.num_lanes + LaneManager.generation_offset.y) * LaneManager.GRID_SCALE + padding
+	
+	focus.x = clamp(focus.x, min_x, max_x)
+	focus.z = clamp(focus.z, min_z, max_z)
+	
+	return focus
 
 func handle_zoom(event: InputEventMouseButton) -> void:
 	if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:

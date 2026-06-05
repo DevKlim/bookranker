@@ -1,0 +1,56 @@
+[gd_scene format=3 uid="uid://cxorbs000kits"][ext_resource type="Script" uid="uid://kitsu1" path="res://scripts/entities/particles/kitsunebi_orbs.gd" id="1_kt"][ext_resource type="Texture2D" uid="uid://bqmjdq3r2r4u3" path="res://assets/textures/particles/flame/flame_01_a.png" id="2_fox"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_kt"]
+radius = 0.5[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kt"]
+transparency = 1
+blend_mode = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_color = Color(0, 0.8, 1, 1)
+albedo_texture = ExtResource("2_fox")
+billboard_mode = 3
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="QuadMesh" id="QuadMesh_kt"]
+material = SubResource("StandardMaterial3D_kt")[sub_resource type="Curve" id="Curve_kt"]
+_data =[Vector2(0, 0.2), 0.0, 0.0, 0, 0, Vector2(0.5, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3[sub_resource type="CurveTexture" id="CurveTexture_kt"]
+curve = SubResource("Curve_kt")[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_kt"]
+direction = Vector3(0, 1, 0)
+spread = 20.0
+initial_velocity_min = 1.0
+initial_velocity_max = 2.0
+gravity = Vector3(0, 1, 0)
+scale_curve = SubResource("CurveTexture_kt")
+color = Color(0, 0.8, 1, 1)
+
+[node name="KitsunebiOrbs" type="Node3D"]
+script = ExtResource("1_kt")
+
+[node name="Orb1" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 1.0, 0)
+collision_layer = 0
+collision_mask = 2[node name="CollisionShape3D" type="CollisionShape3D" parent="Orb1"]
+shape = SubResource("SphereShape3D_kt")
+
+[node name="GPUParticles3D" type="GPUParticles3D" parent="Orb1"]
+amount = 20
+lifetime = 0.6
+process_material = SubResource("ParticleProcessMaterial_kt")
+draw_pass_1 = SubResource("QuadMesh_kt")[node name="OmniLight3D" type="OmniLight3D" parent="Orb1"]
+light_color = Color(0, 0.8, 1, 1)
+omni_range = 3.0
+
+[node name="Orb2" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 1.0, 0)
+collision_layer = 0
+collision_mask = 2[node name="CollisionShape3D" type="CollisionShape3D" parent="Orb2"]
+shape = SubResource("SphereShape3D_kt")[node name="GPUParticles3D" type="GPUParticles3D" parent="Orb2"]
+amount = 20
+lifetime = 0.6
+process_material = SubResource("ParticleProcessMaterial_kt")
+draw_pass_1 = SubResource("QuadMesh_kt")[node name="OmniLight3D" type="OmniLight3D" parent="Orb2"]
+light_color = Color(0, 0.8, 1, 1)
+omni_range = 3.0[connection signal="body_entered" from="Orb1" to="." method="_on_area_entered"][connection signal="body_entered" from="Orb2" to="." method="_on_area_entered"]

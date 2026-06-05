@@ -1,184 +1,328 @@
-[{        "id": "drill", "name": "Drill", "description": "Extracts resources from the ground.",
+[
+    {
+        "id": "drill", "name": "Drill", "description": "Extracts resources from the ground.", "rarity": "D",
+        "icon": "res://assets/icons/drill.png",
         "visuals": { "type": "sprite", "texture": "res://assets/buildables/drill.png", "width": 32, "height": 32, "animations": { "default": { "row": 0, "count": 4, "loop": true } } },
         "logic": { 
-            "power_cost": 10.0, "health": 10.0, 
+            "power_consumption": 5.0, "max_health": 10.0, 
             "inventory": { "slots": 1, "can_output": true, "can_receive": false }, "io_config": { "output":["back"] }, "processing": true, 
-            "stats": { "health_mult": 0.0, "attack_speed_mult": 0.0, "damage_mult": 0.0, "lux_stat": 0.0, "efficiency": 1.0, "speed_mult": 0.0 },
+            "process_speed": 1.0,
+            "stats": { "scale": 1.0, "health_mult": 0.0, "process_speed_mult": 0.0, "damage_mult": 0.0, "networking": 0.0, "compute": 1.0, "speed_mult": 0.0 },
             "formulas": {
-                "health_equation": "base_health * max(0.1, 1.0 + health_mult)",
-                "power_usage_equation": "power_consumption / max(0.1, efficiency)",
-                "processing_speed_equation": "base_speed * max(0.1, 1.0 + attack_speed_mult)"
+                "max_health_equation": "base_max_health * max(0.1, 1.0 + health_mult)",
+                "power_usage_equation": "power_consumption / max(0.1, compute)",
+                "process_speed_equation": "base_process_speed * max(0.1, 1.0 + process_speed_mult)"
             },
-            "stat_weights": { "health_mult": 1.0, "attack_speed_mult": 1.0, "efficiency": 1.0 }
+            "stat_weights": { "health_mult": 1.0, "process_speed_mult": 1.0, "compute": 1.0 }
         }
     },
     {
-        "id": "conveyor", "name": "Conveyor", "description": "Moves items.",
+        "id": "conveyor", "name": "Conveyor", "description": "Moves items.", "rarity": "D",
+        "icon": "res://assets/icons/conveyor.png",
         "visuals": { "type": "sprite", "texture": "res://assets/buildables/conveyor.png", "width": 32, "height": 32, "animations": { "default": { "row": 0, "count": 16, "loop": true } } },
         "logic": { 
-            "power_cost": 1.0, "health": 5.0, 
-            "inventory": { "slots": 1, "can_output": true, "can_receive": true }, "io_config": { "input": ["back"], "output":["front"] }, 
-            "stats": { "health_mult": 0.0, "attack_speed_mult": 0.0, "damage_mult": 0.0, "lux_stat": 0.0, "efficiency": 1.0, "speed_mult": 0.0 },
+            "power_consumption": 1.0, "max_health": 5.0, 
+            "inventory": { "slots": 1, "can_output": true, "can_receive": true }, "io_config": { "input":["back"], "output":["front"] }, 
+            "speed": 2.0,
+            "stats": { "scale": 1.0, "health_mult": 0.0, "process_speed_mult": 0.0, "damage_mult": 0.0, "networking": 0.0, "compute": 1.0, "speed_mult": 0.0 },
             "formulas": {
-                "health_equation": "base_health * max(0.1, 1.0 + health_mult)",
-                "power_usage_equation": "power_consumption / max(0.1, efficiency)"
+                "max_health_equation": "base_max_health * max(0.1, 1.0 + health_mult)",
+                "power_usage_equation": "power_consumption / max(0.1, compute)"
             },
-            "stat_weights": { "health_mult": 1.0, "efficiency": 1.0 }
+            "stat_weights": { "health_mult": 1.0, "compute": 1.0 }
         }
     },
     {
-        "id": "burnace", "name": "Burnace", "description": "Smelts ores into Alloys.",
+        "id": "burnace", "name": "Burnace", "description": "Smelts ores into Alloys.", "rarity": "C",
+        "icon": "res://assets/icons/burnace.png",
         "visuals": { "type": "sprite", "texture": "res://assets/buildables/burnace.png", "width": 32, "height": 48, "animations": { "default": { "row": 0, "count": 4, "loop": true } } },
         "logic": { 
-            "power_cost": 20.0, "health": 20.0, 
+            "power_consumption": 5.0, "max_health": 20.0, 
             "inventory": { "slots": 3, "can_output": true, "can_receive": true }, "io_config": { "input":["left", "right", "back"], "output":["front"] }, "processing": true, 
-            "stats": { "health_mult": 0.0, "attack_speed_mult": 0.0, "damage_mult": 0.0, "lux_stat": 0.0, "efficiency": 1.0, "speed_mult": 0.0 },
+            "process_speed": 1.0,
+            "stats": { "scale": 1.0, "health_mult": 0.0, "process_speed_mult": 0.0, "damage_mult": 0.0, "networking": 0.0, "compute": 1.0, "speed_mult": 0.0 },
             "formulas": {
-                "health_equation": "base_health * max(0.1, 1.0 + health_mult)",
-                "power_usage_equation": "power_consumption / max(0.1, efficiency)",
-                "processing_speed_equation": "base_speed * max(0.1, 1.0 + attack_speed_mult)"
+                "max_health_equation": "base_max_health * max(0.1, 1.0 + health_mult)",
+                "power_usage_equation": "power_consumption / max(0.1, compute)",
+                "process_speed_equation": "base_process_speed * max(0.1, 1.0 + process_speed_mult)"
             },
-            "stat_weights": { "health_mult": 1.0, "attack_speed_mult": 1.0, "efficiency": 1.0 }
+            "stat_weights": { "health_mult": 1.0, "process_speed_mult": 1.0, "compute": 1.0 }
         }
     },
     {
-        "id": "asourcer", "name": "Asourcer", "description": "Assembles components.",
+        "id": "asourcer", "name": "Asourcer", "description": "Assembles components.", "rarity": "C",
+        "icon": "res://assets/icons/asourcer.png",
         "visuals": { "type": "sprite", "texture": "res://assets/buildables/asourcer.png", "width": 48, "height": 48, "animations": { "default": { "row": 0, "count": 4, "loop": true } } },
         "grid": { "width": 2, "height": 2 },
         "logic": { 
-            "power_cost": 30.0, "health": 20.0, 
+            "power_consumption": 5.0, "max_health": 20.0, 
             "inventory": { "slots": 4, "can_output": true, "can_receive": true }, "io_config": { "input":["all"], "output": ["front"] }, "processing": true, 
-            "stats": { "health_mult": 0.0, "attack_speed_mult": 0.0, "damage_mult": 0.0, "lux_stat": 0.0, "efficiency": 1.0, "speed_mult": 0.0 },
+            "process_speed": 1.0,
+            "stats": { "scale": 1.0, "health_mult": 0.0, "process_speed_mult": 0.0, "damage_mult": 0.0, "networking": 0.0, "compute": 1.0, "speed_mult": 0.0 },
             "formulas": {
-                "health_equation": "base_health * max(0.1, 1.0 + health_mult)",
-                "power_usage_equation": "power_consumption / max(0.1, efficiency)",
-                "processing_speed_equation": "base_speed * max(0.1, 1.0 + attack_speed_mult)"
+                "max_health_equation": "base_max_health * max(0.1, 1.0 + health_mult)",
+                "power_usage_equation": "power_consumption / max(0.1, compute)",
+                "process_speed_equation": "base_process_speed * max(0.1, 1.0 + process_speed_mult)"
             },
-            "stat_weights": { "health_mult": 1.0, "attack_speed_mult": 1.0, "efficiency": 1.0 }
+            "stat_weights": { "health_mult": 1.0, "process_speed_mult": 1.0, "compute": 1.0 }
         }
     },
     {
-        "id": "turret", "name": "Turret", "description": "Defends against enemies.",
+        "id": "turret", "name": "Turret", "description": "Defends against enemies.", "rarity": "B",
+        "icon": "res://assets/icons/turret.png",
         "visuals": { "type": "sprite", "texture": "res://assets/buildables/turret.png", "width": 32, "height": 32, "animations": { "idle_up": { "row": 0, "count": 1 }, "shoot_up": { "row": 0, "count": 3 } } },
         "logic": { 
-            "power_cost": 15.0, "health": 20.0, 
+            "power_consumption": 5.0, "max_health": 20.0, 
             "inventory": { "slots": 1, "can_output": false, "can_receive": true }, "io_config": { "input":["back", "left", "right"], "output":["none"] }, "attack_config": "projectile_shot", "shooting": true, "targeting": true, "rotates": true, 
-            "stats": { "health_mult": 0.0, "attack_speed_mult": 0.0, "damage_mult": 0.0, "lux_stat": 10.0, "efficiency": 1.0, "speed_mult": 0.0 },
+            "attack_damage": 3.0, "process_speed": 1.0,
+            "stats": { "scale": 1.0, "health_mult": 0.0, "process_speed_mult": 0.0, "damage_mult": 0.0, "networking": 10.0, "compute": 1.0, "speed_mult": 0.0 },
             "formulas": {
-                "health_equation": "base_health * max(0.1, 1.0 + health_mult)",
-                "power_usage_equation": "power_consumption / max(0.1, efficiency)",
-                "processing_speed_equation": "base_speed * max(0.1, 1.0 + attack_speed_mult)"
+                "max_health_equation": "base_max_health * max(0.1, 1.0 + health_mult)",
+                "power_usage_equation": "power_consumption / max(0.1, compute)",
+                "process_speed_equation": "base_process_speed * max(0.1, 1.0 + process_speed_mult)"
             },
-            "stat_weights": { "health_mult": 1.0, "attack_speed_mult": 1.0, "efficiency": 1.0 }
+            "stat_weights": { "health_mult": 1.0, "process_speed_mult": 1.0, "compute": 1.0 }
         }
     },
     {
-        "id": "remover", "name": "Remover", "description": "Removes buildings.",
-        "visuals": { "texture": "res://icon.svg" },
-        "grid": { "layer": "tool" }
-    },
-    {
-        "id": "chalkboard", "name": "Chalkboard", "description": "Tier 1 Crafter.",
+        "id": "chalkboard", "name": "Chalkboard", "description": "Tier 1 Crafter.", "rarity": "F",
+        "icon": "res://assets/icons/chalkboard.png",
         "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32 },
         "logic": { 
-            "power_cost": 0.0, "health": 150.0, 
-            "inventory": { "slots": 4, "can_output": true, "can_receive": true }, "io_config": { "input":["all"], "output": ["front"] }, "processing": true,
+            "power_consumption": 0.0, "max_health": 150.0, 
+            "inventory": { "slots": 4, "can_output": true, "can_receive": true }, "io_config": { "input":["all"], "output":["front"] }, "processing": true,
+            "stats": { "scale": 1.0, "health_mult": 0.0, "process_speed_mult": 0.0 },
             "formulas": {
-                "health_equation": "base_health * max(0.1, 1.0 + health_mult)",
-                "processing_speed_equation": "base_speed * max(0.1, 1.0 + attack_speed_mult)"
+                "max_health_equation": "base_max_health * max(0.1, 1.0 + health_mult)",
+                "process_speed_equation": "base_process_speed * max(0.1, 1.0 + process_speed_mult)"
             },
-            "stat_weights": { "health_mult": 1.0, "attack_speed_mult": 1.0 }
+            "stat_weights": { "health_mult": 1.0, "process_speed_mult": 1.0 }
         }
     },
     {
-        "id": "cubby", "name": "Cubby", "description": "High-capacity storage unit.",
+        "id": "cubby", "name": "Cubby", "description": "High-capacity storage unit.", "rarity": "D",
+        "icon": "res://assets/icons/cubby.png",
         "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32 },
         "logic": { 
-            "power_cost": 0.0, "health": 100.0, 
+            "power_consumption": 0.0, "max_health": 100.0, 
             "inventory": { "slots": 10, "capacity": 100, "can_output": true, "can_receive": true }, "io_config": { "input": ["all"], "output":["front"] },
+            "stats": { "scale": 1.0, "health_mult": 0.0 },
             "formulas": {
-                "health_equation": "base_health * max(0.1, 1.0 + health_mult)"
+                "max_health_equation": "base_max_health * max(0.1, 1.0 + health_mult)"
             },
             "stat_weights": { "health_mult": 1.0 }
         }
     },
     {
-        "id": "printer", "name": "Printer", "description": "Generates Paper over time.",
+        "id": "backpack", "name": "backpack", "description": "Looting equipment", "rarity": "C",
         "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32 },
         "logic": { 
-            "power_cost": 15.0, "health": 20.0, 
+            "power_consumption": 0.0, "max_health": 5.0, 
+            "inventory": { "slots": 10, "capacity": 100, "can_output": true, "can_receive": true }, "io_config": { "input": ["all"], "output":["front"] },
+            "stats": { "scale": 1.0, "health_mult": 0.0 },
+            "formulas": {
+                "max_health_equation": "base_max_health * max(0.1, 1.0 + health_mult)"
+            },
+            "stat_weights": { "health_mult": 1.0 }
+        }
+    },
+    {
+        "id": "printer", "name": "Printer", "description": "Generates Paper over time.", "rarity": "C",
+        "icon": "res://assets/icons/printer.png",
+        "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32 },
+        "logic": { 
+            "power_consumption": 5.0, "max_health": 20.0, 
             "inventory": { "slots": 2, "can_output": true, "can_receive": true }, "io_config": { "input": ["back"], "output": ["front"] }, "processing": true,
+            "process_speed": 1.0,
+            "stats": { "scale": 1.0, "health_mult": 0.0, "process_speed_mult": 0.0, "compute": 1.0 },
             "formulas": {
-                "health_equation": "base_health * max(0.1, 1.0 + health_mult)",
-                "power_usage_equation": "power_consumption / max(0.1, efficiency)",
-                "processing_speed_equation": "base_speed * max(0.1, 1.0 + attack_speed_mult)"
+                "max_health_equation": "base_max_health * max(0.1, 1.0 + health_mult)",
+                "power_usage_equation": "power_consumption / max(0.1, compute)",
+                "process_speed_equation": "base_process_speed * max(0.1, 1.0 + process_speed_mult)"
             },
-            "stat_weights": { "health_mult": 1.0, "attack_speed_mult": 1.0, "efficiency": 1.0 }
+            "stat_weights": { "health_mult": 1.0, "process_speed_mult": 1.0, "compute": 1.0 }
         }
     },
     {
-        "id": "foldgami", "name": "Foldgami", "description": "Ammunition assembler.",
+        "id": "foldgami", "name": "Foldgami", "description": "Ammunition assembler.", "rarity": "B",
+        "icon": "res://assets/icons/foldgami.png",
         "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32 },
         "logic": { 
-            "power_cost": 5.0, "health": 20.0, 
-            "inventory": { "slots": 3, "can_output": true, "can_receive": true }, "io_config": { "input":["left", "right", "back"], "output": ["front"] }, "processing": true,
+            "power_consumption": 5.0, "max_health": 20.0, 
+            "inventory": { "slots": 3, "can_output": true, "can_receive": true }, "io_config": { "input":["left", "right", "back"], "output":["front"] }, "processing": true,
+            "process_speed": 1.0, "attack_damage": 2.0,
+            "stats": { "scale": 1.0, "health_mult": 0.0, "process_speed_mult": 0.0, "compute": 1.0, "networking": 0.0 },
             "formulas": {
-                "health_equation": "base_health * max(0.1, 1.0 + health_mult)",
-                "power_usage_equation": "power_consumption / max(0.1, efficiency)",
-                "processing_speed_equation": "base_speed * max(0.1, 1.0 + attack_speed_mult)"
+                "max_health_equation": "base_max_health * max(0.1, 1.0 + health_mult)",
+                "power_usage_equation": "power_consumption / max(0.1, compute)",
+                "process_speed_equation": "base_process_speed * max(0.1, 1.0 + process_speed_mult)",
+                "attack_damage_equation": "base_attack_damage + (networking * 1.0)"
             },
-            "stat_weights": { "health_mult": 1.0, "attack_speed_mult": 1.0, "efficiency": 1.0 }
+            "stat_weights": { "health_mult": 1.0, "process_speed_mult": 1.0, "compute": 1.0, "networking": 1.0 }
         }
     },
     {
-        "id": "box_fan", "name": "Box Fan", "description": "Blows the folded creations towards enemies.",
+        "id": "box_fan", "name": "Box Fan", "description": "Blows the folded creations towards enemies.", "rarity": "D",
+        "icon": "res://assets/icons/box_fan.png",
         "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32 },
         "logic": { 
-            "power_cost": 10.0, "health": 20.0, "rotates": true, 
+            "power_consumption": 5.0, "max_health": 20.0, "rotates": true, 
             "inventory": { "slots": 1, "can_output": false, "can_receive": true }, "io_config": { "input": ["back"], "output": ["none"] }, "shooting": true, "attack_config": "fan_blow",
+            "process_speed": 1.0,
+            "stats": { "scale": 1.0, "health_mult": 0.0, "process_speed_mult": 0.0, "compute": 1.0 },
             "formulas": {
-                "health_equation": "base_health * max(0.1, 1.0 + health_mult)",
-                "power_usage_equation": "power_consumption / max(0.1, efficiency)",
-                "processing_speed_equation": "base_speed * max(0.1, 1.0 + attack_speed_mult)"
+                "max_health_equation": "base_max_health * max(0.1, 1.0 + health_mult)",
+                "power_usage_equation": "power_consumption / max(0.1, compute)",
+                "process_speed_equation": "base_process_speed * max(0.1, 1.0 + process_speed_mult)"
             },
-            "stat_weights": { "health_mult": 1.0, "attack_speed_mult": 1.0, "efficiency": 1.0 }
+            "stat_weights": { "health_mult": 1.0, "process_speed_mult": 1.0, "compute": 1.0 }
         }
     },
     {
-        "id": "slipslide", "name": "Slipslide", "description": "Places a slide where exported items glide.",
+        "id": "desk", "name": "Desk", "description": "Fires folded paper creations when a Box Fan is behind it.", "rarity": "C",
+        "icon": "res://assets/icons/desk.png",
         "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32 },
         "logic": { 
-            "power_cost": 5.0, "health": 20.0, 
-            "inventory": { "slots": 1, "can_output": true, "can_receive": true }, "io_config": { "input": ["back"], "output":["front"] },
+            "power_consumption": 0.0, "max_health": 20.0, 
+            "script_path": "res://scripts/entities/buildings/desk.gd",
+            "inventory": { "slots": 1, "can_output": false, "can_receive": true }, "io_config": { "input":["back"], "output": ["front"] },
+            "process_speed": 1.0, "attack_damage": 0.0,
+            "stats": { "scale": 1.0, "health_mult": 0.0, "process_speed_mult": 0.0, "networking": 0.0 },
             "formulas": {
-                "health_equation": "base_health * max(0.1, 1.0 + health_mult)",
-                "power_usage_equation": "power_consumption / max(0.1, efficiency)"
+                "max_health_equation": "base_max_health * max(0.1, 1.0 + health_mult)",
+                "process_speed_equation": "base_process_speed * max(0.1, 1.0 + process_speed_mult)",
+                "attack_damage_equation": "base_attack_damage + (networking * 1.0)"
             },
-            "stat_weights": { "health_mult": 1.0, "efficiency": 1.0 }
+            "stat_weights": { "health_mult": 1.0, "process_speed_mult": 1.0, "networking": 1.0 }
         }
     },
     {
-        "id": "slipstream", "name": "Slipstream", "description": "Water puddle stream for fast travel.",
+        "id": "switch", "name": "Switch", "description": "Toggles power on the wire beneath it.", "rarity": "F",
+        "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32 },
+        "logic": { 
+            "power_consumption": 0.0, "max_health": 10.0, 
+            "script_path": "res://scripts/entities/buildings/switch_building.gd",
+            "inventory": { "slots": 0, "can_output": false, "can_receive": false },
+            "process_speed": 1.0,
+            "stats": { "scale": 1.0, "process_speed_mult": 0.0 },
+            "formulas": {
+                "process_speed_equation": "base_process_speed * max(0.1, 1.0 + process_speed_mult)"
+            },
+            "stat_weights": { "process_speed_mult": 1.0 }
+        }
+    },
+    {
+        "id": "slipslide", "name": "Slipslide", "description": "Places a slide where exported items glide.", "rarity": "D",
+        "icon": "res://assets/icons/slipslide.png",
+        "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32 },
+        "logic": { 
+            "power_consumption": 5.0, "max_health": 20.0, 
+            "inventory": { "slots": 1, "can_output": true, "can_receive": true }, "io_config": { "input": ["back"], "output":["front"] },
+            "stats": { "scale": 1.0, "health_mult": 0.0, "compute": 1.0 },
+            "formulas": {
+                "max_health_equation": "base_max_health * max(0.1, 1.0 + health_mult)",
+                "power_usage_equation": "power_consumption / max(0.1, compute)"
+            },
+            "stat_weights": { "health_mult": 1.0, "compute": 1.0 }
+        }
+    },
+    {
+        "id": "slipstream", "name": "Slipstream", "description": "Water puddle stream for fast travel.", "rarity": "C",
+        "icon": "res://assets/icons/slipstream.png",
         "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32  },
         "logic": { 
-            "power_cost": 0.0, "health": 4.0, "rotates": true, 
-            "inventory": { "slots": 1, "can_output": true, "can_receive": true }, "io_config": { "input": ["back"], "output": ["front"] },
+            "power_consumption": 0.0, "max_health": 4.0, "rotates": true, 
+            "inventory": { "slots": 1, "can_output": true, "can_receive": true }, "io_config": { "input":["back"], "output": ["front"] },
+            "stats": { "scale": 1.0, "health_mult": 0.0 },
             "formulas": {
-                "health_equation": "base_health * max(0.1, 1.0 + health_mult)"
+                "max_health_equation": "base_max_health * max(0.1, 1.0 + health_mult)"
             },
             "stat_weights": { "health_mult": 1.0 }
         }
     },
     {
-        "id": "tarstream", "name": "Tarstream", "description": "Ink puddle stream for slow travel.",
+        "id": "tarstream", "name": "Tarstream", "description": "Ink puddle stream for slow travel.", "rarity": "C",
+        "icon": "res://assets/icons/tarstream.png",
         "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32  },
         "logic": { 
-            "power_cost": 0.0, "health": 4.0, "rotates": true, 
+            "power_consumption": 0.0, "max_health": 4.0, "rotates": true, 
             "inventory": { "slots": 1, "can_output": true, "can_receive": true }, "io_config": { "input": ["back"], "output":["front"] },
+            "stats": { "scale": 1.0, "health_mult": 0.0 },
             "formulas": {
-                "health_equation": "base_health * max(0.1, 1.0 + health_mult)"
+                "max_health_equation": "base_max_health * max(0.1, 1.0 + health_mult)"
             },
             "stat_weights": { "health_mult": 1.0 }
+        }
+    },
+    {
+        "id": "enemy_spawner", "name": "Enemy Spawner", "description": "Spawns enemies for testing and debugging purposes.", "rarity": "SS+",
+        "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32  },
+        "logic": { 
+            "power_consumption": 0.0, "max_health": 9999.0, 
+            "script_path": "res://scripts/entities/buildings/enemy_spawner.gd",
+            "inventory": { "slots": 0, "can_output": false, "can_receive": false },
+            "stats": { "scale": 1.0 }
+        }
+    },
+    {
+        "id": "attack_spawner", "name": "Attack Spawner", "description": "Testing tool. Plays attacks or element sequences at its location.", "rarity": "SS+",
+        "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32  },
+        "logic": { 
+            "power_consumption": 0.0, "max_health": 9999.0, 
+            "script_path": "res://scripts/entities/buildings/attack_spawner.gd",
+            "inventory": { "slots": 0, "can_output": false, "can_receive": false },
+            "stats": { "scale": 1.0 }
+        }
+    },
+    {
+        "id": "windwall", "name": "Windwall", "description": "Spawns a slow moving wall of gusts.", "rarity": "A",
+        "icon": "res://assets/icons/windwall.png",
+        "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32 },
+        "logic": { 
+            "power_consumption": 0.0, "max_health": 50.0,
+            "script_path": "res://scripts/entities/buildings/windwall_spawner.gd",
+            "inventory": { "slots": 0, "can_output": false, "can_receive": false }, "io_config": { "input": ["back"], "output": ["front"] }
+        }
+    },
+    {
+        "id": "water_cannon", "name": "Water Cannon", "description": "Releases high damage water torrent. Uses Aquachalk.", "rarity": "S",
+        "icon": "res://assets/icons/water_cannon.png",
+        "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32 },
+        "logic": { 
+            "power_consumption": 5.0, "max_health": 40.0,
+            "script_path": "res://scripts/entities/buildings/water_cannon.gd",
+            "inventory": { "slots": 1, "can_output": false, "can_receive": true }, "io_config": { "input": ["back", "left", "right"], "output": ["front"] }
+        }
+    },
+    {
+        "id": "mystapus", "name": "Mystapus", "description": "Tentacle smashes enemies. Requires Slipstream.", "rarity": "SS",
+        "icon": "res://assets/icons/mystapus.png",
+        "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32 },
+        "logic": { 
+            "power_consumption": 0.0, "max_health": 100.0,
+            "script_path": "res://scripts/entities/buildings/mystapus.gd",
+            "inventory": { "slots": 0, "can_output": false, "can_receive": false }, "io_config": { "input": ["all"], "output": ["all"] }
+        }
+    },
+    {
+        "id": "lily_bubba", "name": "Lily Bubba", "description": "Generates a bubble. Hit with Aero to shoot.", "rarity": "A",
+        "icon": "res://assets/icons/lily_bubba.png",
+        "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32 },
+        "logic": { 
+            "power_consumption": 2.0, "max_health": 30.0,
+            "script_path": "res://scripts/entities/buildings/lily_bubba.gd",
+            "inventory": { "slots": 0, "can_output": false, "can_receive": false }, "io_config": { "input": ["back"], "output": ["front"] },
+            "stats": { "scale": 1.0, "space": 10.0 }
+        }
+    },
+    {
+        "id": "marble_hoop", "name": "Marble Hoop", "description": "Buffs passing aqua projectiles.", "rarity": "B",
+        "icon": "res://assets/icons/marble_hoop.png",
+        "visuals": { "texture": "res://icon.svg", "width": 32, "height": 32 },
+        "logic": { 
+            "power_consumption": 0.0, "max_health": 20.0,
+            "script_path": "res://scripts/entities/buildings/marble_hoop.gd",
+            "inventory": { "slots": 0, "can_output": false, "can_receive": false }, "io_config": { "input": ["back"], "output": ["front"] }
         }
     }
 ]

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://bp3f7rnmb6mrf"]
+
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_mfin5"]
+[ext_resource type="Texture2D" uid="uid://dr16gfa8sscdn" path="res://assets/icons/rain.png" id="1_wi8ut"]
+
+[resource]
+script = ExtResource("1_mfin5")
+element_name = "Rain"
+icon = ExtResource("1_wi8ut")
+color = Color(0.25490198, 0.4117647, 0.88235295, 1)
+duration = 6.0
+application_cooldown = 0.5
+reaction_rules = {
+"ghost": "ectomist"
+}

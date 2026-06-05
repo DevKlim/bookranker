@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ParticleResource" format=3 uid="uid://dmxwf5nsq5f8j"]
+
+[ext_resource type="PackedScene" uid="uid://baukpd4ibljck" path="res://scenes/particles/channel_aoe_magne.tscn" id="1_ov5vl"]
+[ext_resource type="Script" uid="uid://cx7aidq5y2yns" path="res://scripts/resources/particle_resource.gd" id="2_prg8o"]
+
+[resource]
+script = ExtResource("2_prg8o")
+id = "channel_aoe_magne"
+scene = ExtResource("1_ov5vl")

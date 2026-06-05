@@ -33,7 +33,7 @@ const COMP_ELEMENTAL = "res://scripts/components/elemental_component.gd"
 const COMP_GRID = "res://scripts/components/grid_component.gd"
 
 const ENTITY_ENEMY_SCRIPT = "res://scripts/entities/enemy.gd"
-const ENTITY_ALLY_SCRIPT = "res://scripts/entities/ally.gd"
+const ENTITY_ALLY_SCRIPT = "res://scripts/entities/ally/ally.gd"
 const ENTITY_CLUTTER_SCRIPT = "res://scripts/entities/clutter_object.gd"
 
 var target_item_id: String = "All"

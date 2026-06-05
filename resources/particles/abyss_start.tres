@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ParticleResource" format=3 uid="uid://cba0vnt1p1i6x"]
+
+[ext_resource type="PackedScene" uid="uid://m1cdskkpjx3s" path="res://scenes/particles/abyss_start.tscn" id="1_w4y1k"]
+[ext_resource type="Script" uid="uid://cx7aidq5y2yns" path="res://scripts/resources/particle_resource.gd" id="2_26tom"]
+
+[resource]
+script = ExtResource("2_26tom")
+id = "abyss_start"
+scene = ExtResource("1_w4y1k")

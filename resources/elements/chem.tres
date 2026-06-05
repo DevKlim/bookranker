@@ -7,8 +7,14 @@
 script = ExtResource("1_28ewv")
 element_name = "Chem"
 icon = ExtResource("1_7rvot")
+color = Color(0.19607843, 0.8039216, 0.19607843, 1)
 duration = 8.0
 application_cooldown = 0.5
+reaction_rules = {
+"aqua": "pollute",
+"igni": "pollute",
+"tera": "pollute"
+}
 stat_modifiers = {
-"output_chance": 1.0
+"luck_stat": 10.0
 }

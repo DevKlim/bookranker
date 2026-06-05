@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EnemyResource" format=3 uid="uid://bfj2vcdy0ymx4"]
+
+[ext_resource type="PackedScene" uid="uid://bdbest1ip5btw" path="res://scenes/enemies/dummy.tscn" id="1_ajtny"]
+[ext_resource type="Script" uid="uid://bykln6bau3775" path="res://scripts/resources/enemy_resource.gd" id="2_i7w5w"]
+
+[resource]
+script = ExtResource("2_i7w5w")
+enemy_name = "Target Dummy"
+scene = ExtResource("1_ajtny")
+tags = Array[String](["dps_meter"])
+max_health = 9999999.0
+speed = 0.0
+process_speed = 0.0
+attack_damage = 0.0
+space = 9999.0
+attack_range_depth = 0

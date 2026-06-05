@@ -17,6 +17,7 @@ var mods_grid: GridContainer
 var core_tab: Control
 var core_mods_grid: GridContainer
 var core_stats_label: RichTextLabel
+var power_graph: PowerGraph
 
 # Ally Specific UI
 var ally_tab: Control
@@ -40,7 +41,7 @@ var selected_recipe: RecipeResource = null
 
 var current_ally: Node = null 
 var all_items: Array[ItemResource] =[]
-var all_mods: Array[ItemResource] =[]
+var all_mods: Array[ItemResource] = []
 var all_buildings: Array[BuildableResource] =[]
 var basic_recipes: Array[RecipeResource] =[]
 
@@ -50,17 +51,51 @@ var drag_offset: Vector2
 var d_dragging: bool = false
 var d_drag_offset: Vector2
 
+var _last_ally_update: int = 0
+var _cached_wave: int = -1
+
+class PowerGraph extends Control:
+	var demand_data: Array[float] = []
+	var gen_data: Array[float] =[]
+	
+	func _draw():
+		draw_rect(Rect2(Vector2.ZERO, size), Color(0.1, 0.1, 0.1, 0.5))
+		
+		var max_val = 10.0
+		for v in demand_data: max_val = max(max_val, v)
+		for v in gen_data: max_val = max(max_val, v)
+		max_val *= 1.1 
+		
+		var points = 60
+		var step_x = size.x / max(1, points - 1)
+		
+		draw_line(Vector2(0, size.y/2), Vector2(size.x, size.y/2), Color(1,1,1,0.1))
+		
+		var d_pts = PackedVector2Array()
+		var g_pts = PackedVector2Array()
+		
+		var start_idx = max(0, points - demand_data.size())
+		
+		for i in range(demand_data.size()):
+			var x = (start_idx + i) * step_x
+			var dy = size.y - (demand_data[i] / max_val) * size.y
+			var gy = size.y - (gen_data[i] / max_val) * size.y
+			d_pts.append(Vector2(x, dy))
+			g_pts.append(Vector2(x, gy))
+			
+		if d_pts.size() > 1:
+			draw_polyline(d_pts, Color(1.0, 0.3, 0.3), 2.0)
+		if g_pts.size() > 1:
+			draw_polyline(g_pts, Color(0.3, 1.0, 0.3), 2.0)
+
 class CraftingButton extends Button:
 	var recipe: RecipeResource
 	func _make_custom_tooltip(_for_text: String) -> Object:
-		var panel = PanelContainer.new()
-		var style = StyleBoxFlat.new()
-		style.bg_color = Color(0.9, 0.9, 0.9, 0.9)
-		style.content_margin_left=8; style.content_margin_right=8; style.content_margin_top=8; style.content_margin_bottom=8
-		panel.add_theme_stylebox_override("panel", style)
-		var vbox = VBoxContainer.new(); panel.add_child(vbox)
-		var label = Label.new(); label.text = recipe.recipe_name; label.add_theme_color_override("font_color", Color(0.2, 0.2, 0.2)); vbox.add_child(label)
-		return panel
+		var out = recipe.get_main_output()
+		if out:
+			var tt = load("res://scripts/ui/custom_tooltip.gd")
+			if tt: return tt.new(out)
+		return null
 
 func _create_xp_btn(txt: String) -> Button:
 	var btn = Button.new()
@@ -80,35 +115,20 @@ func _create_xp_btn(txt: String) -> Button:
 	pressed.bg_color = Color(1, 1, 1, 0.4)
 	btn.add_theme_stylebox_override("pressed", pressed)
 	
-	btn.add_theme_color_override("font_color", Color.WHITE)
+	btn.add_theme_color_override("font_color", Color.BLACK)
 	btn.add_theme_color_override("font_hover_color", Color.WHITE)
 	btn.add_theme_color_override("font_pressed_color", Color.WHITE)
 	return btn
 
 func _apply_liquid_glass(win: Control, corner_radius: float = 12.0) -> void:
-	win.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
-	
-	var bbc = BackBufferCopy.new()
-	bbc.copy_mode = BackBufferCopy.COPY_MODE_VIEWPORT
-	win.add_child(bbc)
-	win.move_child(bbc, 0)
-	
-	var bg = ColorRect.new()
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var mat = ShaderMaterial.new()
-	var shader = load("res://shaders/liquid_glass.gdshader")
-	if shader:
-		mat.shader = shader
-		mat.set_shader_parameter("tint", Color(0.9, 0.9, 0.9, 0.25))
-		mat.set_shader_parameter("corner_radius", corner_radius)
-		mat.set_shader_parameter("bezel_width", 12.0)
-	bg.material = mat
-	win.add_child(bg)
-	win.move_child(bg, 1)
-	
-	win.resized.connect(func(): if mat.shader: mat.set_shader_parameter("rect_size", win.size))
-	win.call_deferred("emit_signal", "resized")
+	WindowUtils.apply_liquid_glass(win, corner_radius)
+
+func _recursive_override_size(node: Node, target_size: Vector2) -> void:
+	if node is Control:
+		if node is TextureRect or node is CenterContainer or node is Panel:
+			node.custom_minimum_size = target_size
+	for child in node.get_children():
+		_recursive_override_size(child, target_size)
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -133,18 +153,39 @@ func _setup_inventory_connections() -> void:
 	
 	_on_mode_changed(PlayerManager.is_creative_mode)
 	
+	if is_instance_valid(PlayerManager.player_entity):
+		set_current_ally(PlayerManager.player_entity)
+		
 	call_deferred("_update_tabs_visibility")
 	
 	var vp_size = get_viewport_rect().size
 	var p_size = window_root.size
-	if p_size.x <= 10: p_size = Vector2(950, 600)
+	if p_size.x <= 10: p_size = Vector2(950, 720)
 	window_root.position = (vp_size - p_size) / 2.0
 
 func _process(_delta: float) -> void:
-	if not visible or not is_instance_valid(current_ally): return
+	var current_wave = 1
+	if is_instance_valid(GameManager) and "game_data" in GameManager:
+		current_wave = GameManager.game_data.get("wave", 1)
+		
+	if current_wave != _cached_wave:
+		_cached_wave = current_wave
+		_load_recipes()
+		_populate_grids()
+		_update_tabs_visibility()
+		
+	if not visible: return
+	
 	if tabs.current_tab >= 0 and tabs.current_tab < tabs.get_child_count():
-		if tabs.get_child(tabs.current_tab) == ally_tab:
-			_rebuild_ally_tab()
+		var current_t = tabs.get_child(tabs.current_tab)
+		if current_t == ally_tab and is_instance_valid(current_ally):
+			if Time.get_ticks_msec() - _last_ally_update > 500:
+				_last_ally_update = Time.get_ticks_msec()
+				_rebuild_ally_tab()
+		elif current_t == core_tab:
+			if Time.get_ticks_msec() - _last_ally_update > 1000:
+				_last_ally_update = Time.get_ticks_msec()
+				_update_core_tab()
 
 func _build_ui_structure() -> void:
 	for c in get_children(): c.queue_free()
@@ -152,17 +193,20 @@ func _build_ui_structure() -> void:
 	positioning_layer = Control.new()
 	positioning_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
 	positioning_layer.mouse_filter = Control.MOUSE_FILTER_PASS
+	positioning_layer.set_drag_forwarding(Callable(), Callable(UIHelper, "can_drop_trash"), Callable(UIHelper, "drop_trash"))
 	add_child(positioning_layer)
 	
 	window_root = Control.new()
-	window_root.size = Vector2(950, 600)
+	window_root.size = Vector2(950, 720)
 	window_root.clip_contents = true
+	window_root.set_drag_forwarding(Callable(), Callable(UIHelper, "can_drop_trash"), Callable(UIHelper, "drop_trash"))
 	positioning_layer.add_child(window_root)
 	
 	main_panel = PanelContainer.new()
 	main_panel.name = "MainPanel"
 	main_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
 	main_panel.clip_contents = true
+	main_panel.set_drag_forwarding(Callable(), Callable(UIHelper, "can_drop_trash"), Callable(UIHelper, "drop_trash"))
 	
 	_apply_liquid_glass(main_panel, 12.0)
 	window_root.add_child(main_panel)
@@ -299,22 +343,44 @@ func _build_ui_structure() -> void:
 	core_tab.name = "Core"
 	core_tab.add_theme_constant_override("margin_left", 10); core_tab.add_theme_constant_override("margin_right", 10)
 	core_tab.add_theme_constant_override("margin_top", 10); core_tab.add_theme_constant_override("margin_bottom", 10)
-	var core_vbox = VBoxContainer.new()
-	core_tab.add_child(core_vbox)
+	
+	var core_split = HBoxContainer.new()
+	core_split.add_theme_constant_override("separation", 20)
+	core_tab.add_child(core_split)
+	
+	var core_left = VBoxContainer.new()
+	core_left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	core_split.add_child(core_left)
 	
 	core_stats_label = RichTextLabel.new()
 	core_stats_label.bbcode_enabled = true
 	core_stats_label.fit_content = true
-	core_vbox.add_child(core_stats_label)
+	core_stats_label.add_theme_color_override("default_color", Color(0.1, 0.1, 0.1))
+	core_left.add_child(core_stats_label)
 	
-	core_vbox.add_child(HSeparator.new())
-	var cmod_lbl = Label.new(); cmod_lbl.text = "Core Mod Slots"; cmod_lbl.add_theme_color_override("font_color", Color(0.2, 0.2, 0.2))
-	core_vbox.add_child(cmod_lbl)
+	core_left.add_child(HSeparator.new())
+	var cmod_lbl = Label.new(); cmod_lbl.text = "Core Mod Disk Drives"; cmod_lbl.add_theme_color_override("font_color", Color(0.2, 0.2, 0.2))
+	core_left.add_child(cmod_lbl)
 	
 	core_mods_grid = GridContainer.new()
 	core_mods_grid.columns = 3
 	core_mods_grid.add_theme_constant_override("h_separation", 6); core_mods_grid.add_theme_constant_override("v_separation", 6)
-	core_vbox.add_child(core_mods_grid)
+	core_left.add_child(core_mods_grid)
+	
+	var core_right = VBoxContainer.new()
+	core_right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	core_split.add_child(core_right)
+	
+	var graph_lbl = RichTextLabel.new()
+	graph_lbl.bbcode_enabled = true
+	graph_lbl.fit_content = true
+	graph_lbl.text = "Energy Usage (Past Minute)\n[color=#55ff55]Generation[/color] /[color=#ff5555]Demand[/color]"
+	graph_lbl.add_theme_color_override("default_color", Color(0.2, 0.2, 0.2))
+	core_right.add_child(graph_lbl)
+	
+	power_graph = PowerGraph.new()
+	power_graph.custom_minimum_size = Vector2(0, 200)
+	core_right.add_child(power_graph)
 
 	# Custom Ally Tab
 	ally_tab = MarginContainer.new()
@@ -328,12 +394,15 @@ func _build_ui_structure() -> void:
 	
 	var ally_left = VBoxContainer.new()
 	ally_left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	ally_left.custom_minimum_size = Vector2(250, 0)
 	ally_split.add_child(ally_left)
 	
 	ally_stats_label = RichTextLabel.new()
 	ally_stats_label.bbcode_enabled = true
 	ally_stats_label.fit_content = true
-	ally_stats_label.text = "[color=black][b]Stats[/b][/color]"
+	ally_stats_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	ally_stats_label.add_theme_color_override("default_color", Color(0.1, 0.1, 0.1))
+	ally_stats_label.custom_minimum_size = Vector2(200, 200)
 	ally_left.add_child(ally_stats_label)
 	
 	ally_left.add_child(HSeparator.new())
@@ -365,14 +434,14 @@ func _build_ui_structure() -> void:
 	vbox.add_child(HSeparator.new())
 	var b_lbl = Label.new(); b_lbl.text = "Player Hotbar & Backpack"; b_lbl.add_theme_color_override("font_color", Color(0.2, 0.2, 0.2))
 	vbox.add_child(b_lbl)
-	var p_scroll = ScrollContainer.new(); p_scroll.custom_minimum_size = Vector2(0, 180); vbox.add_child(p_scroll)
+	var p_scroll = ScrollContainer.new(); p_scroll.custom_minimum_size = Vector2(0, 280); vbox.add_child(p_scroll)
 	player_grid = GridContainer.new(); player_grid.columns = 10
 	player_grid.add_theme_constant_override("h_separation", 4); player_grid.add_theme_constant_override("v_separation", 4)
 	p_scroll.add_child(player_grid)
 	
 	details_panel = PanelContainer.new()
 	details_panel.name = "DetailsPanel"
-	details_panel.size = Vector2(300, 600)
+	details_panel.size = Vector2(300, 720)
 	details_panel.visible = false
 	details_panel.clip_contents = true
 	_apply_liquid_glass(details_panel, 12.0)
@@ -463,16 +532,17 @@ func _build_ui_structure() -> void:
 	details_title.add_theme_color_override("font_color", Color(0.2, 0.2, 0.2))
 	details_content.add_child(details_title)
 	
-	var c_icon = CenterContainer.new(); details_content.add_child(c_icon)
-	var i_panel = Panel.new(); i_panel.custom_minimum_size = Vector2(80, 80); c_icon.add_child(i_panel)
-	var center2 = CenterContainer.new(); center2.set_anchors_preset(Control.PRESET_FULL_RECT); i_panel.add_child(center2)
+	var c_icon_margin = MarginContainer.new()
+	c_icon_margin.custom_minimum_size = Vector2(80, 80)
+	c_icon_margin.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	details_content.add_child(c_icon_margin)
 	
 	details_icon = TextureRect.new()
-	details_icon.custom_minimum_size = Vector2(64, 64)
+	details_icon.set_anchors_preset(Control.PRESET_FULL_RECT)
 	details_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	details_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	details_icon.texture_filter = Control.TEXTURE_FILTER_NEAREST
-	center2.add_child(details_icon)
+	c_icon_margin.add_child(details_icon)
 	
 	var spacer = Control.new(); spacer.custom_minimum_size = Vector2(0, 20); details_content.add_child(spacer)
 	var req_l = Label.new(); req_l.text = "Requirements:"; req_l.add_theme_color_override("font_color", Color(0.2, 0.2, 0.2))
@@ -484,142 +554,8 @@ func _build_ui_structure() -> void:
 	craft_button.add_theme_color_override("font_color", Color.BLACK)
 	craft_button.pressed.connect(_on_craft_button_pressed); details_content.add_child(craft_button)
 
-	_setup_window_resizing(window_root, scale_wrapper, scale_root, frame_margin, 950, 600)
-	_setup_window_resizing(details_panel, d_scale_wrapper, d_scale_root, d_frame_margin, 300, 600)
-
-func _setup_window_resizing(win: Control, scale_wrapper: Control, scale_root: Control, content_node: Control, target_w: float, target_h: float) -> void:
-	var m = 12
-	var configs = [[0, -1, Control.CURSOR_VSIZE],[0, 1, Control.CURSOR_VSIZE],[-1, 0, Control.CURSOR_HSIZE],[1, 0, Control.CURSOR_HSIZE],[-1, -1, Control.CURSOR_FDIAGSIZE],[1, -1, Control.CURSOR_BDIAGSIZE],[-1, 1, Control.CURSOR_BDIAGSIZE],[1, 1, Control.CURSOR_FDIAGSIZE]]
-	
-	var handles =[]
-	var sync_ref =[]
-	
-	var update_scale = func():
-		var c_size = scale_wrapper.size
-		if c_size.x < 1 or c_size.y < 1: return
-		
-		var target_x = max(1.0, target_w - 24.0)
-		var target_y = max(1.0, target_h - 54.0)
-		
-		var s = min(1.0, min(c_size.x / target_x, c_size.y / target_y))
-		if s >= 0.99:
-			s = 1.0
-			
-		scale_root.scale = Vector2(s, s)
-		content_node.size = (c_size / s).ceil()
-		content_node.position = Vector2.ZERO
-		
-	scale_wrapper.item_rect_changed.connect(update_scale)
-	
-	for cfg in configs:
-		var handle = Control.new()
-		handle.mouse_default_cursor_shape = cfg[2]
-		handle.top_level = true
-		win.add_child(handle)
-		handles.append({"node": handle, "dx": cfg[0], "dy": cfg[1]})
-		
-		handle.gui_input.connect(func(event):
-			if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-				if event.pressed:
-					win.set_meta("res_drag", true)
-					win.set_meta("res_dx", cfg[0])
-					win.set_meta("res_dy", cfg[1])
-					win.set_meta("res_start_pos", win.global_position)
-					win.set_meta("res_start_size", win.size)
-					win.set_meta("res_start_mouse", event.global_position)
-				else:
-					win.set_meta("res_drag", false)
-			elif event is InputEventMouseMotion and win.get_meta("res_drag", false):
-				var dx = win.get_meta("res_dx")
-				var dy = win.get_meta("res_dy")
-				var s_pos = win.get_meta("res_start_pos")
-				var s_size = win.get_meta("res_start_size")
-				var s_mouse = win.get_meta("res_start_mouse")
-				
-				var delta = event.global_position - s_mouse
-				var absolute_min = Vector2(100, 100)
-				
-				var new_pos = s_pos
-				var new_size = s_size
-				
-				if dx == 1:
-					new_size.x = max(absolute_min.x, s_size.x + delta.x)
-				elif dx == -1:
-					new_size.x = max(absolute_min.x, s_size.x - delta.x)
-					new_pos.x = s_pos.x + (s_size.x - new_size.x)
-					
-				if dy == 1:
-					new_size.y = max(absolute_min.y, s_size.y + delta.y)
-				elif dy == -1:
-					new_size.y = max(absolute_min.y, s_size.y - delta.y)
-					new_pos.y = s_pos.y + (s_size.y - new_size.y)
-					
-				win.global_position = new_pos
-				win.size = new_size
-				win.custom_minimum_size = new_size
-				
-				if sync_ref.size() > 0:
-					sync_ref[0].call()
-		)
-		
-	var sync_handles = func():
-		if not win.is_inside_tree(): return
-		
-		for h in handles:
-			var node = h.node
-			var dx = h.dx
-			var dy = h.dy
-			var r_pos = win.global_position
-			var r_size = win.size
-			
-			if dx == 0 and dy == -1:
-				node.global_position = r_pos + Vector2(m, -m)
-				node.size = Vector2(r_size.x - 2*m, 2*m)
-			elif dx == 0 and dy == 1:
-				node.global_position = r_pos + Vector2(m, r_size.y - m)
-				node.size = Vector2(r_size.x - 2*m, 2*m)
-			elif dx == -1 and dy == 0:
-				node.global_position = r_pos + Vector2(-m, m)
-				node.size = Vector2(2*m, r_size.y - 2*m)
-			elif dx == 1 and dy == 0:
-				node.global_position = r_pos + Vector2(r_size.x - m, m)
-				node.size = Vector2(2*m, r_size.y - 2*m)
-			elif dx == -1 and dy == -1:
-				node.global_position = r_pos + Vector2(-m, -m)
-				node.size = Vector2(2*m, 2*m)
-			elif dx == 1 and dy == -1:
-				node.global_position = r_pos + Vector2(r_size.x - m, -m)
-				node.size = Vector2(2*m, 2*m)
-			elif dx == -1 and dy == 1:
-				node.global_position = r_pos + Vector2(-m, r_size.y - m)
-				node.size = Vector2(2*m, 2*m)
-			elif dx == 1 and dy == 1:
-				node.global_position = r_pos + Vector2(r_size.x - m, r_size.y - m)
-				node.size = Vector2(2*m, 2*m)
-				
-	sync_ref.append(sync_handles)
-	win.resized.connect(sync_handles)
-	win.item_rect_changed.connect(sync_handles)
-	
-	var update_vis = func():
-		var is_vis = win.is_visible_in_tree()
-		for h in handles:
-			if is_instance_valid(h.node):
-				h.node.visible = is_vis
-		if is_vis:
-			if win.is_inside_tree():
-				await win.get_tree().process_frame
-				await win.get_tree().process_frame
-			if is_instance_valid(win):
-				win.emit_signal("resized")
-			if is_instance_valid(scale_wrapper):
-				scale_wrapper.emit_signal("item_rect_changed")
-
-	win.visibility_changed.connect(update_vis)
-	if win != self:
-		self.visibility_changed.connect(update_vis)
-		
-	update_vis.call()
+	WindowUtils.setup_window_resizing(window_root, scale_wrapper, scale_root, frame_margin, Vector2(950, 720))
+	WindowUtils.setup_window_resizing(details_panel, d_scale_wrapper, d_scale_root, d_frame_margin, Vector2(300, 720))
 
 func _on_title_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
@@ -644,18 +580,26 @@ func _on_d_title_gui_input(event: InputEvent) -> void:
 		details_panel.global_position = event.global_position - d_drag_offset
 
 func set_current_ally(ally: Node) -> void:
-	if current_ally == ally: return
+	if not is_instance_valid(ally) and is_instance_valid(PlayerManager.player_entity):
+		ally = PlayerManager.player_entity
+		
+	if current_ally == ally: 
+		return
+		
 	if current_ally:
 		var inv = _get_ally_inventory(current_ally)
 		if inv and inv.is_connected("inventory_changed", _update_ally_grid):
 			inv.inventory_changed.disconnect(_update_ally_grid)
+			
 	current_ally = ally
+	
 	if current_ally:
 		var inv = _get_ally_inventory(current_ally)
 		if inv and not inv.is_connected("inventory_changed", _update_ally_grid):
 			inv.inventory_changed.connect(_update_ally_grid)
 		_rebuild_ally_tab()
 		_update_ally_grid()
+		
 	_update_tabs_visibility()
 
 func _get_ally_inventory(ally: Node) -> InventoryComponent:
@@ -664,38 +608,69 @@ func _get_ally_inventory(ally: Node) -> InventoryComponent:
 	if ally.get("inventory_component"): return ally.get("inventory_component")
 	return null
 
-func _rebuild_ally_tab(arg1 = null, arg2 = null) -> void:
+func _rebuild_ally_tab(_arg1 = null, _arg2 = null) -> void:
 	if not current_ally: return
-	var hp = 0; var mhp = 0; var spd = 0
+	
+	var hp = 0.0; var mhp = 0.0; var sec = 0.0; var msec = 0.0;
 	if current_ally.has_node("HealthComponent"):
 		var hc = current_ally.get_node("HealthComponent")
-		hp = hc.current_health; mhp = hc.max_health
-	if current_ally.get("move_component"):
-		spd = current_ally.move_component.move_speed
-	elif current_ally.has_node("MoveComponent"):
-		spd = current_ally.get_node("MoveComponent").move_speed
-	
+		hp = float(hc.current_health); mhp = float(hc.max_health)
+		sec = float(hc.current_security); msec = float(hc.max_security)
+
+	var spd = 5.0; var p_spd = 1.0; var atk = 10.0; var def = 0.0;
+	var fw = 0.0; var net = 0.0; var spc = 10.0; var luck = 0.0;
+	var comp = 1.0; var scl = 1.0; var ping_val = 1.0; var mal = 0.0;
+
+	if current_ally.has_method("get_stat"):
+		spd = float(current_ally.get_stat("speed", 5.0))
+		spc = float(current_ally.get_stat("space", 10.0))
+		p_spd = float(current_ally.get_stat("process_speed", 1.0))
+		atk = float(current_ally.get_stat("attack_damage", 10.0))
+		def = float(current_ally.get_stat("defense", 0.0))
+		fw = float(current_ally.get_stat("firewall", 0.0))
+		net = float(current_ally.get_stat("networking", 0.0))
+		luck = float(current_ally.get_stat("luck_stat", 0.0))
+		comp = float(current_ally.get_stat("compute", 1.0))
+		scl = float(current_ally.get_stat("scale", 1.0))
+		ping_val = float(current_ally.get_stat("ping", 1.0))
+		mal = float(current_ally.get_stat("malware", 0.0))
+
 	var inv = _get_ally_inventory(current_ally)
 	var slots_used = 0
 	if inv: for s in inv.slots: if s: slots_used += 1
 	var max_s = inv.max_slots if inv else 0
-	
+
 	var name_str = "Ally"
-	if "display_name" in current_ally: name_str = current_ally.display_name
-	elif "ally_name" in current_ally: name_str = current_ally.ally_name
-	
+	if current_ally.get("stats") and current_ally.stats.get("ally_name") != null: 
+		name_str = str(current_ally.stats.get("ally_name"))
+	elif "display_name" in current_ally: name_str = str(current_ally.display_name)
+	elif "ally_name" in current_ally: name_str = str(current_ally.ally_name)
+
 	ally_tab.name = name_str
-	ally_stats_label.text = "[color=black][b][font_size=20]%s[/font_size][/b]\n\n" % name_str
-	ally_stats_label.text += "[color=#aa0000]Health:[/color] %d / %d\n" %[int(hp), int(mhp)]
-	ally_stats_label.text += "[color=#00aa00]Speed:[/color] %.1f\n" % spd
-	ally_stats_label.text += "[color=#0000aa]Load:[/color] %d / %d slots[/color]" %[slots_used, max_s]
+	var txt = "[font_size=20][b]%s[/b][/font_size]\n\n" % name_str
+	txt += "[table=2]"
+	txt += "[cell][color=#aa0000]Health:[/color] %d / %d     [/cell]" %[int(hp), int(mhp)]
+	if msec > 0:
+		txt += "[cell][color=#0055aa]Security:[/color] %d / %d[/cell]" %[int(sec), int(msec)]
+	else:
+		txt += "[cell][/cell]"
+	txt += "[cell][color=#00aa00]Speed:[/color] %.1f     [/cell][cell][color=#555555]Space:[/color] %.1f[/cell]" %[spd, spc]
+	txt += "[cell][color=#aa0000]Attack:[/color] %.1f     [/cell][cell][color=#aa5500]Process:[/color] %.1f[/cell]" %[atk, p_spd]
+	txt += "[cell][color=#555555]Defense:[/color] %.1f[/cell][cell][color=#00aaaa]Firewall:[/color] %.1f[/cell]" %[def, fw]
+	txt += "[cell][color=#00aa00]Luck:[/color] %.1f     [/cell][cell][color=#aa00aa]Network:[/color] %.1f[/cell]" %[luck, net]
+	txt += "[cell][color=#aaaa00]Compute:[/color] %.1f     [/cell][cell][color=#555555]Scale:[/color] %.1f[/cell]" % [comp, scl]
+	txt += "[cell][color=#00aaaa]Ping:[/color] %.1f     [/cell][cell][color=#aa0000]Malware:[/color] %.1f[/cell]" %[ping_val, mal]
+	txt += "[/table]"
+	txt += "\n[color=#0000aa]Load:[/color] %d / %d slots" %[slots_used, max_s]
+
+	ally_stats_label.text = txt
 
 func _update_tabs_visibility() -> void:
 	if not is_inside_tree(): return
 	var prev_tab_idx = tabs.current_tab
-	var prev_tab_ctrl = null
+	var prev_name = ""
 	if prev_tab_idx >= 0 and prev_tab_idx < tabs.get_child_count():
-		prev_tab_ctrl = tabs.get_child(prev_tab_idx)
+		prev_name = tabs.get_child(prev_tab_idx).name
 	
 	for c in tabs.get_children(): tabs.remove_child(c)
 	
@@ -707,48 +682,145 @@ func _update_tabs_visibility() -> void:
 		tabs.add_child(build_tab)
 		tabs.add_child(item_tab)
 		tabs.add_child(mod_tab)
+		
 	if current_ally:
 		tabs.add_child(ally_tab)
-		tabs.current_tab = tabs.get_child_count() - 1
-		return
 	
-	if prev_tab_ctrl and prev_tab_ctrl.get_parent() == tabs:
-		var idx = tabs.get_children().find(prev_tab_ctrl)
-		tabs.current_tab = idx
-	else:
+	var found = false
+	for i in range(tabs.get_child_count()):
+		if tabs.get_child(i).name == prev_name:
+			tabs.current_tab = i
+			found = true
+			break
+			
+	if not found:
 		tabs.current_tab = 0
 
 func _update_core_tab() -> void:
 	var core_node = get_tree().get_first_node_in_group("core")
 	if not core_node: 
-		core_stats_label.text = "[color=black]Core not found.[/color]"
-		_clear(core_mods_grid)
+		core_stats_label.text = "Core not found."
 		return
 	
 	var hp = core_node.health_component.current_health if core_node.health_component else 0
 	var mhp = core_node.health_component.max_health if core_node.health_component else 0
-	var gen = core_node.power_provider.power_generation if core_node.power_provider else 0
 	
-	core_stats_label.text = "[color=black][b][font_size=20]Core Systems[/font_size][/b]\n\n"
+	var def = core_node.get_stat("defense", 0.0) if core_node.has_method("get_stat") else 0.0
+	var fwl = core_node.get_stat("firewall", 0.0) if core_node.has_method("get_stat") else 0.0
+	var atk = core_node.get_stat("attack_damage", 0.0) if core_node.has_method("get_stat") else 0.0
+	
+	var gen = PowerGridManager.total_power_generation
+	var dem = PowerGridManager.total_power_demand
+	
+	core_stats_label.text = "[font_size=20][b]Core Systems[/b][/font_size]\n\n"
 	core_stats_label.text += "[color=#aa0000]Health:[/color] %d / %d\n" %[int(hp), int(mhp)]
-	core_stats_label.text += "[color=#aaaa00]Power Gen:[/color] %d W\n[/color]" % int(gen)
+	core_stats_label.text += "[color=#555555]Defense Base:[/color] %.1f\n" % def
+	core_stats_label.text += "[color=#00aaaa]Firewall Base:[/color] %.1f\n" % fwl
+	core_stats_label.text += "[color=#aa0000]Attack Base:[/color] %.1f\n" % atk
+	core_stats_label.text += "\n[color=#aaaa00]Total Capacity (Gen):[/color] %d W\n" % int(gen)
+	core_stats_label.text += "[color=#aa5500]Total Usage (Demand):[/color] %d W\n" % int(dem)
 	
-	_clear(core_mods_grid)
-	if core_node.mod_inventory:
-		if not core_node.mod_inventory.is_connected("inventory_changed", _update_core_tab):
-			core_node.mod_inventory.inventory_changed.connect(_update_core_tab)
-		for i in range(core_node.mod_inventory.slots.size()):
-			var b = _create_slot_button(core_node.mod_inventory, i)
-			if core_node.mod_inventory.slots[i] == null:
-				var l = Label.new()
-				l.text = "MOD"
-				l.add_theme_color_override("font_color", Color(0.2, 0.2, 0.2, 0.4))
-				l.set_anchors_preset(Control.PRESET_CENTER)
-				b.add_child(l)
-				b.modulate = Color(1,1,1,0.8)
+	if power_graph:
+		power_graph.demand_data = PowerGridManager.history_demand
+		power_graph.gen_data = PowerGridManager.history_generation
+		power_graph.queue_redraw()
+	
+	var mod_inv = core_node.get_node_or_null("ModInventory")
+	if mod_inv:
+		# Guarantee slots are fully initialized
+		if mod_inv.slots.size() != mod_inv.max_slots:
+			if mod_inv.has_method("set_capacity"):
+				mod_inv.set_capacity(mod_inv.max_slots)
 			else:
-				b.modulate = Color(0.8, 1.0, 1.0)
+				mod_inv.slots.resize(mod_inv.max_slots)
+		
+		if not mod_inv.is_connected("inventory_changed", _update_core_mods):
+			mod_inv.inventory_changed.connect(_update_core_mods)
+			
+		_update_core_mods()
+
+func _update_core_mods() -> void:
+	var core_node = get_tree().get_first_node_in_group("core")
+	if not core_node: return
+	var mod_inv = core_node.get_node_or_null("ModInventory")
+	if not mod_inv: return
+	
+	if mod_inv.slots.size() != mod_inv.max_slots:
+		if mod_inv.has_method("set_capacity"):
+			mod_inv.set_capacity(mod_inv.max_slots)
+		else:
+			mod_inv.slots.resize(mod_inv.max_slots)
+
+	if core_mods_grid.get_child_count() != mod_inv.slots.size():
+		_clear(core_mods_grid)
+		for i in range(mod_inv.slots.size()):
+			var b = _create_slot_button(mod_inv, i, false)
+			b.custom_minimum_size = Vector2(128, 128)
+			_recursive_override_size(b, Vector2(128, 128))
 			core_mods_grid.add_child(b)
+
+	for i in range(mod_inv.slots.size()):
+		var b = core_mods_grid.get_child(i)
+		UIHelper.fill_slot_btn(b, mod_inv.slots[i])
+		_recursive_override_size(b, Vector2(128, 128))
+		
+		# Clean up any previously generated overlays
+		for c in b.get_children():
+			if c is Label and c.text in ["DISK"]:
+				c.queue_free()
+			elif c is TextureRect and c.texture and c.texture.resource_path.ends_with("trojan.png"):
+				c.queue_free()
+				
+		if mod_inv.slots[i] == null:
+			var l = Label.new()
+			l.text = "DISK"
+			l.add_theme_font_size_override("font_size", 24)
+			l.add_theme_color_override("font_color", Color(0.2, 0.2, 0.2, 0.4))
+			l.set_anchors_preset(Control.PRESET_CENTER)
+			b.add_child(l)
+			b.modulate = Color(1,1,1,0.8)
+			b.tooltip_text = ""
+			b.set_meta("tooltip_res", null)
+		else:
+			var is_perm = mod_inv.slots[i].item.modifiers.get("permanent", false)
+			b.modulate = Color(1.0, 0.6, 0.8) if is_perm else Color(0.8, 1.0, 1.0)
+			b.tooltip_text = " "
+			b.set_meta("tooltip_res", mod_inv.slots[i].item)
+			
+			# Spinning DVD Animation for Core Mod slot icons
+			var tex_rect = null
+			for c in b.get_children():
+				if c is MarginContainer:
+					for mc in c.get_children():
+						if mc is TextureRect:
+							tex_rect = mc
+							break
+			
+			if tex_rect:
+				tex_rect.pivot_offset = tex_rect.size / 2.0
+				var spin_script = GDScript.new()
+				spin_script.source_code = """
+extends TextureRect
+func _process(delta):
+	rotation += 2.0 * delta
+"""
+				spin_script.reload()
+				tex_rect.set_script(spin_script)
+				tex_rect.set_process(true)
+			
+			# Trojan icon for Eternal Disks
+			if is_perm:
+				var trojan_icon = TextureRect.new()
+				var t_tex = load("res://assets/icons/trojan.png")
+				if t_tex:
+					trojan_icon.texture = t_tex
+				trojan_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+				trojan_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+				trojan_icon.custom_minimum_size = Vector2(32, 32)
+				trojan_icon.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+				trojan_icon.position = Vector2(-36, -36)
+				trojan_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				b.add_child(trojan_icon)
 
 func _create_grid_tab(name: String) -> Control:
 	var m = MarginContainer.new()
@@ -757,7 +829,7 @@ func _create_grid_tab(name: String) -> Control:
 	m.add_theme_constant_override("margin_top", 10); m.add_theme_constant_override("margin_bottom", 10)
 	var s = ScrollContainer.new(); s.name = "Scroll"; m.add_child(s)
 	
-	s.set_drag_forwarding(Callable(), Callable(self, "_can_drop_trash"), Callable(self, "_drop_trash"))
+	s.set_drag_forwarding(Callable(), Callable(UIHelper, "can_drop_trash"), Callable(UIHelper, "drop_trash"))
 	
 	var g = GridContainer.new(); g.name = "Grid"; g.columns = 8; g.add_theme_constant_override("h_separation", 6); g.add_theme_constant_override("v_separation", 6); s.add_child(g)
 	return m
@@ -775,9 +847,24 @@ func _load_resources() -> void:
 	load_all.call("res://resources/items/", all_items, ItemResource)
 	load_all.call("res://resources/buildables/", all_buildings, BuildableResource)
 	load_all.call("res://resources/mods/", all_mods, ItemResource)
+
+func _load_recipes() -> void:
+	basic_recipes.clear()
+	var current_wave = 1
+	if is_instance_valid(GameManager) and "game_data" in GameManager:
+		current_wave = GameManager.game_data.get("wave", 1)
+		
+	var menu_cats = ["assembly", "basic"]
+	if is_instance_valid(GameManager) and GameManager.current_level_config.has("menu_recipe_categories"):
+		var raw_cats = GameManager.current_level_config.get("menu_recipe_categories")
+		if typeof(raw_cats) == TYPE_ARRAY:
+			menu_cats =[]
+			for c in raw_cats: menu_cats.append(str(c))
+			
 	if GameManager.has_method("get_available_recipes"):
 		for r in GameManager.get_available_recipes():
-			if r.category == "basic": basic_recipes.append(r)
+			if r.category in menu_cats and r.tier <= current_wave:
+				basic_recipes.append(r)
 
 func _on_mode_toggle() -> void: PlayerManager.is_creative_mode = !PlayerManager.is_creative_mode
 func _on_mode_changed(creative: bool) -> void:
@@ -789,7 +876,9 @@ func _on_mode_changed(creative: bool) -> void:
 
 func _populate_grids() -> void:
 	_clear(crafting_grid)
-	for r in basic_recipes: crafting_grid.add_child(_create_craft_btn(r))
+	for r in basic_recipes:
+		crafting_grid.add_child(_create_craft_btn(r))
+			
 	_clear(items_grid); _clear(buildings_grid); _clear(mods_grid)
 	if PlayerManager.is_creative_mode:
 		for i in all_items: items_grid.add_child(_create_res_btn(i))
@@ -805,19 +894,22 @@ func _create_craft_btn(r: RecipeResource) -> Button:
 	
 	var out = r.get_main_output()
 	if out and out.get("icon"):
-		var center = CenterContainer.new()
-		center.set_anchors_preset(Control.PRESET_FULL_RECT)
-		center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		b.add_child(center)
+		var margin = MarginContainer.new()
+		margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+		margin.add_theme_constant_override("margin_left", 4)
+		margin.add_theme_constant_override("margin_right", 4)
+		margin.add_theme_constant_override("margin_top", 4)
+		margin.add_theme_constant_override("margin_bottom", 4)
+		margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(margin)
 
 		var tr = TextureRect.new()
 		tr.texture = out.icon
-		tr.custom_minimum_size = Vector2(64, 64)
 		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		tr.texture_filter = Control.TEXTURE_FILTER_NEAREST
 		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		center.add_child(tr)
+		margin.add_child(tr)
 		
 	b.pressed.connect(func(): _select_recipe(r))
 	return b
@@ -835,13 +927,15 @@ func _select_recipe(r: RecipeResource) -> void:
 	_clear(details_ingredients_grid)
 	for entry in r.inputs:
 		var hb = HBoxContainer.new()
+		var margin = MarginContainer.new()
+		margin.custom_minimum_size = Vector2(32, 32)
 		var ic = TextureRect.new()
-		ic.custom_minimum_size = Vector2(32, 32)
 		ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		ic.texture_filter = Control.TEXTURE_FILTER_NEAREST
 		if entry.resource.get("icon"): ic.texture = entry.resource.icon
-		hb.add_child(ic)
+		margin.add_child(ic)
+		hb.add_child(margin)
 		var lb = Label.new()
 		var n = entry.resource.get("item_name") if "item_name" in entry.resource else entry.resource.get("buildable_name")
 		lb.text = "%dx %s" %[entry.count, n]
@@ -863,16 +957,90 @@ func _on_craft_button_pressed() -> void:
 func _on_craft_progress(v): craft_progress.value = v * 100
 func _on_craft_state_changed(_r): _update_crafting_ui()
 
+func _custom_can_drop(pos, data) -> bool:
+	if typeof(data) == TYPE_DICTIONARY and data.get("type") == "creative_copy": return true
+	return UIHelper.can_drop(pos, data)
+
+func _custom_can_drop_ally(pos, data, inv, idx) -> bool:
+	if typeof(data) == TYPE_DICTIONARY and data.get("type") == "creative_copy": return true
+	return UIHelper.can_drop_ally(pos, data, inv, idx)
+
+func _custom_drag_inv(pos, inv, idx, btn):
+	var slot = inv.slots[idx]
+	if slot and slot.item:
+		if slot.item.equipment_type == ItemResource.EquipmentType.MOD:
+			if slot.item.modifiers.get("permanent", false) and not PlayerManager.is_creative_mode:
+				var tween = btn.create_tween()
+				tween.tween_property(btn, "modulate", Color(1, 0, 0), 0.1)
+				tween.tween_property(btn, "modulate", Color.WHITE, 0.1)
+				return null
+				
+	if PlayerManager.is_creative_mode and Input.is_action_pressed("build_copy"):
+		if slot:
+			btn.set_drag_preview(WindowUtils.create_drag_preview(slot.item.icon))
+			return { "type": "creative_copy", "item": slot.item, "count": slot.item.stack_size }
+	return UIHelper.drag_inv(pos, inv, idx, btn)
+
+func _custom_drop_inv(pos, data, inv, idx):
+	if typeof(data) == TYPE_DICTIONARY and data.get("type") == "creative_copy":
+		var existing = inv.slots[idx]
+		if not existing:
+			inv.slots[idx] = {"item": data.item, "count": data.count}
+			inv.inventory_changed.emit()
+		elif existing.item == data.item:
+			var space = existing.item.stack_size - existing.count
+			var add = min(space, data.count)
+			existing.count += add
+			inv.inventory_changed.emit()
+		else:
+			inv.slots[idx] = {"item": data.item, "count": data.count}
+			inv.inventory_changed.emit()
+		return
+	UIHelper.drop_inv(pos, data, inv, idx)
+
+func _custom_drop_ally(pos, data, inv, idx):
+	if typeof(data) == TYPE_DICTIONARY and data.get("type") == "creative_copy":
+		var existing = inv.slots[idx]
+		if not existing:
+			inv.slots[idx] = {"item": data.item, "count": data.count}
+			inv.inventory_changed.emit()
+		elif existing.item == data.item:
+			var space = existing.item.stack_size - existing.count
+			var add = min(space, data.count)
+			existing.count += add
+			inv.inventory_changed.emit()
+		else:
+			inv.slots[idx] = {"item": data.item, "count": data.count}
+			inv.inventory_changed.emit()
+		return
+	UIHelper.drop_ally(pos, data, inv, idx)
+
 func _update_player_inventory() -> void:
 	_clear(player_grid)
 	var slots = PlayerManager.game_inventory.slots
 	for i in range(slots.size()):
-		var btn = _create_slot_btn_base()
-		_fill_slot_btn(btn, slots[i])
+		var btn = UIHelper.create_slot_btn_base()
+		btn.set_script(preload("res://scripts/ui/slot_button.gd"))
+		UIHelper.fill_slot_btn(btn, slots[i])
+		
+		btn.gui_input.connect(func(event: InputEvent):
+			if event.is_action_pressed("build_copy") and PlayerManager.is_creative_mode:
+				var slot = slots[i]
+				if slot:
+					var drag_data = { "type": "creative_copy", "item": slot.item, "count": slot.item.stack_size }
+					btn.force_drag(drag_data, WindowUtils.create_drag_preview(slot.item.icon))
+		)
+		
 		if slots[i]:
-			btn.set_drag_forwarding(Callable(self, "_drag_inv").bind(i), Callable(self, "_can_drop"), Callable(self, "_drop_inv").bind(i))
+			btn.set_meta("tooltip_res", slots[i].item)
+			btn.tooltip_text = " "
+			btn.pressed.connect(func():
+				if Input.is_key_pressed(KEY_SHIFT):
+					UIHelper.handle_shift_click(PlayerManager.game_inventory, i)
+			)
+			btn.set_drag_forwarding(Callable(self, "_custom_drag_inv").bind(PlayerManager.game_inventory, i, btn), Callable(self, "_custom_can_drop"), Callable(self, "_custom_drop_inv").bind(PlayerManager.game_inventory, i))
 		else:
-			btn.set_drag_forwarding(Callable(), Callable(self, "_can_drop"), Callable(self, "_drop_inv").bind(i))
+			btn.set_drag_forwarding(Callable(), Callable(self, "_custom_can_drop"), Callable(self, "_custom_drop_inv").bind(PlayerManager.game_inventory, i))
 		player_grid.add_child(btn)
 
 func _update_ally_grid(_arg=null):
@@ -898,7 +1066,7 @@ func _update_ally_grid(_arg=null):
 			3: show = has_art; label_txt = "AT"
 		
 		if show:
-			var b = _create_slot_button(inv, i)
+			var b = _create_slot_button(inv, i, true)
 			if inv.slots[i] == null:
 				var l = Label.new()
 				l.text = label_txt
@@ -911,60 +1079,46 @@ func _update_ally_grid(_arg=null):
 			ally_equip_grid.add_child(b)
 	
 	for i in range(4, inv.slots.size()):
-		var b = _create_slot_button(inv, i)
+		var b = _create_slot_button(inv, i, true)
 		ally_backpack_grid.add_child(b)
 
-func _create_slot_btn_base() -> Button:
-	var b = Button.new()
-	b.custom_minimum_size = Vector2(64, 64)
-	b.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+func _create_slot_button(inv: InventoryComponent, i: int, is_ally: bool = false) -> Button:
+	var b = UIHelper.create_slot_btn_base()
+	b.set_script(preload("res://scripts/ui/slot_button.gd"))
+	UIHelper.fill_slot_btn(b, inv.slots[i])
 	
-	var center = CenterContainer.new()
-	center.name = "IconCenter"
-	center.set_anchors_preset(Control.PRESET_FULL_RECT)
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	b.add_child(center)
-	return b
+	b.gui_input.connect(func(event: InputEvent):
+		if event.is_action_pressed("build_copy") and PlayerManager.is_creative_mode:
+			var slot = inv.slots[i]
+			if slot:
+				var drag_data = { "type": "creative_copy", "item": slot.item, "count": slot.item.stack_size }
+				b.force_drag(drag_data, WindowUtils.create_drag_preview(slot.item.icon))
+	)
 
-func _fill_slot_btn(b: Button, slot_data):
-	if slot_data:
-		var it = slot_data.item
-		if "item_name" in it:
-			b.tooltip_text = it.item_name
-		elif "buildable_name" in it:
-			b.tooltip_text = it.buildable_name
-		
-		var tr = TextureRect.new()
-		tr.texture = it.icon
-		tr.custom_minimum_size = Vector2(64, 64)
-		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		tr.texture_filter = Control.TEXTURE_FILTER_NEAREST
-		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		
-		var center = b.get_node("IconCenter")
-		if center:
-			center.add_child(tr)
-		
-		var l = Label.new()
-		l.text = str(slot_data.count)
-		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		l.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-		l.offset_right = 4
-		l.offset_bottom = 2
-		var font = load("res://assets/fonts/v2-fs-tahoma-8px.otf")
-		if font:
-			l.add_theme_font_override("font", font)
-		l.add_theme_font_size_override("font_size", 16)
-		l.add_theme_color_override("font_outline_color", Color.BLACK)
-		l.add_theme_constant_override("outline_size", 4)
-		b.add_child(l)
 
-func _create_slot_button(inv, i) -> Button:
-	var b = _create_slot_btn_base()
-	_fill_slot_btn(b, inv.slots[i])
-	b.set_drag_forwarding(Callable(self, "_drag_ally").bind(inv, i), Callable(self, "_can_drop_ally").bind(inv, i), Callable(self, "_drop_ally").bind(inv, i))
+	if inv.slots[i]:
+		b.set_meta("tooltip_res", inv.slots[i].item)
+		b.tooltip_text = " "
+		b.pressed.connect(func():
+			if Input.is_key_pressed(KEY_SHIFT):
+				var slot = inv.slots[i]
+				if slot and slot.item and slot.item.equipment_type == ItemResource.EquipmentType.MOD:
+					if slot.item.modifiers.get("permanent", false) and not PlayerManager.is_creative_mode:
+						var tween = b.create_tween()
+						tween.tween_property(b, "modulate", Color(1, 0, 0), 0.1)
+						tween.tween_property(b, "modulate", Color.WHITE, 0.1)
+						return
+				UIHelper.handle_shift_click(inv, i)
+		)
+		if is_ally:
+			b.set_drag_forwarding(Callable(self, "_custom_drag_inv").bind(inv, i, b), Callable(self, "_custom_can_drop_ally").bind(inv, i), Callable(self, "_custom_drop_ally").bind(inv, i))
+		else:
+			b.set_drag_forwarding(Callable(self, "_custom_drag_inv").bind(inv, i, b), Callable(self, "_custom_can_drop"), Callable(self, "_custom_drop_inv").bind(inv, i))
+	else:
+		if is_ally:
+			b.set_drag_forwarding(Callable(), Callable(self, "_custom_can_drop_ally").bind(inv, i), Callable(self, "_custom_drop_ally").bind(inv, i))
+		else:
+			b.set_drag_forwarding(Callable(), Callable(self, "_custom_can_drop"), Callable(self, "_custom_drop_inv").bind(inv, i))
 	return b
 
 func _create_res_btn(res):
@@ -972,108 +1126,52 @@ func _create_res_btn(res):
 	b.custom_minimum_size = Vector2(64, 64)
 	b.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	b.set_script(preload("res://scripts/ui/slot_button.gd"))
+	b.set_meta("tooltip_res", res)
+	b.tooltip_text = " "
 	
 	if res.get("icon"): 
-		var center = CenterContainer.new()
-		center.set_anchors_preset(Control.PRESET_FULL_RECT)
-		center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		b.add_child(center)
+		var margin = MarginContainer.new()
+		margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+		margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		margin.add_theme_constant_override("margin_left", 4)
+		margin.add_theme_constant_override("margin_right", 4)
+		margin.add_theme_constant_override("margin_top", 4)
+		margin.add_theme_constant_override("margin_bottom", 4)
+		b.add_child(margin)
 		
 		var tr = TextureRect.new()
 		tr.texture = res.icon
-		tr.custom_minimum_size = Vector2(64, 64)
 		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		tr.texture_filter = Control.TEXTURE_FILTER_NEAREST
 		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		center.add_child(tr)
-		
-	if "item_name" in res: b.tooltip_text = res.item_name
-	elif "buildable_name" in res: b.tooltip_text = res.buildable_name
-	elif "ally_name" in res: b.tooltip_text = res.ally_name
+		margin.add_child(tr)
 	
-	b.gui_input.connect(_on_res_btn_input.bind(res))
-	b.set_drag_forwarding(Callable(self, "_drag_create").bind(res), Callable(self, "_can_drop_trash"), Callable(self, "_drop_trash"))
-	return b
-
-func _on_res_btn_input(event: InputEvent, res: Resource):
-	if event is InputEventMouseButton and event.pressed:
-		if event.button_index == MOUSE_BUTTON_LEFT:
+	b.gui_input.connect(func(event: InputEvent):
+		if event.is_action_pressed("build_copy") and PlayerManager.is_creative_mode:
 			var stack = 64
 			if res is ItemResource: stack = res.stack_size
-			PlayerManager.game_inventory.add_item(res, stack)
-		elif event.button_index == MOUSE_BUTTON_RIGHT:
-			PlayerManager.game_inventory.add_item(res, 1)
+			var drag_data = { "type": "creative_copy", "item": res, "count": stack }
+			b.force_drag(drag_data, WindowUtils.create_drag_preview(res.icon))
+		elif event is InputEventMouseButton and event.pressed:
+			if event.button_index == MOUSE_BUTTON_LEFT:
+				var stack = 64
+				if res is ItemResource: stack = res.stack_size
+				PlayerManager.game_inventory.add_item(res, stack)
+			elif event.button_index == MOUSE_BUTTON_RIGHT:
+				PlayerManager.game_inventory.add_item(res, 1)
+	)
+	
+	b.set_drag_forwarding(Callable(self, "_drag_create").bind(res, b), Callable(UIHelper, "can_drop_trash"), Callable(UIHelper, "drop_trash"))
+	return b
 
 func _clear(p): for c in p.get_children(): c.queue_free()
 
-func _drag_create(_p, r): 
-	var t = TextureRect.new()
-	t.texture = r.icon
-	t.size = Vector2(64, 64)
-	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	t.texture_filter = Control.TEXTURE_FILTER_NEAREST
-	set_drag_preview(t)
+func _drag_create(_pos, r, btn: Control): 
+	btn.set_drag_preview(WindowUtils.create_drag_preview(r.icon))
+	if PlayerManager.is_creative_mode and Input.is_action_pressed("build_copy"):
+		var stack = 64
+		if r is ItemResource: stack = r.stack_size
+		return { "type": "creative_copy", "item": r, "count": stack }
 	return { "type": "creative_spawn", "resource": r }
-
-func _drag_inv(_p, i):
-	var s = PlayerManager.game_inventory.slots[i]
-	if not s: return null
-	var t = TextureRect.new()
-	t.texture = s.item.icon
-	t.size = Vector2(64, 64)
-	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	t.texture_filter = Control.TEXTURE_FILTER_NEAREST
-	set_drag_preview(t)
-	return { "type": "inventory_drag", "inventory": PlayerManager.game_inventory, "slot_index": i, "item": s.item, "count": s.count }
-
-func _drag_ally(_p, inv, i):
-	if i >= inv.slots.size() or not inv.slots[i]: return null
-	var t = TextureRect.new()
-	t.texture = inv.slots[i].item.icon
-	t.size = Vector2(64, 64)
-	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	t.texture_filter = Control.TEXTURE_FILTER_NEAREST
-	set_drag_preview(t)
-	return { "type": "inventory_drag", "inventory": inv, "slot_index": i, "item": inv.slots[i].item, "count": inv.slots[i].count }
-
-func _can_drop(_p, d): 
-	return d is Dictionary and d.has("type")
-
-func _can_drop_ally(_p, d, inv, idx):
-	if not (d is Dictionary and d.has("type") and d.has("item")): return false
-	var item = d.item
-	if not inv.is_allowed_in_slot(item, idx): return false
-	return true
-
-func _drop_inv(_p, d, i): _generic_drop(d, PlayerManager.game_inventory, i)
-func _drop_ally(_p, d, inv, i): _generic_drop(d, inv, i)
-
-func _generic_drop(data, target_inv, target_idx):
-	var src = data.inventory if data.has("inventory") else null
-	var item = data.item if data.has("item") else data.resource
-	var count = data.count if data.has("count") else 1
-	
-	if data.type == "creative_spawn": 
-		target_inv.add_item(item, 64)
-	elif data.type == "inventory_drag" and src:
-		if src == target_inv:
-			var temp = target_inv.slots[target_idx]; target_inv.slots[target_idx] = src.slots[data.slot_index]; src.slots[data.slot_index] = temp
-			target_inv.inventory_changed.emit()
-		else:
-			var remainder = target_inv.add_item(item, count)
-			var taken = count - remainder
-			if taken > 0:
-				src.remove_item(item, taken)
-
-func _can_drop_trash(_pos, data) -> bool:
-	if not PlayerManager.is_creative_mode: return false
-	return data is Dictionary and data.has("type") and data.type == "inventory_drag"
-
-func _drop_trash(_pos, data) -> void:
-	if data.has("inventory") and data.has("item") and data.has("count"):
-		data.inventory.remove_item(data.item, data.count)
-

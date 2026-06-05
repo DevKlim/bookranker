@@ -1,0 +1,59 @@
+[gd_scene format=3 uid="uid://c7i45nwmry784"]
+
+[ext_resource type="Script" uid="uid://dtilvlurfts3d" path="res://scripts/entities/particles/particle_effect.gd" id="1_st8hc"]
+[ext_resource type="Texture2D" uid="uid://bovfsc6t06xe8" path="res://assets/textures/particles/smokes/smoke_03_a.png" id="2_st8hc"]
+
+[sub_resource type="Gradient" id="Gradient_ucm32"]
+offsets = PackedFloat32Array(0, 0, 0.7, 1, 1)
+colors = PackedColorArray(0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0.8, 1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_u4xu8"]
+gradient = SubResource("Gradient_ucm32")
+
+[sub_resource type="Curve" id="Curve_ex4oq"]
+_data = [Vector2(0, 0.1), 0.0, 0.0, 0, 0, Vector2(0.3, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_d4m1f"]
+curve = SubResource("Curve_ex4oq")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_hp21j"]
+direction = Vector3(0, 0, 1)
+spread = 10.0
+initial_velocity_min = 10.0
+initial_velocity_max = 15.0
+gravity = Vector3(0, 1, 0)
+scale_curve = SubResource("CurveTexture_d4m1f")
+color_ramp = SubResource("GradientTexture1D_u4xu8")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qt62i"]
+transparency = 1
+blend_mode = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_color = Color(0.2, 0.8, 1, 0.8)
+albedo_texture = ExtResource("2_st8hc")
+billboard_mode = 3
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="QuadMesh" id="QuadMesh_lg0ko"]
+material = SubResource("StandardMaterial3D_qt62i")
+
+[node name="Water Torrent Vfx" type="Node3D" unique_id=824837696]
+script = ExtResource("1_st8hc")
+base_speed_min = 10.0
+base_speed_max = 15.0
+
+[node name="MainEmitter" type="GPUParticles3D" parent="." unique_id=106191783]
+emitting = false
+amount = 30
+lifetime = 0.4
+one_shot = true
+process_material = SubResource("ParticleProcessMaterial_hp21j")
+draw_pass_1 = SubResource("QuadMesh_lg0ko")
+
+[node name="OmniLight" type="OmniLight3D" parent="." unique_id=1893788649]
+light_color = Color(0.2, 0.8, 1, 1)
+omni_range = 4.0

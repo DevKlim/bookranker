@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://cxkitsu00000"]
+
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_kits"]
+[ext_resource type="Texture2D" uid="uid://dj48gvoivcu3e" path="res://assets/icons/kitsunebi.png" id="1_mcapc"]
+
+[resource]
+script = ExtResource("1_kits")
+element_name = "Kitsunebi"
+icon = ExtResource("1_mcapc")
+color = Color(1, 0.54901963, 0, 1)
+duration = 0.1

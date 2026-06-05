@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://dxhkx2odymmkp"]
+
+[ext_resource type="Script" uid="uid://1uckad6v513s" path="res://scripts/entities/projectile.gd" id="1_h5sfu"]
+[ext_resource type="PackedScene" uid="uid://ct30b0g43ovmp" path="res://zip/knife/knife.glb" id="2_tr7y1"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_plane"]
+size = Vector3(1.2501587, 1.0315063, 0.6)
+
+[node name="Knife" type="Area3D" unique_id=1249022890]
+script = ExtResource("1_h5sfu")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1852898355]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.68168336, -0.15095821, 0)
+shape = SubResource("BoxShape3D_plane")
+
+[node name="Model" type="Node3D" parent="." unique_id=2040216868]
+
+[node name="knife" parent="Model" unique_id=1467418642 instance=ExtResource("2_tr7y1")]
+transform = Transform3D(-4.371139e-09, 0, 0.1, 0, 0.1, 0, -0.1, 0, -4.371139e-09, 0, 0, 0)

@@ -1,13 +1,15 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://nrrfcqc3xn8e"]
 
-[ext_resource type="Texture2D" uid="uid://dk1gbxuo1yb61" path="res://assets/items/ink_bottle.png" id="1_drsmc"]
+[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="1_drsmc"]
 [ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="2_hoq3p"]
 
 [resource]
 script = ExtResource("2_hoq3p")
 item_name = "Ink"
 icon = ExtResource("1_drsmc")
-stack_size = 100
+stack_size = 64.0
+rarity = "D"
+item_category = "Item: Resource"
 damage = 1.0
 is_ore = true
 ore_block_name = "Ink Deposit"

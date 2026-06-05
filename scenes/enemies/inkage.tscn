@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bchdmjaw18620"]
 
-[ext_resource type="Script" uid="uid://87pk5o5eu28v" path="res://scripts/entities/enemy.gd" id="1_qufpp"]
+[ext_resource type="Script" uid="uid://bckd86iwrnwwg" path="res://scripts/entities/bosses/inkage_boss.gd" id="1_yne48"]
 [ext_resource type="Script" uid="uid://duudv3f6u8n6m" path="res://scripts/components/health_component.gd" id="2_yne48"]
 [ext_resource type="Script" uid="uid://bw7f6w3g67r4d" path="res://scripts/components/attacker_component.gd" id="3_8ehhf"]
 [ext_resource type="Script" uid="uid://c6lfioqpkvor7" path="res://scripts/components/move_component.gd" id="4_cb7iw"]
@@ -10,7 +10,7 @@
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_sjgsb"]
 
 [node name="Inkage" type="CharacterBody3D" unique_id=176138509]
-script = ExtResource("1_qufpp")
+script = ExtResource("1_yne48")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=739850545]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
@@ -18,7 +18,7 @@ shape = SubResource("CapsuleShape3D_sjgsb")
 
 [node name="HealthComponent" type="Node" parent="." unique_id=1574445027]
 script = ExtResource("2_yne48")
-max_health = 80.0
+max_health = 800.0
 
 [node name="AttackerComponent" type="Node" parent="." unique_id=19566125]
 script = ExtResource("3_8ehhf")

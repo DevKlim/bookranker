@@ -1,0 +1,43 @@
+[gd_scene format=3 uid="uid://bdbest1ip5btw"]
+
+[ext_resource type="Script" uid="uid://87pk5o5eu28v" path="res://scripts/entities/enemy.gd" id="1_rcljs"]
+[ext_resource type="Script" uid="uid://duudv3f6u8n6m" path="res://scripts/components/health_component.gd" id="2_jfoj4"]
+[ext_resource type="Script" uid="uid://bw7f6w3g67r4d" path="res://scripts/components/attacker_component.gd" id="3_5ixd7"]
+[ext_resource type="Script" uid="uid://c6lfioqpkvor7" path="res://scripts/components/move_component.gd" id="4_qql06"]
+[ext_resource type="Script" uid="uid://dg4gfri6lu5o2" path="res://scripts/components/elemental_component.gd" id="5_04q4r"]
+[ext_resource type="Script" uid="uid://bejggjwyke03u" path="res://scripts/components/dps_meter_component.gd" id="6_h5i3h"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_rcljs"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_jfoj4"]
+radius = 0.37939453
+height = 2.5698242
+
+[node name="Target Dummy" type="CharacterBody3D" unique_id=810585595]
+script = ExtResource("1_rcljs")
+
+[node name="ModelFallback" type="MeshInstance3D" parent="." unique_id=1148820195]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+mesh = SubResource("CapsuleMesh_rcljs")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1033213170]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2849121, 0)
+shape = SubResource("CapsuleShape3D_jfoj4")
+
+[node name="HealthComponent" type="Node" parent="." unique_id=1225394415]
+script = ExtResource("2_jfoj4")
+
+[node name="AttackerComponent" type="Node" parent="." unique_id=387487998]
+script = ExtResource("3_5ixd7")
+
+[node name="AttackTimer" type="Timer" parent="AttackerComponent" unique_id=1579627306]
+
+[node name="MoveComponent" type="Node" parent="." unique_id=1376191743]
+script = ExtResource("4_qql06")
+move_speed = 0.0
+
+[node name="ElementalComponent" type="Node" parent="." unique_id=1648971196]
+script = ExtResource("5_04q4r")
+
+[node name="DPSMeterComponent" type="Node" parent="." unique_id=774382152]
+script = ExtResource("6_h5i3h")

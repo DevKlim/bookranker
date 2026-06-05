@@ -21,8 +21,12 @@ func import_mods(list: Array) -> void:
 		res.modifiers = {
 			"cost": entry.get("cost", 0),
 			"type": entry.get("type", "building"),
-			"effects": entry.get("effects", {})
+			"effects": entry.get("effects", {}),
+			"permanent": entry.get("permanent", false)
 		}
+
+		res.rarity = str(entry.get("rarity", "C"))
+		res.item_category = "Mod: " + str(res.modifiers.get("type", "building")).capitalize()
 
 		ResourceSaver.save(res, path)
 		
@@ -34,3 +38,4 @@ func import_mods(list: Array) -> void:
 			if file:
 				file.store_string("extends ModChip\n\nfunc _on_apply() -> void:\n\tpass\n\nfunc _on_remove() -> void:\n\tpass\n")
 				file.close()
+

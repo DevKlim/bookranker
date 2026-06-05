@@ -3,6 +3,8 @@ extends Node
 ## Manages all lane data, grid state, and resource mappings in 3D.
 ## Acts as the central Grid Authority and Pathfinding Server.
 
+signal lane_added(lane_idx)
+
 @export_range(0.0, 1.0) var ore_rarity: float = 0.12 
 @export var generation_offset: Vector2i = Vector2i(0, 0)
 
@@ -16,6 +18,7 @@ const Y_LAYERS = {
 	"ore": 1.0,      
 	"wire": 1.0,     
 	"building": 1.0,  
+	"addon": 1.0,
 	"projectile": 1.5 
 }
 
@@ -40,11 +43,13 @@ var active_ore_deposits: Dictionary = {} # tile (Vector2i) -> remaining_count (i
 var enemies_by_lane: Dictionary = {}
 var enemy_spatial_map: Dictionary = {}
 
+var min_lane: int = 0
+var max_lane: int = 8
 var num_lanes: int = 9
-# Increased length to support field enemies spawning deeper in the map
+
 const LANE_LENGTH = 100
 
-var current_generated_depth: int = 0
+var current_generated_depth: int = -50
 const CHUNK_SIZE: int = 25
 const RENDER_AHEAD: int = 35
 
@@ -63,15 +68,15 @@ func _ready() -> void:
 	fog_manager.setup(self)
 
 	_init_astar()
-	for i in range(num_lanes):
-		enemies_by_lane[i] =[]
+	for i in range(min_lane, max_lane + 1):
+		enemies_by_lane[i] = []
 	_load_resources()
 
 func _init_astar() -> void:
 	astar = AStarGrid2D.new()
 	var x_start = -50 + generation_offset.x
 	var x_size = 200 
-	astar.region = Rect2i(x_start, generation_offset.y, x_size, num_lanes)
+	astar.region = Rect2i(x_start, min_lane + generation_offset.y, x_size, num_lanes)
 	astar.cell_size = Vector2(GRID_SCALE, GRID_SCALE)
 	astar.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_NEVER 
 	astar.update()
@@ -88,20 +93,37 @@ func _init_astar() -> void:
 	astar_ally.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_NEVER
 	astar_ally.update()
 
-func add_lane() -> void:
-	var new_lane_idx = num_lanes
-	num_lanes += 1
-	_generate_lane_data()
-	_init_astar()
-	enemies_by_lane[new_lane_idx] =[]
-	
-	if grid_map:
-		grid_generator._generate_ores_for_lane_chunk(new_lane_idx, 0, current_generated_depth)
-		grid_generator._generate_clutter_for_lane_chunk(new_lane_idx, 0, current_generated_depth)
-		grid_generator._generate_loot_buildings_for_lane_chunk(new_lane_idx, 0, current_generated_depth)
-		grid_generator._generate_terrain_for_lane_chunk(new_lane_idx, 0, current_generated_depth)
+	for coord in grid_state.keys():
+		if grid_state[coord].has("building"):
+			var e = grid_state[coord]["building"]
+			if is_instance_valid(e):
+				var is_clutter = e.is_in_group("clutter")
+				var is_loot = e.is_in_group("loot_buildings")
+				var is_stream = e.is_in_group("stream")
+				if not is_clutter and not is_loot and not is_stream:
+					astar.set_point_solid(coord, true)
+				if not is_loot and not is_stream:
+					astar_field.set_point_solid(coord, true)
+
+func add_lane(direction: int = 1) -> void:
+	print("[LANE-MANAGER] add_lane called. Direction: ", direction, " | Old Min/Max: ", min_lane, "/", max_lane)
+	var new_lane_idx = 0
+	if direction == 1:
+		max_lane += 1
+		new_lane_idx = max_lane
+	else:
+		min_lane -= 1
+		new_lane_idx = min_lane
 		
-	# Update spawners for the new lane so pathfinding has a valid endpoint
+	num_lanes = max_lane - min_lane + 1
+	print("[LANE-MANAGER] New lane generated at idx: ", new_lane_idx, " | Total Lanes: ", num_lanes)
+	
+	_generate_lane_data_for(new_lane_idx)
+	_init_astar()
+	
+	if not enemies_by_lane.has(new_lane_idx):
+		enemies_by_lane[new_lane_idx] = []
+	
 	if fog_manager:
 		var spawn_tile = Vector2i(fog_manager.current_fog_depth, new_lane_idx + generation_offset.y)
 		spawners_by_lane[new_lane_idx] = tile_to_world(spawn_tile)
@@ -112,6 +134,38 @@ func add_lane() -> void:
 		new_world_pos.y = existing.y
 		new_world_pos.x = existing.x
 		spawners_by_lane[new_lane_idx] = new_world_pos
+
+	emit_signal("lane_added", new_lane_idx)
+	
+	_build_lane_visuals_sequentially(new_lane_idx)
+
+func _build_lane_visuals_sequentially(lane_idx: int) -> void:
+	print("[LANE-MANAGER] Starting sequential visual build for lane ", lane_idx, " up to depth: ", current_generated_depth)
+	var depth = -50
+	
+	while depth < current_generated_depth:
+		# Use chunk spans of 15 tiles to create a gorgeous cascading wave pattern of blocks dropping
+		var end_d = min(depth + 15, current_generated_depth)
+		print("[LANE-MANAGER] Generating sequence depth chunk: ", depth, " to ", end_d)
+		
+		if grid_map and grid_generator:
+			grid_generator._generate_terrain_for_lane_chunk(lane_idx, depth, end_d, true)
+			grid_generator._generate_ores_for_lane_chunk(lane_idx, depth, end_d, true)
+			grid_generator._generate_clutter_for_lane_chunk(lane_idx, depth, end_d, true)
+			grid_generator._generate_loot_buildings_for_lane_chunk(lane_idx, depth, end_d, true)
+		else:
+			printerr("[LANE-MANAGER-ERROR] Cannot generate sequentially! GridMap or Generator is missing.")
+			break
+			
+		var world_pos = tile_to_world(Vector2i((end_d - 1) + generation_offset.x, lane_idx + generation_offset.y))
+		if is_instance_valid(GameManager) and GameManager.get("vfx_manager"):
+			GameManager.vfx_manager.play_vfx("y2k_reaction", world_pos)
+			GameManager.vfx_manager.play_vfx("fold_craft", world_pos + Vector3(0, 1, 0))
+			
+		depth = end_d
+		await get_tree().create_timer(0.08).timeout # Wait 0.08s between generation chunks to form a fluid timeline wave
+		
+	print("[LANE-MANAGER] Finished sequential visual build for lane ", lane_idx)
 
 func _load_resources() -> void:
 	ores.clear()
@@ -182,9 +236,9 @@ func _initialize() -> void:
 		grid_generator.generate_guaranteed_clutter(GameManager.current_level_config.get("clutter",[]), parent_node)
 		grid_generator.generate_guaranteed_loot_buildings(GameManager.current_level_config.get("loot_buildings",[]), parent_node)
 		
-		current_generated_depth = 0
+		current_generated_depth = -50
 		var end = min(CHUNK_SIZE, LANE_LENGTH)
-		grid_generator.generate_chunk(0, end)
+		grid_generator.generate_chunk(-50, end)
 		current_generated_depth = end
 		
 		if fog_manager:
@@ -210,22 +264,24 @@ func _process(_delta: float) -> void:
 		grid_generator.generate_chunk(current_generated_depth, end)
 		current_generated_depth = end
 
+func _generate_lane_data_for(lane_idx: int) -> void:
+	var physical_path: Array[Vector2i] = []
+	for depth in range(-50, LANE_LENGTH):
+		var x = depth + generation_offset.x
+		var z = lane_idx + generation_offset.y
+		var tile = Vector2i(x, z)
+		physical_path.append(tile)
+	lane_paths[lane_idx] = physical_path
+	for i in range(physical_path.size()):
+		var tile_coord = physical_path[i]
+		_tile_to_logical_map[tile_coord] = Vector2i(lane_idx, i)
+
 func _generate_lane_data() -> void:
 	_tile_to_logical_map.clear()
 	lane_paths.clear()
 	active_ore_deposits.clear()
-	
-	for lane_idx in range(num_lanes):
-		var physical_path: Array[Vector2i] =[]
-		for depth in range(LANE_LENGTH):
-			var x = depth + generation_offset.x
-			var z = lane_idx + generation_offset.y
-			var tile = Vector2i(x, z)
-			physical_path.append(tile)
-		lane_paths[lane_idx] = physical_path
-		for i in range(physical_path.size()):
-			var tile_coord = physical_path[i]
-			_tile_to_logical_map[tile_coord] = Vector2i(lane_idx, i)
+	for lane_idx in range(min_lane, max_lane + 1):
+		_generate_lane_data_for(lane_idx)
 
 func _calculate_grid_coord(lane_id: int, depth: int) -> Vector2i:
 	var x = depth + generation_offset.x
@@ -237,9 +293,12 @@ func register_entity(entity: Node, coord: Vector2i, layer: String) -> void:
 	grid_state[coord][layer] = entity
 	if layer == "building":
 		var is_clutter = entity.is_in_group("clutter")
-		if not is_clutter:
+		var is_loot = entity.is_in_group("loot_buildings")
+		var is_stream = entity.is_in_group("stream")
+		if not is_clutter and not is_loot and not is_stream:
 			astar.set_point_solid(coord, true)
-		astar_field.set_point_solid(coord, true)
+		if not is_loot and not is_stream:
+			astar_field.set_point_solid(coord, true)
 
 func unregister_entity(coord: Vector2i, layer: String) -> void:
 	if grid_state.has(coord) and grid_state[coord].has(layer):
@@ -251,9 +310,9 @@ func unregister_entity(coord: Vector2i, layer: String) -> void:
 		if grid_state.has(coord) and grid_state[coord].has("building"):
 			var e = grid_state[coord]["building"]
 			if is_instance_valid(e):
-				should_be_solid_field = true
-				if not e.is_in_group("clutter"):
-					should_be_solid_astar = true
+				if not e.is_in_group("loot_buildings") and not e.is_in_group("stream"):
+					should_be_solid_field = true
+					if not e.is_in_group("clutter"): should_be_solid_astar = true
 		astar.set_point_solid(coord, should_be_solid_astar)
 		astar_field.set_point_solid(coord, should_be_solid_field)
 
@@ -270,9 +329,10 @@ func get_entity_at(coord: Vector2i, layer: String) -> Node:
 				if grid_state.has(coord) and grid_state[coord].has("building"):
 					var e = grid_state[coord]["building"]
 					if is_instance_valid(e):
-						should_be_solid_field = true
-						if not e.is_in_group("clutter"):
-							should_be_solid_astar = true
+						if not e.is_in_group("loot_buildings") and not e.is_in_group("stream"):
+							should_be_solid_field = true
+							if not e.is_in_group("clutter"):
+								should_be_solid_astar = true
 				astar.set_point_solid(coord, should_be_solid_astar)
 				astar_field.set_point_solid(coord, should_be_solid_field)
 	return null
@@ -410,7 +470,7 @@ func scan_for_spawners(dev_map: GridMap) -> void:
 				ref_y = world_pos.y
 				
 	if ref_x != -INF:
-		for i in range(num_lanes):
+		for i in range(min_lane, max_lane + 1):
 			if not spawners_by_lane.has(i):
 				var virtual_tile = Vector2i(0, i + generation_offset.y)
 				var virtual_pos = tile_to_world(virtual_tile)
@@ -466,7 +526,7 @@ func get_valid_field_spawn_pos(min_d: int, max_d: int, safe_buffer: int) -> Vect
 	
 	for i in range(10):
 		var depth = randi_range(start, active_max)
-		var lane = randi() % num_lanes
+		var lane = randi_range(min_lane, max_lane)
 		var tile = _calculate_grid_coord(lane, depth)
 		
 		if not get_entity_at(tile, "building"):
@@ -478,7 +538,7 @@ func get_valid_field_spawn_pos(min_d: int, max_d: int, safe_buffer: int) -> Vect
 
 func get_valid_ally_spawn_pos() -> Vector3:
 	for x in range(0, 10):
-		for z in range(max(1, num_lanes)):
+		for z in range(min_lane, max_lane + 1):
 			var tile = Vector2i(x, z)
 			if not get_entity_at(tile, "building"):
 				var world_pos = tile_to_world(tile)

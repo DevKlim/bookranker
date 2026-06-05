@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://baukpd4ibljck"][ext_resource type="Shader" path="res://shaders/y2k_forcefield.gdshader" id="1_y2ks"][sub_resource type="GDScript" id="GDScript_magne"]
+script/source = "extends Node3D
+
+func _ready() -> void:
+    var tween = create_tween()
+    tween.tween_property(self, \"scale\", Vector3(3.0, 3.0, 3.0), 0.4).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+    var mat = $MeshInstance3D.get_active_material(0)
+    tween.parallel().tween_property(mat, \"shader_parameter/color:a\", 0.0, 0.4)
+    tween.tween_callback(queue_free)
+"[sub_resource type="ShaderMaterial" id="ShaderMaterial_magne"]
+render_priority = 0
+shader = ExtResource("1_y2ks")
+shader_parameter/color = Color(0.662745, 0.662745, 0.662745, 0.8)
+shader_parameter/fresnel_power = 2.0[sub_resource type="SphereMesh" id="SphereMesh_magne"]
+material = SubResource("ShaderMaterial_magne")[node name="Channel Aoe Magne" type="Node3D" unique_id=78341528]
+script = SubResource("GDScript_magne")[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("SphereMesh_magne")[node name="OmniLight" type="OmniLight3D" parent="." unique_id=459425119]
+light_color = Color(0.6627451, 0.6627451, 0.6627451, 1)
+omni_range = 4.0

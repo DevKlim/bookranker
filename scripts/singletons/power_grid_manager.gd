@@ -12,14 +12,29 @@ var total_power_generation: float = 0.0
 var total_power_demand: float = 0.0
 var net_power: float = 0.0
 
+var history_demand: Array[float] = []
+var history_generation: Array[float] = []
+var _history_timer: float = 0.0
+const HISTORY_MAX_POINTS: int = 60
+
 @onready var wiring_manager = get_node("/root/WiringManager")
 @onready var build_manager = get_node("/root/BuildManager")
 @onready var lane_manager = get_node("/root/LaneManager") 
 
 func _ready() -> void:
 	print("PowerGridManager Initialized.")
-	# Respond to wire network changes
 	wiring_manager.network_updated.connect(update_grid)
+	set_process(true)
+
+func _process(delta: float) -> void:
+	_history_timer -= delta
+	if _history_timer <= 0.0:
+		_history_timer = 1.0
+		history_demand.append(total_power_demand)
+		history_generation.append(total_power_generation)
+		if history_demand.size() > HISTORY_MAX_POINTS:
+			history_demand.pop_front()
+			history_generation.pop_front()
 
 ## Updates the power state for all consumers.
 func update_grid(_arg = null) -> void:

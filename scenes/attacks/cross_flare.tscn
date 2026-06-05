@@ -1,0 +1,123 @@
+[gd_scene format=3 uid="uid://bbghl6uadc7fh"]
+
+[ext_resource type="Script" path="res://scripts/entities/attack_visual.gd" id="1_mob8p"]
+[ext_resource type="Texture2D" uid="uid://dlhsq3ji216un" path="res://assets/attacks/txt_dot.png" id="2_5ds1x"]
+[ext_resource type="Shader" uid="uid://dufo0je2b0hqq" path="res://zip/cross_flare/cross_flare.gdshader" id="2_7p43n"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_mob8p"]
+angle_min = -44.99999
+angle_max = 45.00001
+gravity = Vector3(0, 0, 0)
+
+[sub_resource type="Curve" id="Curve_7p43n"]
+_data = [Vector2(0, 0), 0.0, 1.4, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_gdy8k"]
+curve = SubResource("Curve_7p43n")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_7p43n"]
+render_priority = 0
+shader = ExtResource("2_7p43n")
+shader_parameter/albedo = Color(1.353256, 1.353256, 1.353256, 1)
+shader_parameter/texture_albedo = ExtResource("2_5ds1x")
+shader_parameter/msdf_pixel_range = 4.0
+shader_parameter/msdf_outline_size = 0.0
+shader_parameter/albedo_texture_size = Vector2i(64, 64)
+shader_parameter/point_size = 1.0
+shader_parameter/roughness = 1.0
+shader_parameter/metallic_texture_channel = Vector4(1, 0, 0, 0)
+shader_parameter/specular = 0.5
+shader_parameter/metallic = 0.0
+shader_parameter/particles_anim_h_frames = 1
+shader_parameter/particles_anim_v_frames = 1
+shader_parameter/particles_anim_loop = false
+shader_parameter/emission = Color(0.33101895, 0.33101892, 0.33101892, 1)
+shader_parameter/emission_energy = 1.0
+shader_parameter/uv1_scale = Vector3(1, 1, 1)
+shader_parameter/uv1_offset = Vector3(0, 0, 0)
+shader_parameter/uv2_scale = Vector3(1, 1, 1)
+shader_parameter/uv2_offset = Vector3(0, 0, 0)
+shader_parameter/reveal_curve = SubResource("CurveTexture_gdy8k")
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_gdy8k"]
+material = SubResource("ShaderMaterial_7p43n")
+size = Vector2(0.1, 2)
+orientation = 2
+
+[sub_resource type="Animation" id="Animation_ht8nl"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("GPUParticles3D:emitting")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("GPUParticles3D:visible")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+
+[sub_resource type="Animation" id="Animation_stab"]
+resource_name = "default"
+length = 0.5
+step = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("GPUParticles3D:emitting")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0.1, 0.5),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [true, false]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("GPUParticles3D:visible")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [false, true]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_stab"]
+_data = {
+&"RESET": SubResource("Animation_ht8nl"),
+&"default": SubResource("Animation_stab")
+}
+
+[node name="CrossFlare" type="Node3D" unique_id=1367897748]
+script = ExtResource("1_mob8p")
+
+[node name="GPUParticles3D" type="GPUParticles3D" parent="." unique_id=733005616]
+visible = false
+emitting = false
+amount = 1
+lifetime = 0.1
+one_shot = true
+process_material = SubResource("ParticleProcessMaterial_mob8p")
+draw_pass_1 = SubResource("PlaneMesh_gdy8k")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=2005359631]
+libraries/ = SubResource("AnimationLibrary_stab")

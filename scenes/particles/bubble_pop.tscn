@@ -1,0 +1,56 @@
+[gd_scene format=3 uid="uid://cc6rg30on57st"]
+
+[ext_resource type="Script" uid="uid://dtilvlurfts3d" path="res://scripts/entities/particles/particle_effect.gd" id="1_q42n1"]
+[ext_resource type="Texture2D" uid="uid://tly22pod1pnm" path="res://assets/textures/particles/circle/circle_04_a.png" id="2_yfx38"]
+
+[sub_resource type="Gradient" id="Gradient_5wein"]
+offsets = PackedFloat32Array(0, 1, 0, 0.7, 1)
+colors = PackedColorArray(0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.8, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_ft067"]
+gradient = SubResource("Gradient_5wein")
+
+[sub_resource type="Curve" id="Curve_brk6w"]
+_data = [Vector2(0, 0.1), 0.0, 0.0, 0, 0, Vector2(0.3, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_riugn"]
+curve = SubResource("Curve_brk6w")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_6q2yi"]
+direction = Vector3(0, 1, 0)
+spread = 180.0
+initial_velocity_min = 3.0
+initial_velocity_max = 6.0
+gravity = Vector3(0, 1, 0)
+scale_curve = SubResource("CurveTexture_riugn")
+color_ramp = SubResource("GradientTexture1D_ft067")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kshke"]
+transparency = 1
+blend_mode = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_color = Color(1, 0.8, 1, 0.8)
+albedo_texture = ExtResource("2_yfx38")
+billboard_mode = 3
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="QuadMesh" id="QuadMesh_wsapi"]
+material = SubResource("StandardMaterial3D_kshke")
+
+[node name="Bubble Pop" type="Node3D" unique_id=438863718]
+script = ExtResource("1_q42n1")
+base_speed_min = 3.0
+base_speed_max = 6.0
+
+[node name="MainEmitter" type="GPUParticles3D" parent="." unique_id=1931626631]
+emitting = false
+amount = 15
+lifetime = 0.5
+one_shot = true
+explosiveness = 1.0
+process_material = SubResource("ParticleProcessMaterial_6q2yi")
+draw_pass_1 = SubResource("QuadMesh_wsapi")

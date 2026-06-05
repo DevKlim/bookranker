@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://oow6ektwgvb8"]
 
 [ext_resource type="Resource" uid="uid://coghxhqspfcp0" path="res://resources/items/graphite.tres" id="1_l3ce4"]
-[ext_resource type="Resource" uid="uid://cde1e6hfb38th" path="res://resources/items/ignichalk.tres" id="2_4xdg3"]
+[ext_resource type="Resource" uid="uid://fnimcv81cy5p" path="res://resources/items/cardboard.tres" id="3_l3ce4"]
 [ext_resource type="Resource" uid="uid://dom6dpbqvf46m" path="res://resources/items/aquachalk.tres" id="3_nt4cr"]
 [ext_resource type="Resource" uid="uid://dllpdr1snbxxq" path="res://resources/buildables/slipslide.tres" id="4_58gbk"]
 [ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="5_s8byv"]
@@ -10,16 +10,16 @@
 script = ExtResource("5_s8byv")
 category = "chalkboard"
 recipe_name = "Slipslide"
-craft_time = 1.0
+tier = 2
 inputs = [{
-"count": 2,
+"count": 8,
 "resource": ExtResource("1_l3ce4")
 }, {
-"count": 1,
-"resource": ExtResource("2_4xdg3")
-}, {
-"count": 1,
+"count": 8,
 "resource": ExtResource("3_nt4cr")
+}, {
+"count": 8,
+"resource": ExtResource("3_l3ce4")
 }]
 outputs = [{
 "count": 1,

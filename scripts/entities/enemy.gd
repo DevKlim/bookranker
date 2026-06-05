@@ -6,44 +6,32 @@ extends CharacterBody3D
 signal tile_changed(old_tile, new_tile)
 
 enum State {
-	MOVE,
-	ATTACK_WAIT,
-	ATTACK_LUNGE,
-	ATTACK_RETURN,
-	RAGDOLL,
-	IDLE,
-	WANDER,
-	AGGRO 
+	MOVE, ATTACK_WAIT, ATTACK_LUNGE, ATTACK_RETURN, RAGDOLL, IDLE, WANDER, AGGRO 
 }
 
 var current_state: State = State.MOVE
 
+var stat_component: StatComponent
 var health_component: HealthComponent
 var elemental_component: ElementalComponent
 var move_component: MoveComponent 
 var attacker_component: AttackerComponent
 var enemy_movement_component: EnemyMovementComponent
 
-# Visuals
 @onready var model_container: Node3D = get_node_or_null("ModelContainer")
 
-# Optimized Visual Tinting
-var _tint_materials: Array[StandardMaterial3D] =[]
+var boss_ui: CanvasLayer
+var hp_bar: ProgressBar
+
+var _tint_materials: Array[StandardMaterial3D] = []
 var _tint_sprites: Array[Node] =[]
 var _tint_timer: float = 0.0
 const TINT_DURATION: float = 0.5
 
-const SPEED_SCALE: float = 0.05
-
-# Stats
-var base_speed: float = 5.0
-var base_weight: float = 10.0
-
-# Range Config
+var base_space: float = 10.0
 var range_depth: int = 1
 var range_width: int = 0
 
-# Field Behavior
 var is_field_enemy: bool = false
 var aggro_range: float = 10.0
 var wander_radius: float = 5.0
@@ -52,45 +40,44 @@ var idle_timer: float = 0.0
 var _home_tile: Vector2i = Vector2i.ZERO 
 
 var is_staggered: bool = false
+var is_dead: bool = false
 var current_attack_target: Node3D = null
 
-# Physics / Gravity Status
 var has_gravity_effect: bool = false
 var _ragdoll_recovery_timer: float = 0.0
-
-# Pathfinding
 var current_path_queue: Array[Vector3] =[]
-
-# Attack State Variables
 var safe_tile_center: Vector3 = Vector3.ZERO
 var attack_wait_timer: float = 0.0
 
-# Lane Tracking
 var _registered_lane_id: int = -1
 var _current_tile_coords: Vector2i = Vector2i(-9999, -9999)
 
-var _debug_timer: float = 0.0
+var target_y_pos: float = 1.0
+
+var _innate_timer: float = 0.0
 
 func _ready() -> void:
+	add_to_group("enemies")
 	collision_layer = 2
 	collision_mask = 1 
 	
-	if not model_container:
-		model_container = get_node_or_null("ModelFallback")
-	
+	if not model_container: model_container = get_node_or_null("ModelFallback")
 	_cache_visual_materials(model_container)
 	_apply_retro_glow(model_container)
 	
+	stat_component = load("res://scripts/components/stat_component.gd").new()
+	stat_component.name = "StatComponent"
+	add_child(stat_component)
+	stat_component.stats_changed.connect(_update_stats)
+
 	health_component = get_node_or_null("HealthComponent")
 	elemental_component = get_node_or_null("ElementalComponent")
-	move_component = get_node_or_null("MoveComponent")
 	attacker_component = get_node_or_null("AttackerComponent")
 	
-	if not move_component:
-		move_component = MoveComponent.new()
-		move_component.name = "MoveComponent"
-		add_child(move_component)
-	move_component.set_physics_process(false)
+	move_component = get_node_or_null("MoveComponent")
+	if move_component:
+		move_component.process_mode = Node.PROCESS_MODE_DISABLED
+		move_component.set_physics_process(false)
 	
 	enemy_movement_component = get_node_or_null("EnemyMovementComponent")
 	if not enemy_movement_component:
@@ -107,11 +94,58 @@ func _ready() -> void:
 	if enemy_resource:
 		initialize_from_resource(enemy_resource)
 	else:
-		if health_component:
-			health_component.current_health = health_component.max_health
+		if health_component: health_component.current_health = health_component.max_health
 		current_state = State.MOVE
 		
 	_register_lane()
+	_update_stats() 
+
+func _setup_boss_ui() -> void:
+	if is_instance_valid(boss_ui): return
+	
+	boss_ui = CanvasLayer.new()
+	boss_ui.layer = 100
+	
+	var ctrl = Control.new()
+	ctrl.set_anchors_preset(Control.PRESET_FULL_RECT)
+	ctrl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	boss_ui.add_child(ctrl)
+	
+	hp_bar = ProgressBar.new()
+	hp_bar.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	hp_bar.custom_minimum_size = Vector2(600, 30)
+	hp_bar.position = Vector2(-300, -120)
+	hp_bar.show_percentage = false
+	
+	var sb = StyleBoxFlat.new()
+	sb.bg_color = Color(0.1, 0.1, 0.1, 0.8)
+	sb.border_width_left = 2; sb.border_width_right = 2
+	sb.border_width_top = 2; sb.border_width_bottom = 2
+	sb.border_color = Color(0.8, 0.1, 0.1, 1.0)
+	hp_bar.add_theme_stylebox_override("background", sb)
+	
+	var sbf = StyleBoxFlat.new()
+	sbf.bg_color = Color(0.9, 0.1, 0.1, 1.0)
+	hp_bar.add_theme_stylebox_override("fill", sbf)
+	ctrl.add_child(hp_bar)
+	
+	var lbl = Label.new()
+	lbl.text = enemy_resource.enemy_name if enemy_resource else "Boss"
+	lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	var font = load("res://assets/fonts/v2-fs-tahoma-8px.otf")
+	if font: lbl.add_theme_font_override("font", font)
+	lbl.add_theme_font_size_override("font_size", 20)
+	lbl.add_theme_color_override("font_outline_color", Color.BLACK)
+	lbl.add_theme_constant_override("outline_size", 4)
+	hp_bar.add_child(lbl)
+	
+	get_tree().root.call_deferred("add_child", boss_ui)
+	
+	if health_component:
+		hp_bar.max_value = health_component.max_health
+		hp_bar.value = health_component.current_health
 
 func _cache_visual_materials(node: Node) -> void:
 	if not is_instance_valid(node): return
@@ -122,8 +156,11 @@ func _cache_visual_materials(node: Node) -> void:
 			var surf_count = node.mesh.get_surface_count()
 			for i in range(surf_count):
 				var mat = node.get_active_material(i)
-				if not mat: mat = StandardMaterial3D.new()
-				if mat is StandardMaterial3D:
+				if not mat: 
+					mat = StandardMaterial3D.new()
+					node.set_surface_override_material(i, mat)
+					_tint_materials.append(mat)
+				elif mat is StandardMaterial3D:
 					var unique_mat = mat.duplicate()
 					node.set_surface_override_material(i, unique_mat)
 					_tint_materials.append(unique_mat)
@@ -138,7 +175,7 @@ func _apply_retro_glow(node: Node) -> void:
 		var glow_mat = ShaderMaterial.new()
 		glow_mat.shader = load("res://shaders/retro_glow.gdshader")
 		if glow_mat.shader:
-			glow_mat.set_shader_parameter("glow_color", Color(1.0, 0.1, 0.3, 0.8)) # Red/Magenta Retro Glow
+			glow_mat.set_shader_parameter("glow_color", Color(1.0, 0.1, 0.3, 0.8)) 
 			glow_mat.set_shader_parameter("fresnel_power", 2.0)
 			glow_mat.set_shader_parameter("edge_intensity", 1.5)
 			node.material_overlay = glow_mat
@@ -149,19 +186,15 @@ func _apply_retro_glow(node: Node) -> void:
 		if sprite_mat.shader:
 			sprite_mat.set_shader_parameter("glow_color", Color(1.0, 0.1, 0.3, 0.8))
 			sprite_mat.set_shader_parameter("width", 2.0)
-			
 			if node.material_override:
 				var base_tex = null
 				if node.material_override is StandardMaterial3D:
 					base_tex = node.material_override.albedo_texture
 				sprite_mat.set_shader_parameter("texture_albedo", base_tex)
 			else:
-				if "texture" in node and node.get("texture"):
-					sprite_mat.set_shader_parameter("texture_albedo", node.texture)
+				if "texture" in node and node.get("texture"): sprite_mat.set_shader_parameter("texture_albedo", node.texture)
 				elif "sprite_frames" in node and node is AnimatedSprite3D:
-					if node.sprite_frames and node.animation:
-						sprite_mat.set_shader_parameter("texture_albedo", node.sprite_frames.get_frame_texture(node.animation, node.frame))
-			
+					if node.sprite_frames and node.animation: sprite_mat.set_shader_parameter("texture_albedo", node.sprite_frames.get_frame_texture(node.animation, node.frame))
 			node.material_override = sprite_mat
 
 	for child in node.get_children():
@@ -181,21 +214,29 @@ func _register_lane() -> void:
 func initialize_from_resource(res: EnemyResource, config: Dictionary = {}) -> void:
 	enemy_resource = res 
 	if health_component:
-		health_component.max_health = res.health
-		health_component.current_health = res.health
+		health_component.max_health = res.max_health
+		health_component.max_security = res.security
+		health_component.current_health = res.max_health
+		health_component.current_security = res.security
 		health_component.defense = res.defense
-		health_component.magical_defense = res.magical_defense
+		health_component.firewall = res.firewall
+		health_component.malware = res.malware
+		health_component.security_regen_delay = res.security_regen_delay
+		health_component.security_regen_time = res.security_regen_time
 	
 	if elemental_component:
 		elemental_component.elemental_cd += res.elemental_cd
+		if res.innate_element:
+			elemental_component.add_or_refresh_status(res.innate_element, 1, true)
+			if res.innate_instant_react and not elemental_component.status_removed.is_connected(_on_status_removed):
+				elemental_component.status_removed.connect(_on_status_removed)
 
-	base_speed = res.speed * SPEED_SCALE
-	base_weight = res.weight
+	base_space = res.space
 	range_depth = res.attack_range_depth
 	range_width = res.attack_range_width
 	
 	if attacker_component:
-		attacker_component.initialize(res.attack_damage, res.attack_speed, res.attack_element)
+		attacker_component.initialize(res.attack_damage, res.process_speed, res.attack_element)
 	
 	is_field_enemy = config.get("is_field_enemy", false)
 	aggro_range = config.get("aggro_range", 10.0)
@@ -207,36 +248,41 @@ func initialize_from_resource(res: EnemyResource, config: Dictionary = {}) -> vo
 		current_state = State.IDLE
 		_home_tile = LaneManager.world_to_tile(global_position)
 		if global_position.y < 0.5: global_position.y = 0.5
+		
+	if enemy_resource.tags.has("boss"):
+		_setup_boss_ui()
+
+func _on_status_removed(id: String) -> void:
+	if enemy_resource and enemy_resource.innate_element and enemy_resource.innate_instant_react:
+		if id == enemy_resource.innate_element.element_name.to_lower():
+			if elemental_component and is_instance_valid(elemental_component):
+				elemental_component.call_deferred("add_or_refresh_status", enemy_resource.innate_element, 1, true)
 
 func set_as_wave_enemy() -> void:
 	is_field_enemy = false
 	current_state = State.MOVE
-	
 	var clutters = get_tree().get_nodes_in_group("clutter")
-	for c in clutters:
-		if is_instance_valid(c):
-			_ignore_collisions_recursive(c)
-			
+	for c in clutters: if is_instance_valid(c): _ignore_collisions_recursive(c)
 	set_path([])
 
 func _ignore_collisions_recursive(node: Node) -> void:
-	if node is PhysicsBody3D:
-		add_collision_exception_with(node)
-	for child in node.get_children():
-		_ignore_collisions_recursive(child)
+	if node is PhysicsBody3D: add_collision_exception_with(node)
+	for child in node.get_children(): _ignore_collisions_recursive(child)
 
 func set_path(world_path: Array[Vector3]) -> void:
 	current_path_queue = world_path.duplicate()
-	
-	if enemy_movement_component:
-		enemy_movement_component.reset_target()
-		
-	if current_state != State.RAGDOLL:
-		if current_state != State.AGGRO:
-			current_state = State.MOVE
+	if enemy_movement_component: enemy_movement_component.reset_target()
+	if current_state != State.RAGDOLL and current_state != State.AGGRO: current_state = State.MOVE
 
 func _process(delta: float) -> void:
 	_process_tint(delta)
+	
+	if enemy_resource and enemy_resource.innate_element:
+		_innate_timer -= delta
+		if _innate_timer <= 0:
+			_innate_timer = max(0.1, enemy_resource.innate_reapply_interval)
+			if elemental_component and not elemental_component.has_element(enemy_resource.innate_element.element_name.to_lower()):
+				elemental_component.add_or_refresh_status(enemy_resource.innate_element, 1, true)
 
 func _process_tint(delta: float) -> void:
 	if _tint_timer > 0.0:
@@ -249,12 +295,10 @@ func _process_tint(delta: float) -> void:
 		_apply_tint(Color.WHITE)
 
 func _physics_process(delta: float) -> void:
-	# Failsafe kill-Z plane (prevents soft-locks if spawning outside of terrain bounds incorrectly)
+	if is_dead: return
 	if global_position.y < -10.0:
-		if health_component:
-			health_component.take_damage(999999.0)
-		else:
-			queue_free()
+		if health_component: health_component.take_damage(999999.0)
+		else: queue_free()
 		return
 
 	var new_tile = LaneManager.world_to_tile(global_position)
@@ -269,20 +313,17 @@ func _physics_process(delta: float) -> void:
 			LaneManager.register_enemy(self, _registered_lane_id)
 
 	if is_staggered and current_state != State.RAGDOLL: return
-	_update_stats()
 	
 	if current_attack_target:
-		if not is_instance_valid(current_attack_target) or current_attack_target.is_queued_for_deletion() or current_attack_target.get("is_dead") == true:
+		if not is_instance_valid(current_attack_target) or current_attack_target.get("is_dead") == true:
 			_stop_attacking_sequence()
-		elif current_state in[State.ATTACK_WAIT, State.ATTACK_LUNGE]:
+		elif current_state in [State.ATTACK_WAIT, State.ATTACK_LUNGE]:
 			if not _is_target_in_range(current_attack_target):
 				if attacker_component: attacker_component.stop_attacking()
-				
 				if is_field_enemy and global_position.distance_to(current_attack_target.global_position) <= aggro_range * 1.5:
 					current_state = State.AGGRO
 					set_path([])
-				else:
-					_stop_attacking_sequence()
+				else: _stop_attacking_sequence()
 		elif is_field_enemy and current_state == State.AGGRO:
 			if global_position.distance_to(current_attack_target.global_position) > aggro_range * 1.5:
 				_stop_attacking_sequence()
@@ -293,47 +334,32 @@ func _physics_process(delta: float) -> void:
 	else:
 		set_collision_mask_value(1, true)
 		velocity.y = 0.0
-		if not is_equal_approx(global_position.y, 1.0):
-			global_position.y = lerp(global_position.y, 1.0, 15.0 * delta)
+		if not is_equal_approx(global_position.y, target_y_pos): global_position.y = lerp(global_position.y, target_y_pos, 15.0 * delta)
 
 	match current_state:
-		State.MOVE:
-			_process_move_state(delta)
-		State.ATTACK_WAIT:
-			_process_attack_wait(delta)
-		State.ATTACK_LUNGE:
-			_process_attack_lunge(delta)
-		State.ATTACK_RETURN:
-			_process_attack_return(delta)
-		State.RAGDOLL:
-			_process_ragdoll_state(delta)
-		State.IDLE:
-			_process_idle_state(delta)
-		State.WANDER:
-			_process_wander_state(delta)
-		State.AGGRO:
-			_process_aggro_state(delta)
+		State.MOVE: _process_move_state(delta)
+		State.ATTACK_WAIT: _process_attack_wait(delta)
+		State.ATTACK_LUNGE: _process_attack_lunge(delta)
+		State.ATTACK_RETURN: _process_attack_return(delta)
+		State.RAGDOLL: _process_ragdoll_state(delta)
+		State.IDLE: _process_idle_state(delta)
+		State.WANDER: _process_wander_state(delta)
+		State.AGGRO: _process_aggro_state(delta)
 	
 	move_and_slide()
-	
-	_debug_timer += delta
-	if _debug_timer >= 2.0:
-		_debug_timer = 0.0
-		var tgt_name = current_attack_target.name if is_instance_valid(current_attack_target) else "None"
-
-# --- PHYSICS SYSTEM ---
 
 func apply_impulse(force_vector: Vector3) -> void:
 	has_gravity_effect = true
 	current_state = State.RAGDOLL
 	_ragdoll_recovery_timer = 0.5
-	var final_weight = max(1.0, get_weight())
-	velocity += (force_vector / final_weight)
+	var final_space = max(1.0, get_space())
+	velocity += (force_vector / final_space)
 	if abs(force_vector.y) < 0.1: velocity.y += 2.0 
 
-func get_weight() -> float:
-	var w = base_weight
-	if elemental_component: w += elemental_component.get_stat_modifier("weight")
+func get_space() -> float:
+	var w = base_space
+	if stat_component: w = stat_component.get_stat("space", w)
+	if elemental_component: w += elemental_component.get_stat_modifier("space")
 	return max(1.0, w)
 
 func _process_ragdoll_state(delta: float) -> void:
@@ -343,20 +369,22 @@ func _process_ragdoll_state(delta: float) -> void:
 	
 	if model_container and velocity.length_squared() > 1.0:
 		var axis = velocity.cross(Vector3.UP).normalized()
-		if axis.length_squared() > 0.01:
-			model_container.rotate(axis, velocity.length() * delta * 0.2)
+		if axis.length_squared() > 0.01: model_container.rotate(axis, velocity.length() * delta * 0.2)
 	
 	_ragdoll_recovery_timer -= delta
 	if _ragdoll_recovery_timer <= 0:
-		if is_on_floor() and velocity.length_squared() < 1.0:
-			_recover_from_ragdoll()
+		if is_on_floor() and velocity.length_squared() < 1.0: _recover_from_ragdoll()
 
 func _recover_from_ragdoll() -> void:
 	has_gravity_effect = false
 	velocity = Vector3.ZERO
+	
 	if model_container:
 		var tween = create_tween()
 		tween.tween_property(model_container, "rotation", Vector3.ZERO, 0.3)
+	
+	if enemy_movement_component:
+		enemy_movement_component.trigger_recenter()
 	
 	if is_field_enemy:
 		current_state = State.IDLE
@@ -367,20 +395,15 @@ func _recover_from_ragdoll() -> void:
 	else:
 		current_state = State.MOVE
 
-# --- FIELD BEHAVIOR ---
-
 func _process_idle_state(delta: float) -> void:
 	velocity.x = move_toward(velocity.x, 0, 10.0 * delta)
 	velocity.z = move_toward(velocity.z, 0, 10.0 * delta)
 	_check_aggro(delta)
 	if current_state != State.IDLE: return
-	
-	if enemy_resource and enemy_resource.field_movement == EnemyResource.FieldMovement.STATIC:
-		return 
+	if enemy_resource and enemy_resource.field_movement == EnemyResource.FieldMovement.STATIC: return 
 	
 	idle_timer -= delta
-	if idle_timer <= 0:
-		_pick_wander_target()
+	if idle_timer <= 0: _pick_wander_target()
 
 func _pick_wander_target() -> void:
 	var valid_tiles =[]
@@ -410,19 +433,16 @@ func _pick_wander_target() -> void:
 func _process_wander_state(delta: float) -> void:
 	_check_aggro(delta)
 	if current_state != State.WANDER: return
-
 	if enemy_movement_component and not enemy_movement_component.has_target and enemy_movement_component.step_cooldown <= 0:
 		current_state = State.IDLE
 		idle_timer = base_idle_time
 		return
-
 	_process_grid_movement(delta)
 
 func _process_aggro_state(delta: float) -> void:
 	if not is_instance_valid(current_attack_target) or current_attack_target.get("is_dead") == true:
 		_stop_attacking_sequence()
 		return
-	
 	if global_position.distance_to(current_attack_target.global_position) > aggro_range * 1.5:
 		_stop_attacking_sequence()
 		return
@@ -446,8 +466,7 @@ func _check_aggro(_delta: float) -> void:
 	if not is_field_enemy: return
 	var nearby = LaneManager.get_entity_at(_current_tile_coords, "building")
 	
-	# Explicitly ignore clutter so enemies don't aggro rocks/trees
-	if nearby and is_instance_valid(nearby) and not (nearby is ClutterObject):
+	if nearby and is_instance_valid(nearby) and not nearby.is_in_group("clutter") and not nearby.is_in_group("loot_buildings") and not nearby.is_in_group("stream"):
 		current_attack_target = nearby
 		current_state = State.AGGRO
 		set_path([])
@@ -463,8 +482,6 @@ func _check_aggro(_delta: float) -> void:
 				set_path([])
 				return
 
-# --- MOVEMENT & ATTACK ---
-
 func _process_move_state(delta: float) -> void:
 	if is_field_enemy and enemy_movement_component and not enemy_movement_component.has_target and enemy_movement_component.step_cooldown <= 0:
 		current_state = State.IDLE
@@ -475,14 +492,12 @@ func _process_move_state(delta: float) -> void:
 func _process_grid_movement(delta: float) -> void:
 	_scan_for_targets()
 	if current_state in[State.ATTACK_WAIT, State.ATTACK_LUNGE, State.ATTACK_RETURN]: return
-
 	if not enemy_movement_component: return
 
-	var spd: float = base_speed
-	if move_component:
-		spd = move_component.move_speed
-
-	var move_vel = enemy_movement_component.get_movement_velocity(delta, current_path_queue, is_field_enemy, spd, _registered_lane_id, enemy_resource)
+	var raw_speed = get_stat("speed", 5.0) 
+	var physical_speed = raw_speed * 0.1
+	
+	var move_vel = enemy_movement_component.get_movement_velocity(delta, current_path_queue, is_field_enemy, physical_speed, _registered_lane_id, enemy_resource)
 	
 	velocity.x = move_vel.x
 	velocity.z = move_vel.z
@@ -496,8 +511,7 @@ func _process_attack_wait(delta: float) -> void:
 			look_at(look_pos, Vector3.UP)
 	
 	attack_wait_timer -= delta
-	if attack_wait_timer <= 0:
-		current_state = State.ATTACK_LUNGE
+	if attack_wait_timer <= 0: current_state = State.ATTACK_LUNGE
 
 func _process_attack_lunge(_delta: float) -> void:
 	if not is_instance_valid(current_attack_target) or current_attack_target.get("is_dead") == true:
@@ -508,18 +522,17 @@ func _process_attack_lunge(_delta: float) -> void:
 	var t_flat = Vector3(target_pos.x, 0, target_pos.z)
 	var dir = (t_flat - my_flat).normalized()
 	
-	var spd: float = base_speed
-	if move_component:
-		spd = move_component.move_speed
-	spd *= 3.0
+	var raw_speed = get_stat("speed", 5.0) 
+	var spd = max(8.0, raw_speed * 0.8) # Fiercely dynamic snap baseline to complete attacks quickly
 	
-	# Lunge physics
 	velocity.x = dir.x * spd
 	velocity.z = dir.z * spd
 	
 	var lunge_blocked = false
 	for i in get_slide_collision_count():
 		var col = get_slide_collision(i)
+		var collider = col.get_collider()
+		if collider and collider.is_in_group("loot_buildings"): continue
 		if abs(col.get_normal().y) < 0.5:
 			lunge_blocked = true
 			break
@@ -531,13 +544,10 @@ func _process_attack_lunge(_delta: float) -> void:
 func _process_attack_return(delta: float) -> void:
 	var my_pos_2d = Vector2(global_position.x, global_position.z)
 	var target_pos_2d = Vector2(safe_tile_center.x, safe_tile_center.z)
-	
 	var dist = my_pos_2d.distance_to(target_pos_2d)
 	
-	var spd: float = base_speed
-	if move_component:
-		spd = move_component.move_speed
-	spd *= 2.0
+	var raw_speed = get_stat("speed", 5.0) 
+	var spd = max(5.0, raw_speed * 0.5) # Force robust, snappy return velocity
 	
 	if dist <= spd * delta or dist < 0.05:
 		global_position.x = safe_tile_center.x
@@ -561,6 +571,14 @@ func _process_attack_return(delta: float) -> void:
 		look_at(Vector3(t_pos.x, global_position.y, t_pos.z), Vector3.UP)
 
 func _scan_for_targets() -> void:
+	# ECS EXPLICIT CORE OVERRIDE: Guarantee an attack on the core if we breach the base depth
+	var my_tile = LaneManager.world_to_tile(global_position)
+	if my_tile.x <= 1 + range_depth:
+		var core = get_tree().get_first_node_in_group("core")
+		if is_instance_valid(core) and core.get("is_dead") != true:
+			_start_attacking_sequence(core)
+			return
+			
 	var allies = get_tree().get_nodes_in_group("allies")
 	for ally in allies:
 		if ally.get("is_dead") == true: continue
@@ -568,7 +586,6 @@ func _scan_for_targets() -> void:
 			if ally.has_method("take_damage") or ally.has_node("HealthComponent"):
 				_start_attacking_sequence(ally); return
 
-	var my_tile = LaneManager.world_to_tile(global_position)
 	for d in range(0, range_depth + 1):
 		for w in range(-range_width, range_width + 1):
 			if not is_field_enemy and w != 0: continue
@@ -576,58 +593,61 @@ func _scan_for_targets() -> void:
 			var check_tile = Vector2i(my_tile.x - d, my_tile.y + w)
 			var building = LaneManager.get_entity_at(check_tile, "building")
 			
-			# Group check bypasses script evaluation cyclic dependency issues
-			if building and is_instance_valid(building) and not building.is_in_group("clutter") and (building.has_method("take_damage") or building.has_node("HealthComponent")):
+			if building and is_instance_valid(building) and not building.is_in_group("clutter") and not building.is_in_group("loot_buildings") and not building.is_in_group("stream") and (building.has_method("take_damage") or building.has_node("HealthComponent")):
 				_start_attacking_sequence(building); return
 
 func _is_target_in_range(target: Node3D) -> bool:
 	if not is_instance_valid(target): return false
-	
 	var my_tile = LaneManager.world_to_tile(global_position)
 	
+	if target.is_in_group("core"):
+		return my_tile.x <= 1 + range_depth
+		
 	if is_field_enemy:
 		var attack_dist = (float(range_depth) * LaneManager.GRID_SCALE) + 0.5
 		var my_flat = Vector3(global_position.x, 0, global_position.z)
 		var t_flat = Vector3(target.global_position.x, 0, target.global_position.z)
 		return my_flat.distance_to(t_flat) <= attack_dist
 	else:
-		# Wave Enemy Logic: Must be strictly forward
 		for d in range(0, range_depth + 1):
 			for w in range(-range_width, range_width + 1):
-				if w != 0: continue # Strict Lane Combat
-				
+				if w != 0: continue
 				var check_tile = Vector2i(my_tile.x - d, my_tile.y + w)
-				
 				var entity = LaneManager.get_entity_at(check_tile, "building")
-				if entity == target:
-					return true
-					
-				var target_tile = LaneManager.world_to_tile(target.global_position)
-				if target_tile == check_tile:
-					return true
-					
+				if entity == target: return true
+				if LaneManager.world_to_tile(target.global_position) == check_tile: return true
 		return false
 
 func _start_attacking_sequence(target: Node) -> void:
 	if current_state != State.MOVE and current_state != State.AGGRO and current_state != State.WANDER and current_state != State.IDLE: return
-	
 	current_attack_target = target
 	velocity.x = 0; velocity.z = 0
 	
 	var safe_tile_coords = LaneManager.world_to_tile(global_position)
+	
+	if is_instance_valid(target):
+		var target_tile = LaneManager.world_to_tile(target.global_position)
+		# Sophisticated back-step if overlapping or too close to perform a clean animation
+		if safe_tile_coords == target_tile or global_position.distance_to(target.global_position) < 1.2:
+			var push_dir = 1
+			if global_position.x < target.global_position.x:
+				push_dir = -1
+				
+			safe_tile_coords.x += push_dir
+			if not LaneManager.is_valid_tile(safe_tile_coords):
+				safe_tile_coords.x -= push_dir * 2
+				if not LaneManager.is_valid_tile(safe_tile_coords):
+					safe_tile_coords.x += push_dir # Fallback if both sides fail
+					
 	safe_tile_center = LaneManager.tile_to_world(safe_tile_coords)
 	safe_tile_center.y = global_position.y
-	
 	current_state = State.ATTACK_RETURN
 
 func _perform_attack_damage() -> void:
 	if not is_instance_valid(current_attack_target) or current_attack_target.get("is_dead") == true: return
-	
-	if attacker_component:
-		attacker_component.start_attacking(current_attack_target)
+	if attacker_component: attacker_component.start_attacking(current_attack_target)
 	else:
-		if current_attack_target.has_method("take_damage"):
-			current_attack_target.take_damage(10.0, null, self)
+		if current_attack_target.has_method("take_damage"): current_attack_target.take_damage(10.0, null, self)
 
 func _stop_attacking_sequence() -> void:
 	if attacker_component: attacker_component.stop_attacking()
@@ -638,46 +658,38 @@ func _stop_attacking_sequence() -> void:
 			idle_timer = 0.5
 		else:
 			current_state = State.MOVE
-			if enemy_movement_component:
-				enemy_movement_component.reset_target()
+			if enemy_movement_component: enemy_movement_component.reset_target()
 
 func get_stat(stat_name: String, default_value: float = 0.0) -> float:
-	var val = default_value
-	if stat_name == "health": val = health_component.max_health if health_component else enemy_resource.health
-	elif stat_name == "speed": val = base_speed
-	elif stat_name == "defense": val = health_component.defense if health_component else enemy_resource.defense
-	elif stat_name == "attack_damage": val = attacker_component.basic_attack.base_damage if attacker_component and attacker_component.basic_attack else enemy_resource.attack_damage
-	
-	if elemental_component:
-		val *= (1.0 + elemental_component.get_stat_modifier(stat_name + "_mult"))
-		val += elemental_component.get_stat_modifier(stat_name + "_flat")
-	return val
+	if stat_component: return stat_component.get_stat(stat_name, default_value)
+	return default_value
 
 func _update_stats() -> void:
-	var final_speed = base_speed
-	if elemental_component:
-		var spd_mult = elemental_component.get_stat_modifier("speed_mult")
-		final_speed *= (1.0 + spd_mult)
-		
-	if enemy_resource and enemy_resource.speed_equation != "":
-		if ClassDB.class_exists("FormulaHelper") or ResourceLoader.exists("res://scripts/utils/formula_helper.gd"):
-			var fh = load("res://scripts/utils/formula_helper.gd")
-			if fh:
-				var vars = {"base_speed": base_speed, "final_speed": final_speed}
-				for k in enemy_resource.stat_weights.keys():
-					vars[k+"_weight"] = enemy_resource.stat_weights[k]
-					vars[k] = get_stat(k, 0.0)
-				final_speed = fh.evaluate(enemy_resource, enemy_resource.speed_equation, vars, final_speed)
-				
-	if move_component:
-		move_component.move_speed = max(0, final_speed)
+	if health_component:
+		health_component.max_health = get_stat("max_health", enemy_resource.max_health if enemy_resource else 100.0)
+		health_component.max_security = get_stat("security", enemy_resource.security if enemy_resource else 0.0)
+		health_component.defense = get_stat("defense", enemy_resource.defense if enemy_resource else 0.0)
+		health_component.firewall = get_stat("firewall", enemy_resource.firewall if enemy_resource else 0.0)
+		health_component.malware = get_stat("malware", enemy_resource.malware if enemy_resource else 0.0)
+		health_component.security_regen_delay = get_stat("security_regen_delay", enemy_resource.security_regen_delay if enemy_resource else 5.0)
+		health_component.security_regen_time = get_stat("security_regen_time", enemy_resource.security_regen_time if enemy_resource else 5.0)
+	var size_mult = get_stat("scale", enemy_resource.scale if enemy_resource else 1.0)
+	if model_container:
+		model_container.scale = Vector3(size_mult, size_mult, size_mult)
 
 func _on_staggered(_duration: float) -> void:
 	is_staggered = true
 	if current_state != State.RAGDOLL: velocity = Vector3.ZERO
-func _on_recovered() -> void: is_staggered = false
+	
+func _on_recovered() -> void:
+	is_staggered = false
+	if enemy_movement_component:
+		enemy_movement_component.trigger_recenter()
+
 func _on_died(_node):
+	is_dead = true
 	_drop_loot()
+	if is_instance_valid(boss_ui): boss_ui.queue_free()
 	queue_free()
 	
 func _drop_loot() -> void:
@@ -701,22 +713,22 @@ func _spawn_item(item_id: String, min_amt: int, max_amt: int) -> void:
 	if ResourceLoader.exists(path):
 		var item = load(path)
 		var count = randi_range(min_amt, max_amt)
-		if PlayerManager.game_inventory:
-			PlayerManager.game_inventory.add_item(item, count)
+		if PlayerManager.game_inventory: PlayerManager.game_inventory.add_item(item, count)
 			
 func _on_health_changed(new_val, old_val):
 	if new_val < old_val: _tint_timer = TINT_DURATION
 	if is_field_enemy and not current_attack_target and current_state != State.RAGDOLL:
 		_scan_for_targets()
+	if hp_bar:
+		hp_bar.value = new_val
+		
 func _apply_tint(color: Color):
-	for s in _tint_sprites:
-		if is_instance_valid(s): s.modulate = color
-	for m in _tint_materials:
-		if m: m.albedo_color = color
+	for s in _tint_sprites: if is_instance_valid(s): s.modulate = color
+	for m in _tint_materials: if m: m.albedo_color = color
+	
 func take_damage(amount: float, element: ElementResource = null, source: Node = null) -> void:
 	if is_field_enemy and source and source != self and source.is_in_group("allies"):
-		if source.get("is_dead") == true:
-			pass
+		if source.get("is_dead") == true: pass
 		elif not current_attack_target:
 			current_attack_target = source
 			current_state = State.AGGRO
@@ -724,4 +736,5 @@ func take_damage(amount: float, element: ElementResource = null, source: Node = 
 	if health_component:
 		if element: ElementManager.apply_element(self, element, source, amount)
 		health_component.take_damage(amount, element, source)
+		
 func get_lane_id() -> int: return _registered_lane_id

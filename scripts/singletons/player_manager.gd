@@ -34,8 +34,8 @@ func _ready() -> void:
 	# Initialize a persistent inventory for the player (Backpack/Hotbar)
 	game_inventory = InventoryComponent.new()
 	game_inventory.name = "GameInventory"
-	game_inventory.max_slots = 40 # 10 Hotbar + 30 Storage
-	game_inventory.slot_capacity = 99
+	game_inventory.max_slots = 20 # 10 Hotbar + 30 Storage
+	game_inventory.slot_capacity = 64
 	game_inventory.can_receive = true
 	game_inventory.can_output = true
 	add_child(game_inventory)

@@ -53,7 +53,7 @@ func _ready() -> void:
 	
 	panel = PanelContainer.new()
 	panel.clip_contents = true
-	panel.custom_minimum_size = Vector2(650, 450)
+	panel.custom_minimum_size = Vector2(800, 500)
 	_apply_liquid_glass(panel, 12.0)
 	positioning_layer.add_child(panel)
 	
@@ -165,7 +165,7 @@ func _ready() -> void:
 	
 	items_container = HBoxContainer.new()
 	items_container.alignment = BoxContainer.ALIGNMENT_CENTER
-	items_container.add_theme_constant_override("separation", 20)
+	items_container.add_theme_constant_override("separation", 30)
 	items_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content_vbox.add_child(items_container)
 	
@@ -189,7 +189,7 @@ func _create_xp_btn(txt: String) -> Button:
 	pressed.bg_color = Color(1, 1, 1, 0.4)
 	btn.add_theme_stylebox_override("pressed", pressed)
 	
-	btn.add_theme_color_override("font_color", Color.WHITE)
+	btn.add_theme_color_override("font_color", Color.BLACK)
 	btn.add_theme_color_override("font_hover_color", Color.WHITE)
 	btn.add_theme_color_override("font_pressed_color", Color.WHITE)
 	
@@ -260,8 +260,8 @@ func _setup_window_resizing(win: Control, scale_wrapper: Control, scale_root: Co
 		c_size.x = max(1.0, c_size.x)
 		c_size.y = max(1.0, c_size.y)
 		
-		var target_x = max(1.0, 650.0 - 24.0)
-		var target_y = max(1.0, 450.0 - 54.0)
+		var target_x = max(1.0, 800.0 - 24.0)
+		var target_y = max(1.0, 500.0 - 54.0)
 		
 		var s = min(1.0, min(c_size.x / target_x, c_size.y / target_y))
 		if s >= 0.99:
@@ -338,7 +338,7 @@ func open(wave_idx: int) -> void:
 	
 	var vp_size = get_viewport_rect().size
 	var p_size = panel.size
-	if p_size.x <= 10: p_size = Vector2(650, 450)
+	if p_size.x <= 10: p_size = Vector2(800, 500)
 	panel.size = p_size
 	panel.position = (vp_size - p_size) / 2.0
 	show()
@@ -361,8 +361,7 @@ func _populate_shop(wave_idx: int) -> void:
 	for c in items_container.get_children():
 		c.queue_free()
 		
-	var pool = _get_shop_pool(wave_idx)
-	pool.shuffle()
+	var pool = _get_shop_pool_picks(wave_idx, 3)
 	
 	if pool.is_empty():
 		var lbl = Label.new()
@@ -371,36 +370,46 @@ func _populate_shop(wave_idx: int) -> void:
 		items_container.add_child(lbl)
 		return
 	
-	var to_show = min(3, pool.size())
-	for i in range(to_show):
+	for i in range(pool.size()):
 		_create_shop_item(pool[i])
 
-func _get_shop_pool(wave_idx: int) -> Array:
-	var all_mods =[]
-	var ItemResClass = load("res://scripts/resources/item_resource.gd")
-	var dir = DirAccess.open("res://resources/mods/")
-	
-	if dir:
-		dir.list_dir_begin()
-		var f = dir.get_next()
-		while f != "":
-			if f.ends_with(".tres"):
-				var res = load("res://resources/mods/" + f)
-				if res is ItemResource and "MOD" in ItemResClass.EquipmentType.keys() and res.equipment_type == ItemResClass.EquipmentType.MOD:
-					all_mods.append(res)
-			f = dir.get_next()
-			
-	var pool =[]
-	
-	for mod in all_mods:
-		var type = mod.modifiers.get("type", "building")
-		if wave_idx == 0:
-			if type == "core":
-				pool.append(mod)
-		else:
-			pool.append(mod)
-			
-	return pool
+func _get_shop_pool_picks(wave_idx: int, count: int) -> Array:
+	var config = GameManager.current_level_config
+	var shop_pools = config.get("shop_pools", {})
+	var pool_name = "wave_" + str(wave_idx)
+	var pool_data = shop_pools.get(pool_name, shop_pools.get("general", []))
+
+	var picks =[]
+	if pool_data.is_empty():
+		# Fallback if no JSON pool data is provided
+		var all_mods =[]
+		var ItemResClass = load("res://scripts/resources/item_resource.gd")
+		var dir = DirAccess.open("res://resources/mods/")
+		if dir:
+			dir.list_dir_begin()
+			var f = dir.get_next()
+			while f != "":
+				if f.ends_with(".tres"):
+					var res = load("res://resources/mods/" + f)
+					if res is ItemResource and res.equipment_type == ItemResClass.EquipmentType.MOD:
+						all_mods.append(res)
+				f = dir.get_next()
+		all_mods.shuffle()
+		for i in range(min(count, all_mods.size())):
+			picks.append(all_mods[i])
+	else:
+		# Use configured weighted shop pools (e.g.[{"item": "mod_overheat", "weight": 10.0}])
+		var temp_pool = pool_data.duplicate(true)
+		for i in range(count):
+			if temp_pool.is_empty(): break
+			var pick = GameManager.pick_from_weighted_pool(temp_pool)
+			if pick:
+				var path = "res://resources/mods/" + pick.get("item", "") + ".tres"
+				if ResourceLoader.exists(path):
+					picks.append(load(path))
+				temp_pool.erase(pick)
+				
+	return picks
 
 func _create_shop_item(item: ItemResource) -> void:
 	var vbox = VBoxContainer.new()
@@ -409,30 +418,48 @@ func _create_shop_item(item: ItemResource) -> void:
 	var panel_bg = PanelContainer.new()
 	var style = StyleBoxFlat.new()
 	style.bg_color = Color(0.95, 0.95, 0.95)
-	style.border_width_left = 1
-	style.border_width_right = 1
-	style.border_width_top = 1
-	style.border_width_bottom = 1
-	style.border_color = Color(0.8, 0.8, 0.8)
+	
+	var r_color = Color(0.8, 0.8, 0.8)
+	var rarity = item.rarity if "rarity" in item else "C"
+	match rarity.to_upper():
+		"F": r_color = Color(0.5, 0.5, 0.5)
+		"D": r_color = Color(1.0, 1.0, 1.0)
+		"C": r_color = Color(0.33, 1.0, 0.33)
+		"B": r_color = Color(0.33, 0.33, 1.0)
+		"A": r_color = Color(0.66, 0.33, 1.0)
+		"S": r_color = Color(1.0, 0.84, 0.0)
+		"SS": r_color = Color(1.0, 0.27, 0.0)
+		"SS+": r_color = Color(0.0, 1.0, 1.0)
+		
+	style.border_width_left = 3
+	style.border_width_right = 3
+	style.border_width_top = 3
+	style.border_width_bottom = 3
+	style.border_color = r_color
 	style.corner_radius_top_left = 6
 	style.corner_radius_top_right = 6
 	style.corner_radius_bottom_left = 6
 	style.corner_radius_bottom_right = 6
 	panel_bg.add_theme_stylebox_override("panel", style)
-	panel_bg.custom_minimum_size = Vector2(120, 150)
+	panel_bg.custom_minimum_size = Vector2(160, 220)
+	
+	panel_bg.set_meta("tooltip_res", item)
+	panel_bg.tooltip_text = " "
+	
 	vbox.add_child(panel_bg)
 	
 	var inner_vbox = VBoxContainer.new()
 	inner_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	inner_vbox.add_theme_constant_override("separation", 10)
 	panel_bg.add_child(inner_vbox)
 	
 	var center = CenterContainer.new()
-	center.custom_minimum_size = Vector2(64, 64)
+	center.custom_minimum_size = Vector2(128, 128)
 	inner_vbox.add_child(center)
 	
 	var icon = TextureRect.new()
 	icon.texture = item.icon
-	icon.custom_minimum_size = Vector2(64, 64)
+	icon.custom_minimum_size = Vector2(128, 128)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.texture_filter = Control.TEXTURE_FILTER_NEAREST
@@ -442,7 +469,8 @@ func _create_shop_item(item: ItemResource) -> void:
 	name_lbl.text = item.item_name
 	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD
-	name_lbl.custom_minimum_size = Vector2(100, 0)
+	name_lbl.custom_minimum_size = Vector2(140, 0)
+	name_lbl.add_theme_font_size_override("font_size", 16)
 	name_lbl.add_theme_color_override("font_color", Color.BLACK)
 	inner_vbox.add_child(name_lbl)
 	
@@ -450,16 +478,17 @@ func _create_shop_item(item: ItemResource) -> void:
 	type_lbl.text = "[" + item.modifiers.get("type", "Unknown").capitalize() + "]"
 	type_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	type_lbl.add_theme_color_override("font_color", Color(0.3, 0.3, 0.3))
-	type_lbl.add_theme_font_size_override("font_size", 12)
+	type_lbl.add_theme_font_size_override("font_size", 14)
 	inner_vbox.add_child(type_lbl)
 	
 	var cost = int(item.modifiers.get("cost", 1))
 	
 	var buy_btn = Button.new()
 	buy_btn.text = "Buy (" + str(cost) + " Byts)"
-	buy_btn.custom_minimum_size = Vector2(100, 36)
+	buy_btn.custom_minimum_size = Vector2(140, 45)
 	buy_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	buy_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	buy_btn.add_theme_font_size_override("font_size", 16)
 	
 	var btn_style = StyleBoxFlat.new()
 	btn_style.bg_color = Color(0.95, 0.95, 0.95)

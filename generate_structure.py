@@ -55,7 +55,7 @@ def generate_structure(root_dir, ignore_dirs, ignore_files, ignore_extensions):
 
 if __name__ == "__main__":
     # The directory to analyze
-    target_dir = '../bookranker'
+    target_dir = '../bookranker/'
     
     # Define what to ignore
     dirs_to_ignore = {
@@ -95,7 +95,8 @@ if __name__ == "__main__":
         '.cfg',
         '.aseprite',
         '.import',
-        '.uid'
+        '.uid',
+        '.png'
     }
 
     # Generate the structure

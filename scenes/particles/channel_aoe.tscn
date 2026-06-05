@@ -1,0 +1,49 @@
+[gd_scene format=3 uid="uid://cxchannelaoe"]
+
+[ext_resource type="Script" path="res://scripts/entities/particles/channel_aoe.gd" id="1_ca"]
+[ext_resource type="Texture2D" uid="uid://budni1yifi317" path="res://assets/textures/particles/circle/circle_03_a.png" id="2_ca"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ca"]
+transparency = 1
+blend_mode = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_texture = ExtResource("2_ca")
+billboard_mode = 3
+billboard_keep_scale = true
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="QuadMesh" id="QuadMesh_ca"]
+material = SubResource("StandardMaterial3D_ca")
+
+[sub_resource type="Curve" id="Curve_ca"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -2.5, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_ca"]
+curve = SubResource("Curve_ca")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_ca"]
+emission_shape = 6
+emission_ring_axis = Vector3(0, 1, 0)
+emission_ring_height = 0.5
+emission_ring_radius = 2.0
+emission_ring_inner_radius = 1.8
+direction = Vector3(0, 1, 0)
+spread = 0.0
+gravity = Vector3(0, 0, 0)
+scale_curve = SubResource("CurveTexture_ca")
+
+[node name="ChannelAoE" type="Node3D"]
+script = ExtResource("1_ca")
+
+[node name="GPUParticles3D" type="GPUParticles3D" parent="."]
+emitting = false
+amount = 24
+lifetime = 0.6
+one_shot = true
+explosiveness = 0.95
+process_material = SubResource("ParticleProcessMaterial_ca")
+draw_pass_1 = SubResource("QuadMesh_ca")

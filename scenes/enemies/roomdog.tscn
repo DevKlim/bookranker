@@ -34,3 +34,4 @@ script = ExtResource("4_4pe7q")
 script = ExtResource("4")
 
 [node name="blockbench_export" parent="." unique_id=552813616 instance=ExtResource("6_e1dfu")]
+transform = Transform3D(1.1924881e-08, 0, -1, 0, 1, 0, 1, 0, 1.1924881e-08, 0, 0, 0)

@@ -49,6 +49,8 @@ func _apply_liquid_glass(win: Control, corner_radius: float = 12.0) -> void:
 	win.call_deferred("emit_signal", "resized")
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	
 	if panel:
 		_apply_liquid_glass(panel, 12.0)
 		
@@ -66,6 +68,7 @@ func _ready() -> void:
 		fake_title.set_anchors_preset(Control.PRESET_TOP_WIDE)
 		fake_title.position = Vector2(0, 16)
 		panel.add_child(fake_title)
+	
 	
 	if resume_btn:
 		resume_btn.add_theme_color_override("font_color", Color.BLACK)

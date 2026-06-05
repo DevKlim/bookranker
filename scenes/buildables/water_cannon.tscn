@@ -1,0 +1,28 @@
+[gd_scene format=3 uid="uid://bssj6k2wcpu66"]
+
+[ext_resource type="Script" uid="uid://n55fko4m1n07" path="res://scripts/entities/buildings/water_cannon.gd" id="1_8nv3y"]
+[ext_resource type="Script" uid="uid://dad3f8h2j4k5l" path="res://scripts/components/inventory_component.gd" id="3_xqgox"]
+[ext_resource type="Script" uid="uid://dg4gfri6lu5o2" path="res://scripts/components/elemental_component.gd" id="4_8ij3u"]
+[ext_resource type="PackedScene" uid="uid://bgylu0sakp62f" path="res://assets/buildables/water_cannon/water_cannon.gltf" id="4_8nv3y"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_i7ye5"]
+
+[node name="Water Cannon" type="StaticBody3D" unique_id=1782859201]
+script = ExtResource("1_8nv3y")
+max_health = 40.0
+default_output_mask = 4
+layout_config = [Vector2i(0, 0)]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1784362562]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("BoxShape3D_i7ye5")
+
+[node name="InventoryComponent" type="Node" parent="." unique_id=1291525403]
+script = ExtResource("3_xqgox")
+can_output = false
+
+[node name="ElementalComponent" type="Node" parent="." unique_id=1044929426]
+script = ExtResource("4_8ij3u")
+
+[node name="blockbench_export" parent="." unique_id=1609025689 instance=ExtResource("4_8nv3y")]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0)

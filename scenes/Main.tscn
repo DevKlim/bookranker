@@ -25,6 +25,7 @@ size = Vector3(5, 5, 5)
 
 [node name="Main" type="Node3D" unique_id=1011281730]
 script = ExtResource("1_57xwr")
+build_cooldown_ms = 20
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1573918408]
 environment = SubResource("Environment_1")
@@ -48,6 +49,7 @@ script = ExtResource("2_vcsgt")
 
 [node name="Core" type="MeshInstance3D" parent="Core" unique_id=476539278]
 transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 0, 0, 0)
+visible = false
 mesh = SubResource("SphereMesh_c01mt")
 skeleton = NodePath("../../Buildings")
 
@@ -78,10 +80,10 @@ metadata/_custom_type_script = "uid://cgqs7pvpbdrdo"
 
 [node name="DataImporter" type="Node" parent="." unique_id=477849547]
 script = ExtResource("7_nxtc6")
-target_category = "Allies"
+target_category = "Mods"
 overwrite_existing = true
 only_update_resources = true
-target_item_id = "player"
+target_item_id = "All"
 
 [node name="GridMap" parent="." unique_id=786906317 instance=ExtResource("5_tbgi4")]
 

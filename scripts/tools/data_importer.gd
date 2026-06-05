@@ -16,7 +16,7 @@ extends Node
 			_run_cleanup()
 		clean_up_data = false
 
-@export_enum("All", "Elements", "Items", "Buildables", "Recipes", "Enemies", "Allies", "Blocks", "Debug", "Clutter", "Attacks", "Events", "Mods") var target_category: String = "All":
+@export_enum("All", "Elements", "Items", "Buildables", "Recipes", "Enemies", "Allies", "Blocks", "Debug", "Clutter", "Attacks", "Events", "Mods", "Particles") var target_category: String = "All":
 	set(value):
 		if target_category != value:
 			target_category = value
@@ -41,7 +41,7 @@ func _get_property_list() -> Array:
 			"Elements": "elements", "Items": "items", "Blocks": "blocks",
 			"Debug": "debug", "Recipes": "recipes", "Enemies": "enemies",
 			"Allies": "allies", "Clutter": "clutter", "Attacks": "attacks",
-			"Buildables": ["buildings", "wires"], "Events": "events", "Mods": "mods"
+			"Buildables": ["buildings", "wires"], "Events": "events", "Mods": "mods", "Particles": "particles"
 		}
 		
 		if key_map.has(target_category):
@@ -129,6 +129,7 @@ func _run_import() -> void:
 	run_imp.call("Allies", "ally_importer.gd", "import_allies")
 	run_imp.call("Clutter", "clutter_importer.gd", "import_clutter")
 	run_imp.call("Events", "event_importer.gd", "import_events")
+	run_imp.call("Particles", "particle_importer.gd", "import_particles")
 	
 	print("--- Data Import Complete ---")
 	if Engine.is_editor_hint():
@@ -139,7 +140,7 @@ func _make_dirs() -> void:
 	DirAccess.make_dir_recursive_absolute("res://assets/ores/")
 	DirAccess.make_dir_recursive_absolute("res://assets/buildables/")
 	DirAccess.make_dir_recursive_absolute(CONTENT_DIR)
-	for d in["elements/", "items/", "buildables/", "recipes/", "enemies/", "allies/", "clutter/", "attacks/", "events/", "mods/"]:
+	for d in["elements/", "items/", "buildables/", "recipes/", "enemies/", "allies/", "clutter/", "attacks/", "events/", "mods/", "particles/"]:
 		DirAccess.make_dir_recursive_absolute(RESOURCE_BASE_PATH + d)
 	DirAccess.make_dir_recursive_absolute("res://scenes/buildables/")
 	DirAccess.make_dir_recursive_absolute("res://scenes/enemies/")
@@ -186,6 +187,8 @@ func _run_cleanup() -> void:
 		clean_folder.call(RESOURCE_BASE_PATH + "allies/", get_valid.call("allies"))
 	if target_category == "All" or target_category == "Events":
 		clean_folder.call(RESOURCE_BASE_PATH + "events/", get_valid.call("events"))
+	if target_category == "All" or target_category == "Particles":
+		clean_folder.call(RESOURCE_BASE_PATH + "particles/", get_valid.call("particles"))
 		
 	print("--- Cleanup Complete ---")
 	if Engine.is_editor_hint():

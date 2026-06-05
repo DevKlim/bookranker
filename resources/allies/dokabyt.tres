@@ -7,7 +7,7 @@
 script = ExtResource("2_ad2m4")
 ally_name = "Dokabyt"
 icon = ExtResource("1_7rtvh")
-health = 20.0
+max_health = 20.0
 inventory_slots = 5
 respawns_count = 1
 respawns_cooldown = 10.0

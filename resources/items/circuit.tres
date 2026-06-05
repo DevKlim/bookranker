@@ -8,7 +8,9 @@
 script = ExtResource("3_x7d0f")
 item_name = "Circuit"
 icon = ExtResource("2_4y18v")
-stack_size = 100.0
+stack_size = 64.0
+rarity = "B"
+item_category = "Item: Material"
 damage = 2.0
 element = ExtResource("1_cjw55")
 element_units = 2

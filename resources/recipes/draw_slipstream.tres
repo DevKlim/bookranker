@@ -8,9 +8,9 @@
 script = ExtResource("3_h3227")
 category = "chalkboard"
 recipe_name = "Slipstream"
-craft_time = 0.5
+craft_time = 1.0
 inputs = [{
-"count": 1,
+"count": 4,
 "resource": ExtResource("1_u625y")
 }]
 outputs = [{

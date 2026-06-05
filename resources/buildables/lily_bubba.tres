@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="BuildableResource" format=3 uid="uid://8lh8qutbfekx"]
+
+[ext_resource type="PackedScene" uid="uid://h1wfp4vrom4e" path="res://scenes/buildables/lily_bubba.tscn" id="1_8qmjh"]
+[ext_resource type="Texture2D" uid="uid://cv4c7uvqob0u7" path="res://assets/icons/lily_bubba.png" id="1_bpcbr"]
+[ext_resource type="Script" uid="uid://qpm1dylmnjld" path="res://scripts/resources/buildable_resource.gd" id="1_jf860"]
+
+[resource]
+script = ExtResource("1_jf860")
+buildable_name = "Lily Bubba"
+description = "Generates a bubble. Hit with Aero to shoot."
+icon = ExtResource("1_bpcbr")
+rarity = "D"
+build_category = "Building: Support"
+max_health = 30.0
+power_consumption = 0.0
+has_input = false
+has_output = false
+default_input_mask = 1
+default_output_mask = 4
+scene = ExtResource("1_8qmjh")

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://cvaxkk2idhutr"]
+
+[ext_resource type="Resource" uid="uid://ta6pdd42mpp1" path="res://resources/attacks/knife.tres" id="1_rvh1q"]
+[ext_resource type="Texture2D" uid="uid://wp11cky8w2m7" path="res://assets/items/knife/knife.png" id="2_cg1t7"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="3_dk8nf"]
+
+[resource]
+script = ExtResource("3_dk8nf")
+item_name = "Combat Knife"
+icon = ExtResource("2_cg1t7")
+stack_size = 1.0
+equipment_type = 2
+rarity = "B"
+item_category = "Item: Weapon"
+attack_config = ExtResource("1_rvh1q")
+damage = 1.0

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://dxqtyxgmta2jn"]
+
+[ext_resource type="Texture2D" uid="uid://bmbm2176vskks" path="res://assets/icons/aether.png" id="1_gui5n"]
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_hmu18"]
+
+[resource]
+script = ExtResource("1_hmu18")
+element_name = "Aether"
+icon = ExtResource("1_gui5n")
+color = Color(0.9411765, 0.9019608, 0.54901963, 1)
+duration = 0.1
+reaction_rules = {
+"ghost": "pixie"
+}

@@ -1,0 +1,42 @@
+[gd_scene format=3 uid="uid://bgplas1"][ext_resource type="Texture2D" uid="uid://bqmjdq3r2r4u3" path="res://assets/textures/particles/flame/flame_01_a.png" id="1_tex"][sub_resource type="GDScript" id="GDScript_plas"]
+script/source = "extends Node3D
+func _ready():
+    $GPUParticles3D.emitting = true
+    get_tree().create_timer(1.0).timeout.connect(queue_free)
+"[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_plas"]
+transparency = 1
+blend_mode = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_color = Color(0.7, 0.1, 1, 0.9)
+albedo_texture = ExtResource("1_tex")
+billboard_mode = 3
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false[sub_resource type="QuadMesh" id="QuadMesh_plas"]
+material = SubResource("StandardMaterial3D_plas")[sub_resource type="Curve" id="Curve_plas"]
+_data =[Vector2(0, 0.2), 0.0, 0.0, 0, 0, Vector2(0.5, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_plas"]
+curve = SubResource("Curve_plas")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_plas"]
+direction = Vector3(0, 1, 0)
+spread = 45.0
+initial_velocity_min = 2.0
+initial_velocity_max = 5.0
+gravity = Vector3(0, 1, 0)
+scale_curve = SubResource("CurveTexture_plas")
+color = Color(0.7, 0.1, 1, 1)[node name="PlasmaBurn" type="Node3D"]
+script = SubResource("GDScript_plas")[node name="GPUParticles3D" type="GPUParticles3D" parent="."]
+emitting = false
+amount = 30
+lifetime = 0.8
+one_shot = true
+explosiveness = 0.6
+process_material = SubResource("ParticleProcessMaterial_plas")
+draw_pass_1 = SubResource("QuadMesh_plas")[node name="OmniLight3D" type="OmniLight3D" parent="."]
+light_color = Color(0.7, 0.1, 1, 1)
+light_energy = 2.0
+omni_range = 3.0

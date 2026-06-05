@@ -1,21 +1,30 @@
 [gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://caik3hdgve4bi"]
 
-[ext_resource type="Resource" uid="uid://coghxhqspfcp0" path="res://resources/items/graphite.tres" id="1_ugp4v"]
 [ext_resource type="Resource" uid="uid://nrrfcqc3xn8e" path="res://resources/items/ink.tres" id="2_2uk3t"]
+[ext_resource type="Resource" uid="uid://d1jxdol00rp3u" path="res://resources/items/paper.tres" id="2_nranj"]
 [ext_resource type="Resource" uid="uid://c86j7cnj47x0p" path="res://resources/buildables/printer.tres" id="3_nranj"]
+[ext_resource type="Resource" uid="uid://cde1e6hfb38th" path="res://resources/items/ignichalk.tres" id="4_ibqq4"]
 [ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="4_nacyj"]
+[ext_resource type="Resource" uid="uid://blhc64oe47vne" path="res://resources/items/luxchalk.tres" id="4_nranj"]
 
 [resource]
 script = ExtResource("4_nacyj")
 category = "chalkboard"
 recipe_name = "Printer"
-craft_time = 3.0
+tier = 2
+craft_time = 5.0
 inputs = [{
-"count": 5,
-"resource": ExtResource("1_ugp4v")
-}, {
-"count": 3,
+"count": 16,
 "resource": ExtResource("2_2uk3t")
+}, {
+"count": 8,
+"resource": ExtResource("2_nranj")
+}, {
+"count": 8,
+"resource": ExtResource("4_ibqq4")
+}, {
+"count": 2,
+"resource": ExtResource("4_nranj")
 }]
 outputs = [{
 "count": 1,

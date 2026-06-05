@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://cw1c3wo0plojg"]
+
+[ext_resource type="Resource" uid="uid://coghxhqspfcp0" path="res://resources/items/graphite.tres" id="1_clgdc"]
+[ext_resource type="Resource" uid="uid://dayi1dtfqsk2w" path="res://resources/items/dull_pencil.tres" id="2_phqi4"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="3_jv5sa"]
+
+[resource]
+script = ExtResource("3_jv5sa")
+category = "lvl1"
+recipe_name = "Dull Pencil"
+craft_time = 1.0
+inputs = [{
+"count": 2,
+"resource": ExtResource("1_clgdc")
+}]
+outputs = [{
+"count": 1,
+"resource": ExtResource("2_phqi4")
+}]

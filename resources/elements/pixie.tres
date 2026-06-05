@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://bd7jcprxy6hbl"]
+
+[ext_resource type="Texture2D" uid="uid://cfd7pj7iodumi" path="res://assets/icons/pixie.png" id="1_1f4lt"]
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_ifdxh"]
+
+[resource]
+script = ExtResource("1_ifdxh")
+element_name = "Pixie"
+icon = ExtResource("1_1f4lt")
+color = Color(1, 0.4117647, 0.7058824, 1)
+duration = 0.1

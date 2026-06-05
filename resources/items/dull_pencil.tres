@@ -1,12 +1,16 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://dayi1dtfqsk2w"]
 
-[ext_resource type="Texture2D" uid="uid://fxn5b2fqq04e" path="res://assets/icons/dull_pencil.png" id="1_aiecc"]
+[ext_resource type="Texture2D" uid="uid://fxn5b2fqq04e" path="res://assets/items/dull_pencil.png" id="1_aiecc"]
+[ext_resource type="Resource" uid="uid://gvqddjpsd7er" path="res://resources/attacks/dull_pencil_stab.tres" id="1_whxvp"]
 [ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="2_whxvp"]
 
 [resource]
 script = ExtResource("2_whxvp")
 item_name = "Dull Pencil"
 icon = ExtResource("1_aiecc")
-stack_size = 1
+stack_size = 1.0
 equipment_type = 2
+rarity = "F"
+item_category = "Item: Weapon"
+attack_config = ExtResource("1_whxvp")
 damage = 1.0

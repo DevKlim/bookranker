@@ -32,6 +32,9 @@ func _ready() -> void:
 	
 	super._ready()
 	
+	if stat_component:
+		stat_component.stats_changed.connect(_update_mining_state)
+	
 	# Initial state check
 	_update_mining_state()
 
@@ -39,10 +42,12 @@ func _on_power_status_changed(has_power: bool) -> void:
 	# Base class handles is_active flag
 	super._on_power_status_changed(has_power)
 	_update_mining_state()
-	print("Drill %s Power Status Changed: %s" % [name, is_active])
+	print("Drill %s Power Status Changed: %s" %[name, is_active])
 
 func _update_mining_state() -> void:
 	if is_active:
+		var process_spd = get_stat("process_speed", 1.0)
+		mine_timer.wait_time = 2.0 / max(0.1, process_spd)
 		if mine_timer.is_stopped():
 			mine_timer.start()
 			print("Drill %s started mining." % name)
@@ -55,7 +60,8 @@ func _process(delta: float) -> void:
 	
 	# Visual Feedback: Spin the drill bit if active
 	if is_active and is_instance_valid(_mesh_visual):
-		_mesh_visual.rotate_y(drill_speed * delta)
+		var process_spd = get_stat("process_speed", 1.0)
+		_mesh_visual.rotate_y((drill_speed * process_spd) * delta)
 	
 	# Output Logic: Continuously try to output if items are available
 	if is_active and inventory.has_item():

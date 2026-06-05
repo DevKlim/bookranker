@@ -1,0 +1,66 @@
+[gd_scene format=3 uid="uid://dyardssweqwe"]
+
+[ext_resource type="Script" path="res://scripts/entities/attack_visual.gd" id="1_atkvis"]
+
+[sub_resource type="TorusMesh" id="TorusMesh_arc"]
+inner_radius = 1.8
+outer_radius = 2.2
+
+[sub_resource type="Shader" id="Shader_arc"]
+code = "shader_type spatial;
+render_mode blend_add, unshaded, cull_disabled;
+uniform vec4 color : source_color = vec4(1.0, 0.2, 0.8, 1.0);
+uniform float progress : hint_range(0.0, 1.0) = 0.0;
+void fragment() {
+    // Only show half the torus
+    if (VERTEX.z > 0.0) discard;
+    
+    // Gridlines pattern for the 'ruler' look
+    float grid = step(0.9, fract(UV.x * 20.0)) + step(0.9, fract(UV.y * 5.0));
+    
+    // Reveal arc
+    float angle = atan(VERTEX.x, -VERTEX.z) / 3.14159;
+    float alpha = step(angle, progress * 2.0 - 1.0);
+    
+    ALBEDO = color.rgb * (1.0 + grid);
+    ALPHA = color.a * alpha * (1.0 - progress);
+}"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_arc"]
+shader = SubResource("Shader_arc")
+shader_parameter/color = Color(1.0, 0.2, 0.8, 1.0)
+shader_parameter/progress = 0.0
+
+[sub_resource type="Animation" id="Animation_arc"]
+resource_name = "default"
+length = 0.5
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("MeshInstance3D:surface_material_override/0:shader_parameter/progress")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.5),
+"transitions": PackedFloat32Array(0.3, 1),
+"update": 0,
+"values": [0.0, 1.0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_arc"]
+_data = {
+"default": SubResource("Animation_arc")
+}
+
+[node name="YardstickArcVFX" type="Node3D"]
+script = ExtResource("1_atkvis")
+animation_name = "default"
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("TorusMesh_arc")
+surface_material_override/0 = SubResource("ShaderMaterial_arc")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+"": SubResource("AnimationLibrary_arc")
+}

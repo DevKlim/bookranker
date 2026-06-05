@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ParticleResource" format=3 uid="uid://dmnixdgci40qu"]
+
+[ext_resource type="PackedScene" uid="uid://mjwl2riu5npc" path="res://scenes/particles/attack.tscn" id="1_l8nla"]
+[ext_resource type="Script" uid="uid://cx7aidq5y2yns" path="res://scripts/resources/particle_resource.gd" id="2_oirur"]
+
+[resource]
+script = ExtResource("2_oirur")
+id = "attack"
+scene = ExtResource("1_l8nla")

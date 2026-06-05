@@ -20,15 +20,20 @@
 4. **Subsequent Shops:** After the initial phase, shops will prompt after each wave and sell any unlocked mods (up to 3) from the global pool.
 
 ## Buildings
-- **Chalkboard (Tier 1 Crafter):** The fundamental crafting hub. *(Cost: 15x Ignichalk, 15x Aquachalk, 15x Aerochalk, 5x Graphite, 5x Marble)*
-- **Drill:** Extracts raw materials from the ground deposits. *(Cost: 10x Marble, 10x Graphite, 5x Aerochalk)*
-- **Binder:** Acts as a high-capacity storage unit. *(Cost: 5x Cardboard)*
-- **Printer:** Generates Paper over time, requires energy. *(Cost: 15x Graphite, 10x Ink, 10x Ignichalk, 10x Aerochalk, 10x Aquachalk)*
-- **Foldgami:** The core ammunition assembler. Takes Paper + any Elemental Chalk (or Ink) which is optional + a Stamp(if no stamp, it is crumpled), and folds them into an infused Origami Weapon. *(Cost: 10x Graphite, 2x Ink)*
-- **Box Fan:** Placed behind a Foldgami. Blows the folded creations towards enemies, making them move like projectiles. Applies Aero to all enemies within a range of 3 in front of it. *(Cost: 10x Graphite, 6x Cardboard, 4x Aerochalk)*
-- **Slipslide:** A transport building. Places a slide where exported items glide along the wet ground until hitting another building or the stream ends. Takes items from the building behind it. *(Cost: 5x Graphite, 2x Ignichalk, 3x Aquachalk)*
-- **Slipstream:** A placeable water puddle stream. Essential for sea-based origami travel (fast speed). *(Cost: 2x Aquachalk)*
-- **Tarstream:** A placeable ink puddle stream. Used for sea-based origami (slow speed, multi-hit). **Applies Slime to enemies.** *(Cost: 2x Ink, 2x Aquachalk)*
+- **Windwall** Slow moving wall of gusts that inches forward for 5 tiles before disappearing. Upon colliding with enemies, it will stop and defend. It has 50 hp. Enemies attacking it is applied aero. Slow craft time.
+- **Water Cannon** Releases high damage, high aqua units torrent of water that consumes 4 aquachalk a second and deals 4 aqua damage a second.
+- **Mystapus** A pool of water that summons a tentacle from the ground and smashes enemies, applying aqua. Can only be placed on tiles with a slipstream. No power needed. It attacks all 4 directions but has a high cooldown between attack and charge time.
+- **Lily Bubba** A ring on the ground that will form a bubble and floats above it. Upon bubble pop or bubble leaving the tile, it will take 5 seconds to generate a new bubble. Boxfans can apply aero to Lily Bubba and, when applied aero, will release a slow moving bubble projectile along its direction. Colliding with enemies deals 5 aqua damage. Increasing 'space' stat of lily bubba will increase the size of the bubble and deal heavier damage. Power needed.
+- **Marble Hoop** Any aqua-based projectiles that goes through the hoop will receive increased damage and elemental units, adding 2 aqua units to the attack and 3 flat damage. Can stack with each hoop placed. Can only be placed on a tile with "Slipstream" building.
+- **Chalkboard (Tier 1 Crafter):** The fundamental crafting hub.
+- **Drill:** Extracts raw materials from the ground deposits.
+- **Binder:** Acts as a high-capacity storage unit.
+- **Printer:** Generates Paper over time, requires energy.
+- **Foldgami:** The core ammunition assembler. Takes Paper + any Elemental Chalk (or Ink) which is optional + a Stamp(if no stamp, it is crumpled), and folds them into an infused Origami Weapon.
+- **Box Fan:** Placed behind a Foldgami. Blows the folded creations towards enemies, making them move like projectiles. Applies Aero to all enemies within a range of 3 in front of it. 
+- **Slipslide:** A transport building. Places a slide where exported items glide along the wet ground until hitting another building or the stream ends. Takes items from the building behind it. *
+- **Slipstream:** A placeable water puddle stream. Essential for sea-based origami travel (fast speed).
+- **Tarstream:** A placeable ink puddle stream. Used for sea-based origami (slow speed, multi-hit).
 
 ## Deposits & Drilled Materials
 *Ores are found as deposits in the ground and must be extracted using a Drill or Hand Drill.*
@@ -100,7 +105,7 @@ Enemies in Level 1 follow a PvZ-style lane progression system, thematic to rogue
 
 ### Inkage (Level Boss)
 *   **Description:** A ink-slathered mage who will inflict his inkmagic on you.
-*   **Mechanic:** Does not approach the core but moves side to side and teleports sometimes. He remains atleast 5 tiles away from the nearest building or at the end of the lane. 
+*   **Mechanic:** Does not approach the core but moves side to side and teleports sometimes. He remains atleast in front of the fog or at the end of the lane. 
 * **Attacks:**
 - Periodically sends inked paper planes down the lane with 3 HP. Will do large damage upon contact.
 - Teleports and fires an ink bullet down the lane it teleports to.
@@ -135,3 +140,108 @@ Enemies in Level 1 follow a PvZ-style lane progression system, thematic to rogue
 - Unlock: Base (Started off unlocked).
 - Crafting: 5x Marble.
 - Effect: Basic manual extraction tool for ores/materials.
+
+## Reactions
+
+### Igni (P) (??? + ???)
+Igni + Aqua = Boil
+Ghost + Igni = Kitsunebi
+Boil + Igni = NOTHING
+Volt + Igni = Light
+Plasma + Light/Volt/Igni = Ionize
+
+### Aqua (P) (??? + ???)
+Igni + Aqua = Boil (R)
+Dark + Aqua = Abyss (R)
+Dew + Aqua = Rain (R)
+Ghost + Aqua = Undine
+Boil + Aqua = Aqua
+
+### Dark (R) (??? + ???)
+Aero + Dark = Ghost
+Dark + Aqua = Abyss (R)
+
+### Aero (P) (??? + ???)
+Aero + Igni/Aqua/Volt = Tailwind
+Aero + Dark = Ghost
+Aero + Boil = Dew
+
+### Volt (P) (??? + ???)
+Volt + Aqua/Magne = Channel
+Volt + Igni = Light
+Plasma + Light/Volt/Igni = Ionize
+
+### Light (R) (Volt + Igni)
+Makes enemies glow and blinded. While afflicted by light, their attacks have a ((source_lux_stat + 25)/5 )% chance on missing their attack (dealing 0 damage).
+Light + Volt = Plasma
+Light + Igni = Aether
+Plasma + Light/Volt/Igni = Ionize
+
+### Plasma
+When afflicted with plasma, additional volt, igni, or light damage will fully turn into ionize reaction damage. All volt, igni, and light is instantly consumed when plasma is active.
+Plasma + Light/Volt/Igni = Ionize
+
+### Ionize (Plasma + Light/Volt/Igni)
+Volt, igni, or light damage receive a buff given by the formula F = (min(# of Volt Units + # of times Volt was applied, 10 \* lux_stat) * 0.2 + min(# of Igni Units + # of times Igni was applied, 10 \* lux_stat) * 0.1 + min(# of Light Units + # of times Light was applied, 10 \* lux_stat) * 0.4) in which the most recent elemental attack using igni, light, or volt will receive the additional buff on top of their original damage.
+
+### Aether (Light + Igni) (R)
+Heals target for F = (source_lux_stat + 2 * elemental units consumed + elemental damage)
+Aether + Ghost = Pixie
+
+### Pixie (Aether + Ghost)
+Will randomly fly up and target three random buildings on the map and heal them for F = (source_lux_stat + 1.5 * elemental units consumed + 0.5 * elemental damage), multiple pixies cannot fly to the same building, applying pixie reaction for 8 seconds.
+
+### Channel (Volt + Aqua/Magne)
+Inflicts aqua or magne to nearby enemies in a 3x3 area from target with a damage of (1 + # of elemental units consumed). Applying additional volt will trigger the arc reaction and reset the channel duration. Applying another instance of aqua or magne will reapply the initial channel damage.
+
+### Arc (Volt + Channel)
+The volt damage is instantly consumed to apply an instance bouncing arc damage to a random nearby aqua/magne-applied enemies within a range of (max(int(sqrt(lux_stat + elemental units consumed)), 2)) tiles. It selects 1 target and bounces to different nearby targets until no more targets with aqua and magne exist. Cannot bounce to a target that it already bounced to. Lastly, the number of times it can bounce it dependent on (max(int(sqrt(lux_stat + number of elemental units consumed)), 3)). The damage of the arc damage is determined by ((Initial volt damage + # elemental units consumed) * (lux_stat + 10)/100) and it deals "Arc" damage. It will not halt the duration of the aqua or magne.
+
+
+### Tailwind (R) (Aero + ANY PRIMARY)
+Applies the non-aero element to all enemies 10 tiles behind the enemy. DMG Formula: 1 + 0.25*(source networking stat) + 0.2*(source speed)
+
+### Ghost (R) (Aero + Dark)
+Applied enemy will be haunted and ghost reaction stays for 8 seconds. A ghost vfx will fly up and haunt three other random enemies on the map, applying same reaction damage to those enemies and applying ghost. F = ((# of Elemental Units Consumed * source networking stat of source) + 2)
+Ghost + Igni = Kitsunebi
+Ghost + Aqua = Undine
+Dew + Ghost = Ectomist
+Aether + Ghost = Pixie
+
+### Kitsunebi (R)
+Does not react with anything. Summons two orbs on opposite sides of the target's tile of foxfire that spins around the target for 2 loops. Applies # of elemental units consumed of Ghost to enemies hit by the foxfire and deals F = (source networking stat of source + 0.5 * applied elemental damage).
+
+### Undine (R)
+Does not react with anything. Act as another proxy for applying elemental reactions. Last for 20 seconds. It looks like a jellyfish that covers the target. It is not a shield but copies all future elemental reactions that its host (target) has. Elemental reactions can occur on the jellyfish and it is like a parasite. About *(30 + source_lux_stat * 0.5)% of its elemental reaction damage the jellyfish takes will apply will go back to the host. If Undine is reapplied to the host or the jellyfish, the duration just resets. The Jellyfish starts with a single unit application of Ghost.
+
+### Boil (R) (Igni + Aqua)
+Stays on enemies for 8 seconds. Applies a reaction damage to the formula (DMG = 1 + (0.1 * # of Units Consumed*(Source Damage + Total # of Aqua Unit on Enemy before hit) * source networking stat))
+Aero + Boil = Dew
+Igni + Boil = NOTHING
+Boil + Aqua = Aqua
+
+### Abyss (R) (Aqua + Dark)
+Dark bubble form around enemy and encases them for 4-20 seconds. Enemy cannot be damaged while in this state but enemy is slowed by F1 = 30% + 0.5(# of Units Consumed). Instead, the encased enemy's elements are suspended and timer is reset upon bubble popping. The shell itself will keep track of all elemental damage and units applied to the shell; for each reaction, extend the shell duration by 2 seconds. At the end of its duration, the shell is removed and reaction damage is applied to enemy based on F2 = ((# of reactions + 0.1 * Applied Elemental Damage + 0.25 * Applied Elemental Units) * 0.5 * # of Units Consumed by Initial Reaction + 0.5 * source networking stat)
+Dew + Abyss = Asphyxiate
+
+### Dew (R) (Aero + Boil)
+Creates a Dew effect on the tile where the reaction occured and persists for 20 seconds. Enemies are applied the Dew reaction upon touching the Dew and lasts for 8 seconds after leaving. Enemies in the Dew has their speed reduced by a flat 25%. If a Dew exist and another Dew reaction takes place at the same tile, the enemy afflicted will be stunned for 0.5 seconds and take a reaction damage of (1 + # of Boil Units existing on the Enemy + 0.5 * (source networking stat)).
+Dew + Aqua = Rain
+Dew + Abyss = Asphyxiate
+Dew + Ghost = Ectomist
+Rain + Ghost = Ectomist
+
+### Rain (R) (Dew + Aqua)
+The tile will summon clouds above and start to rain, constantly applying Aqua to all enemies on and entering the tile, reapplies every 2 seconds. Enemies with Aqua aura already will receive an addition unit of aqua on top of their existing Aqua Units. Clouds last for 30 seconds. Upon reaction, reaction units is fully consumed and Rain does not exist as aura on target.
+Rain + Ghost = Ectomist
+
+### Ectomist (R) (Dew + Ghost)
+Reaction is fully consumed and creates a subtle ghostly mist that last for 8 seconds in a 3x3 area. Ectomists cannot overlap a tile, only one can coexist. It will make all enemies in that tile more vulnerable, increasing damage taken by F=(source lux_stat * 0.5 + 10) and applying a single unit of Ghost upon entering a tile with Ectomist. Does not reapply.
+
+### Asphyxiate (R) (Dew + Abyss)
+When reacted, nearby tiles with Dew (up to 2 tiles away) will be consumed and the target will receive DMG = (1 + 2 * (# of Fog Consumed)) every (min(3, 15/(networking))) for the duration of the Abyss timer. Additional Asphyxiate will increase the damage over time by 1. Aphyxiate aura is fully consumed by Abyss aura will not be consumed and the timer for Abyss is unaffected.
+
+### 
+
+### NOTHING
+Nothing occurs and both elements are consumed.

@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ParticleResource" format=3 uid="uid://2uwa8tmqr8tb"]
+
+[ext_resource type="PackedScene" uid="uid://3vc1k3b0p5iu" path="res://scenes/particles/mystapus_splash.tscn" id="1_wu1w2"]
+[ext_resource type="Script" uid="uid://cx7aidq5y2yns" path="res://scripts/resources/particle_resource.gd" id="2_bfr3y"]
+
+[resource]
+script = ExtResource("2_bfr3y")
+id = "mystapus_splash"
+scene = ExtResource("1_wu1w2")

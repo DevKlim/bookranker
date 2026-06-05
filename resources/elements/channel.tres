@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://cuqnuxad8copw"]
+
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_4ducd"]
+[ext_resource type="Texture2D" uid="uid://bu7a6lpg5s5e7" path="res://assets/icons/channel.png" id="1_ti6wo"]
+
+[resource]
+script = ExtResource("1_4ducd")
+element_name = "Channel"
+icon = ExtResource("1_ti6wo")
+color = Color(0, 0.7490196, 1, 1)
+duration = 8.0
+application_cooldown = 0.5
+reaction_rules = {
+"aqua": "pulse",
+"magne": "pulse",
+"volt": "arc"
+}

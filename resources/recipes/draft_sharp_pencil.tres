@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://d3fhgkwfllxwq"]
+
+[ext_resource type="Resource" uid="uid://coghxhqspfcp0" path="res://resources/items/graphite.tres" id="1_mth6o"]
+[ext_resource type="Resource" uid="uid://dayi1dtfqsk2w" path="res://resources/items/dull_pencil.tres" id="2_tfnt3"]
+[ext_resource type="Resource" uid="uid://d1d73w5hn00nd" path="res://resources/items/sharp_pencil.tres" id="3_73s23"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="4_plh20"]
+
+[resource]
+script = ExtResource("4_plh20")
+category = "lvl1"
+recipe_name = "Sharp Pencil"
+craft_time = 1.5
+inputs = [{
+"count": 4,
+"resource": ExtResource("1_mth6o")
+}, {
+"count": 1,
+"resource": ExtResource("2_tfnt3")
+}]
+outputs = [{
+"count": 1,
+"resource": ExtResource("3_73s23")
+}]

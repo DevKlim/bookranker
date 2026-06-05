@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://sharp_pencil_tip123"]
+
+[ext_resource type="Script" uid="uid://dj7657xb6odwr" path="res://scripts/resources/attack_resource.gd" id="1_tipwu"]
+
+[resource]
+script = ExtResource("1_tipwu")
+id = "sharp_pencil_tip"
+base_damage = 1.0
+damage_equation = "(base_damage + (attack_damage * attack_damage_weight) + global_flat_damage) * (1.0 + damage_mult)"
+stat_weights = {
+"attack_damage": 0.5
+}
+
+is_aoe = false
+hitbox_extents = Vector3(1.0, 1.0, 1.0)
+hitbox_offset = Vector3(0.0, 0.0, -2.0)
+orient_to_source_direction = true
+min_range = 0
+max_range = 1
+visual_duration = 0.0

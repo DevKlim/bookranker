@@ -24,6 +24,13 @@ func import_attacks(list: Array) -> void:
 		res.scaling_stat = str(entry.get("scaling_stat", "attack_damage"))
 		res.scaling_factor = float(entry.get("scaling_factor", 1.0))
 		
+		# Casting
+		res.cast_time = float(entry.get("cast_time", 0.0))
+		if entry.has("on_cast_scene"):
+			var cast_path = str(entry["on_cast_scene"])
+			if ResourceLoader.exists(cast_path):
+				res.on_cast_scene = load(cast_path)
+		
 		# Range
 		res.min_range = int(entry.get("min_range", 0))
 		res.max_range = int(entry.get("max_range", 1))
@@ -43,10 +50,17 @@ func import_attacks(list: Array) -> void:
 		# Projectiles
 		res.spawn_projectile = bool(entry.get("spawn_projectile", false))
 		res.projectile_speed = float(entry.get("projectile_speed", 10.0))
+		res.projectile_lifetime = float(entry.get("projectile_lifetime", 0.0))
 		if entry.has("projectile_scene"):
 			var scene_path = str(entry["projectile_scene"])
 			if ResourceLoader.exists(scene_path):
 				res.projectile_scene = load(scene_path)
+				
+		# Elemental Data
+		if entry.has("element"):
+			var elem_path = "res://resources/elements/" + str(entry["element"]) + ".tres"
+			if ResourceLoader.exists(elem_path):
+				res.element = load(elem_path)
 		
 		# Visuals
 		if entry.has("visual_scene"):
@@ -65,3 +79,4 @@ func import_attacks(list: Array) -> void:
 		_apply_formulas_and_weights(res, entry)
 		
 		ResourceSaver.save(res, path)
+

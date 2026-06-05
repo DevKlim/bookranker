@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://dnuqqkqqxnlhm"]
+
+[ext_resource type="Script" uid="uid://dj7657xb6odwr" path="res://scripts/resources/attack_resource.gd" id="1_wd31h"]
+
+[resource]
+script = ExtResource("1_wd31h")
+id = "bell"
+cooldown = 3.0
+base_damage = 4.0
+damage_equation = "(base_damage + (weight * weight_weight) + global_flat_damage) * (1.0 + damage_mult)"
+stat_weights = {
+"weight": 1.5
+}
+min_range = -2
+max_range = 2
+range_width = 3
+is_aoe = true
+visual_spawn_point = 1
+visual_offset = Vector3(0, 0, 0)
+visual_duration = 1.0

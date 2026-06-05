@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="BuildableResource" format=3 uid="uid://b33s4q3u6ihxb"]
+
+[ext_resource type="PackedScene" uid="uid://bssj6k2wcpu66" path="res://scenes/buildables/water_cannon.tscn" id="1_gj3l4"]
+[ext_resource type="Texture2D" uid="uid://dgjwaej8efs70" path="res://assets/icons/water_cannon.png" id="1_o5o40"]
+[ext_resource type="Script" uid="uid://qpm1dylmnjld" path="res://scripts/resources/buildable_resource.gd" id="1_xvcbs"]
+
+[resource]
+script = ExtResource("1_xvcbs")
+buildable_name = "Water Cannon"
+description = "Releases high damage water torrent. Uses Aquachalk."
+icon = ExtResource("1_o5o40")
+rarity = "S"
+build_category = "Building: Support"
+max_health = 40.0
+has_input = false
+has_output = false
+default_input_mask = 11
+default_output_mask = 4
+scene = ExtResource("1_gj3l4")

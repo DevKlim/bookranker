@@ -1,10 +1,11 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://8671ectiujx7"]
 
-[ext_resource type="Texture2D" uid="uid://buicucwdvjhoe" path="res://assets/icons/stamp_shuriken.png" id="1_s0ecn"]
+[ext_resource type="Texture2D" uid="uid://buicucwdvjhoe" path="res://assets/items/stamp_shuriken.png" id="1_s0ecn"]
 [ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="2_e3m6o"]
 
 [resource]
 script = ExtResource("2_e3m6o")
 item_name = "Shuriken Stamp"
 icon = ExtResource("1_s0ecn")
-stack_size = 1
+stack_size = 1.0
+item_category = "Item: Material"

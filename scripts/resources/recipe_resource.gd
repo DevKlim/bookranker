@@ -1,7 +1,7 @@
 class_name RecipeResource
 extends Resource
 
-@export_enum("assembly", "smelting", "basic") var category: String = "assembly"
+@export var category: String = "assembly"
 @export var recipe_name: String = "Recipe"
 @export var tier: int = 1
 @export var craft_time: float = 2.0

@@ -200,3 +200,18 @@ Defines standard GridMap cubes.
 }
 ```
 *`texture_base` automatically looks for `_top`, `_side`, `_bottom` suffixes.*
+The Issue: Why Target Finding Failed & Effects Lingered
+
+    Target Finding Bug: In the previous logic, the script was iterating over the LaneManager.enemies_by_lane dictionary but accidentally appended the arrays of enemies inside it instead of the individual enemies themselves. This caused valid_enemies to be a list of nested arrays, which broke targeting entirely.
+
+    Lingering VFX: Relying on Godot's built-in particle lifecycle hooks (like finished signals) can be buggy when particles are culled off-screen or if the node is created purely via a dynamically injected string script. The light and the mist became permanently orphaned because the queue_free() callback was never securely reached.
+
+The Fix
+
+By completely decoupling the "Poof" logic and the "Projectile" logic into their own dedicated component scripts (ghost_poof.gd and ghost_projectile.gd) and linking them cleanly to the .tscn files:
+
+    We guarantee Godot natively respects their _ready() and _process() engine hooks.
+
+    Targeting is explicitly flattened into a single array of valid 3D Nodes.
+
+    The scenes utilize absolute timers and manually toggle visible = false and emitting = false, ensuring the effect fades out gracefully and is strictly removed from memory regardless of visual culling.

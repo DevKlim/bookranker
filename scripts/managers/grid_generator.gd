@@ -6,7 +6,8 @@ func setup(lane_manager: Node) -> void:
 	lm = lane_manager
 
 func generate_chunk(start_d: int, end_d: int) -> void:
-	for lane in range(lm.num_lanes):
+	print(str("[GRID-GENERATOR] Generating chunk from depth ", start_d, " to ", end_d, " across lanes ", lm.min_lane, " to ", lm.max_lane))
+	for lane in range(lm.min_lane, lm.max_lane + 1):
 		_generate_ores_for_lane_chunk(lane, start_d, end_d)
 		_generate_clutter_for_lane_chunk(lane, start_d, end_d)
 		_generate_loot_buildings_for_lane_chunk(lane, start_d, end_d)
@@ -25,7 +26,7 @@ func generate_guaranteed_ores(level_ores: Array) -> void:
 		
 		while placed < guaranteed and attempts < 1000:
 			attempts += 1
-			var lane = randi() % lm.num_lanes
+			var lane = randi_range(lm.min_lane, lm.max_lane)
 			var act_max = min(max_d, lm.LANE_LENGTH - 1)
 			if act_max < min_d: continue
 			var depth = randi_range(min_d, act_max)
@@ -35,7 +36,7 @@ func generate_guaranteed_ores(level_ores: Array) -> void:
 				_place_ore_block_by_config(coord, block_id, o_conf)
 				placed += 1
 
-func _generate_ores_for_lane_chunk(lane: int, start_d: int, end_d: int) -> void:
+func _generate_ores_for_lane_chunk(lane: int, start_d: int, end_d: int, animated: bool = false) -> void:
 	var level_ores = GameManager.current_level_config.get("ores",[])
 	if level_ores.is_empty(): return
 	for depth in range(start_d, end_d):
@@ -61,11 +62,11 @@ func _generate_ores_for_lane_chunk(lane: int, start_d: int, end_d: int) -> void:
 			if block_id != -1:
 				var gen_method = picked_conf.get("generation_method", "random")
 				if gen_method == "cluster":
-					_generate_ore_cluster(tile_coord, block_id, picked_conf)
+					_generate_ore_cluster(tile_coord, block_id, picked_conf, animated)
 				else:
-					_place_ore_block_by_config(tile_coord, block_id, picked_conf)
+					_place_ore_block_by_config(tile_coord, block_id, picked_conf, animated)
 					
-func _generate_ore_cluster(center: Vector2i, block_id: int, conf: Dictionary) -> void:
+func _generate_ore_cluster(center: Vector2i, block_id: int, conf: Dictionary, animated: bool = false) -> void:
 	var cluster_size = randi_range(conf.get("cluster_min", 2), conf.get("cluster_max", 5))
 	var placed = 0
 	var queue = [center]
@@ -77,7 +78,7 @@ func _generate_ore_cluster(center: Vector2i, block_id: int, conf: Dictionary) ->
 		
 		var cell_pos = Vector3i(curr.x, 0, curr.y)
 		if lm.grid_map.get_cell_item(cell_pos) == GridMap.INVALID_CELL_ITEM:
-			_place_ore_block_by_config(curr, block_id, conf)
+			_place_ore_block_by_config(curr, block_id, conf, animated)
 			placed += 1
 			
 		var neighbors =[Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]
@@ -89,27 +90,94 @@ func _generate_ore_cluster(center: Vector2i, block_id: int, conf: Dictionary) ->
 				if randf() < 0.7:
 					queue.append(next_t)
 
-func _place_ore_block_by_config(coord: Vector2i, block_id: int, conf: Dictionary) -> void:
+func _place_ore_block_by_config(coord: Vector2i, block_id: int, conf: Dictionary, animated: bool = false) -> void:
 	if not lm.grid_map: return
-	lm.grid_map.set_cell_item(Vector3i(coord.x, 0, coord.y), block_id)
+	var cell_pos = Vector3i(coord.x, 0, coord.y)
+	
+	if animated:
+		_place_block_animated(cell_pos, block_id, coord)
+	else:
+		lm.grid_map.set_cell_item(cell_pos, block_id)
+		
 	var yield_min = conf.get("yield_min", 1)
 	var yield_max = conf.get("yield_max", 1)
 	lm.active_ore_deposits[coord] = randi_range(yield_min, yield_max)
 
-func _generate_terrain_for_lane_chunk(lane: int, start_d: int, end_d: int) -> void:
-	if not lm.grid_map: return
+func _generate_terrain_for_lane_chunk(lane: int, start_d: int, end_d: int, animated: bool = false) -> void:
+	if not lm.grid_map: 
+		print("[GRID-GENERATOR-ERROR] grid_map is null!")
+		return
+		
+	var blocks_placed = 0
 	var terrain_layers = GameManager.current_level_config.get("terrain_layers",[ { "depth": 5, "block": "Dirt" }, { "depth": lm.LANE_LENGTH, "block": "Stone" } ])
 	for depth in range(start_d, end_d):
 		var tile_coord = lm._calculate_grid_coord(lane, depth)
 		var cell_pos = Vector3i(tile_coord.x, 0, tile_coord.y)
 		if lm.grid_map.get_cell_item(cell_pos) != GridMap.INVALID_CELL_ITEM: continue
+		
 		var block_to_place = "Stone"
 		for layer in terrain_layers:
 			if depth <= layer.get("depth", lm.LANE_LENGTH):
 				block_to_place = layer.get("block", "Stone")
 				break
+				
 		if lm.block_name_to_id_map.has(block_to_place):
-			lm.grid_map.set_cell_item(cell_pos, lm.block_name_to_id_map[block_to_place])
+			var b_id = lm.block_name_to_id_map[block_to_place]
+			if animated:
+				_place_block_animated(cell_pos, b_id, tile_coord)
+			else:
+				lm.grid_map.set_cell_item(cell_pos, b_id)
+			blocks_placed += 1
+		else:
+			print("[GRID-GENERATOR-WARNING] Block name not found in map: ", block_to_place)
+
+func _place_block_animated(cell_pos: Vector3i, block_id: int, coord: Vector2i) -> void:
+	var mesh_lib = lm.grid_map.mesh_library
+	if not mesh_lib:
+		lm.grid_map.set_cell_item(cell_pos, block_id)
+		return
+		
+	var mesh = mesh_lib.get_item_mesh(block_id)
+	if not mesh:
+		lm.grid_map.set_cell_item(cell_pos, block_id)
+		return
+		
+	var temp_mi = MeshInstance3D.new()
+	temp_mi.mesh = mesh
+	
+	# Y2K Emissive Blue/Cyan Hologram Shader applied to the falling temporary tile
+	var mat = StandardMaterial3D.new()
+	mat.albedo_color = Color(0.1, 0.9, 1.0, 0.7)
+	mat.emission_enabled = true
+	mat.emission = Color(0.1, 0.9, 1.0)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	temp_mi.material_override = mat
+
+	lm.add_child(temp_mi)
+	
+	var local_pos = lm.grid_map.map_to_local(cell_pos)
+	var target_pos = lm.grid_map.to_global(local_pos)
+	
+	var start_pos = target_pos + Vector3(0, 15.0, 0)
+	temp_mi.global_position = start_pos
+	
+	var tween = temp_mi.create_tween()
+	# Slight delay randomized to create a disjointed digital wave formation
+	var wave_delay = randf_range(0.0, 0.2)
+	
+	tween.tween_interval(wave_delay)
+	tween.tween_property(temp_mi, "global_position", target_pos, 0.5).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(mat, "albedo_color:a", 1.0, 0.4).set_delay(wave_delay)
+	tween.parallel().tween_property(mat, "emission_energy_multiplier", 0.0, 0.5).set_delay(wave_delay)
+	
+	tween.tween_callback(func():
+		if is_instance_valid(lm.grid_map):
+			lm.grid_map.set_cell_item(cell_pos, block_id)
+			if randf() < 0.1: # Sporadic cyber grid particles when block anchors
+				if is_instance_valid(GameManager) and GameManager.get("vfx_manager"):
+					GameManager.vfx_manager.play_vfx("y2k_glitch", target_pos)
+		temp_mi.queue_free()
+	)
 
 func _get_clutter_resource(id: String) -> Resource:
 	for c in lm.clutter_types:
@@ -132,7 +200,7 @@ func generate_guaranteed_clutter(level_clutter: Array, parent_node: Node) -> voi
 		
 		while placed < guaranteed and attempts < 1000:
 			attempts += 1
-			var lane = randi() % lm.num_lanes
+			var lane = randi_range(lm.min_lane, lm.max_lane)
 			var act_max = min(max_d, lm.LANE_LENGTH - 1)
 			if act_max < min_d: continue
 			var depth = randi_range(min_d, act_max)
@@ -144,7 +212,7 @@ func generate_guaranteed_clutter(level_clutter: Array, parent_node: Node) -> voi
 			_spawn_clutter_at(tile_coord, c_res, parent_node)
 			placed += 1
 
-func _generate_clutter_for_lane_chunk(lane: int, start_d: int, end_d: int) -> void:
+func _generate_clutter_for_lane_chunk(lane: int, start_d: int, end_d: int, animated: bool = false) -> void:
 	var level_clutter = GameManager.current_level_config.get("clutter",[])
 	if level_clutter.is_empty(): return
 	var root = get_tree().current_scene
@@ -173,15 +241,25 @@ func _generate_clutter_for_lane_chunk(lane: int, start_d: int, end_d: int) -> vo
 		if picked_conf:
 			var c_res = _get_clutter_resource(picked_conf["id"])
 			if c_res:
-				_spawn_clutter_at(tile_coord, c_res, parent_node)
+				_spawn_clutter_at(tile_coord, c_res, parent_node, animated)
 
-func _spawn_clutter_at(coord: Vector2i, clutter: Resource, parent: Node) -> void:
+func _spawn_clutter_at(coord: Vector2i, clutter: Resource, parent: Node, animated: bool = false) -> void:
 	if not "scene" in clutter or not clutter.scene: return
 	var inst = clutter.scene.instantiate()
 	if "clutter_resource" in inst:
 		inst.clutter_resource = clutter
 	parent.add_child(inst)
-	inst.global_position = lm.tile_to_world(coord) + lm.building_offset + Vector3(0, 1.0, 0)
+	var target_pos = lm.tile_to_world(coord) + lm.building_offset + Vector3(0, 1.0, 0)
+	
+	if animated:
+		var start_pos = target_pos + Vector3(0, 15.0, 0)
+		inst.global_position = start_pos
+		var tween = inst.create_tween()
+		var wave_delay = randf_range(0.1, 0.3)
+		tween.tween_interval(wave_delay)
+		tween.tween_property(inst, "global_position", target_pos, 0.6).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	else:
+		inst.global_position = target_pos
 
 func generate_guaranteed_loot_buildings(level_loot: Array, parent_node: Node) -> void:
 	for l_conf in level_loot:
@@ -195,7 +273,7 @@ func generate_guaranteed_loot_buildings(level_loot: Array, parent_node: Node) ->
 		
 		while placed < guaranteed and attempts < 1000:
 			attempts += 1
-			var lane = randi() % lm.num_lanes
+			var lane = randi_range(lm.min_lane, lm.max_lane)
 			var act_max = min(max_d, lm.LANE_LENGTH - 1)
 			if act_max < min_d: continue
 			var depth = randi_range(min_d, act_max)
@@ -207,7 +285,7 @@ func generate_guaranteed_loot_buildings(level_loot: Array, parent_node: Node) ->
 			_spawn_loot_building_at(tile_coord, l_conf, parent_node)
 			placed += 1
 
-func _generate_loot_buildings_for_lane_chunk(lane: int, start_d: int, end_d: int) -> void:
+func _generate_loot_buildings_for_lane_chunk(lane: int, start_d: int, end_d: int, animated: bool = false) -> void:
 	var level_loot = GameManager.current_level_config.get("loot_buildings",[])
 	if level_loot.is_empty(): return
 	var root = get_tree().current_scene
@@ -234,9 +312,9 @@ func _generate_loot_buildings_for_lane_chunk(lane: int, start_d: int, end_d: int
 				break
 		
 		if picked_conf:
-			_spawn_loot_building_at(tile_coord, picked_conf, parent_node)
+			_spawn_loot_building_at(tile_coord, picked_conf, parent_node, animated)
 
-func _spawn_loot_building_at(coord: Vector2i, conf: Dictionary, parent: Node) -> void:
+func _spawn_loot_building_at(coord: Vector2i, conf: Dictionary, parent: Node, animated: bool = false) -> void:
 	var building_id = conf.get("id", "")
 	if building_id == "": return
 	
@@ -247,7 +325,16 @@ func _spawn_loot_building_at(coord: Vector2i, conf: Dictionary, parent: Node) ->
 	if not scene: return
 	var inst = scene.instantiate()
 	parent.add_child(inst)
-	inst.global_position = lm.tile_to_world(coord) + lm.building_offset
+	var target_pos = lm.tile_to_world(coord) + lm.building_offset
+	
+	if animated:
+		inst.global_position = target_pos + Vector3(0, 15.0, 0)
+		var tween = inst.create_tween()
+		var wave_delay = randf_range(0.1, 0.3)
+		tween.tween_interval(wave_delay)
+		tween.tween_property(inst, "global_position", target_pos, 0.6).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	else:
+		inst.global_position = target_pos
 	
 	if not inst.is_in_group("clutter"):
 		inst.add_to_group("clutter")
@@ -264,7 +351,7 @@ func _spawn_loot_building_at(coord: Vector2i, conf: Dictionary, parent: Node) ->
 	if inv and conf.has("loot_pool"):
 		var pool = GameManager.get_item_pool(conf["loot_pool"])
 		if not pool.is_empty():
-			for i in range(randi_range(1, 3)):
+			for i in range(randi_range(1, len(pool))):
 				var pick = GameManager.pick_from_weighted_pool(pool)
 				if pick.is_empty(): continue
 				var item_id = pick.get("item", "")

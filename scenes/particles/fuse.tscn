@@ -1,0 +1,75 @@
+[gd_scene format=3 uid="uid://cx6g3k7j2aabc"]
+
+[ext_resource type="Script" uid="uid://dtilvlurfts3d" path="res://scripts/entities/particles/particle_effect.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://ccw12ljs1lliv" path="res://assets/textures/particles/scorch/scorch_01_a.png" id="2_scorch"]
+[ext_resource type="Texture2D" uid="uid://c6lfiqpkvor7d" path="res://assets/textures/particles/effect/effect_03_a.png" id="3_glow"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_flash"]
+gravity = Vector3(0, 0, 0)
+scale_min = 2.0
+scale_max = 3.5
+color = Color(1.0, 0.8, 0.2, 0.9)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_flash"]
+transparency = 1
+blend_mode = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_texture = ExtResource("3_glow")
+billboard_mode = 3
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="QuadMesh" id="QuadMesh_flash"]
+material = SubResource("StandardMaterial3D_flash")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_sparks"]
+emission_shape = 1
+emission_sphere_radius = 0.5
+direction = Vector3(0, 1, 0)
+spread = 180.0
+initial_velocity_min = 6.0
+initial_velocity_max = 10.0
+gravity = Vector3(0, -5.0, 0)
+scale_min = 0.5
+scale_max = 1.2
+color = Color(1.0, 0.4, 0.1, 0.8)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sparks"]
+transparency = 1
+blend_mode = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_texture = ExtResource("2_scorch")
+billboard_mode = 3
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="QuadMesh" id="QuadMesh_sparks"]
+material = SubResource("StandardMaterial3D_sparks")
+
+[node name="Fuse Explosion Root" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="FlashLayer" type="GPUParticles3D" parent="."]
+emitting = false
+amount = 1
+lifetime = 0.2
+one_shot = true
+process_material = SubResource("ParticleProcessMaterial_flash")
+draw_pass_1 = SubResource("QuadMesh_flash")
+
+[node name="SparkLayer" type="GPUParticles3D" parent="."]
+emitting = false
+amount = 30
+lifetime = 0.6
+one_shot = true
+explosiveness = 0.95
+process_material = SubResource("ParticleProcessMaterial_sparks")
+draw_pass_1 = SubResource("QuadMesh_sparks")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="."]
+light_color = Color(1.0, 0.6, 0.1, 1)
+omni_range = 8.0

@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ParticleResource" format=3 uid="uid://c8sull4wga5p1"]
+
+[ext_resource type="PackedScene" uid="uid://b8enadeo5xm7w" path="res://scenes/particles/windwall_gust.tscn" id="1_dn5yg"]
+[ext_resource type="Script" uid="uid://cx7aidq5y2yns" path="res://scripts/resources/particle_resource.gd" id="2_1l5k5"]
+
+[resource]
+script = ExtResource("2_1l5k5")
+id = "windwall_gust"
+scene = ExtResource("1_dn5yg")

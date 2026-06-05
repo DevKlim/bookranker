@@ -1,15 +1,20 @@
-[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://bl61ulchils33"]
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://k78cfs7ktg4j"]
 
 [ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="1_xt8xp"]
 [ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="2_y2xcq"]
 
 [resource]
 script = ExtResource("2_y2xcq")
-item_name = "Double Ping! (Mod)"
+item_name = "Double Ping!"
 icon = ExtResource("1_xt8xp")
 equipment_type = 5
+rarity = "SS"
+item_category = "Mod: Core"
 modifiers = {
 "cost": 2.0,
-"effects": {},
+"effects": {
+"global_flat_damage": 2.0
+},
+"permanent": false,
 "type": "core"
 }

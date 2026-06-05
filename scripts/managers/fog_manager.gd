@@ -3,23 +3,40 @@ class_name FogManager extends Node
 var lm: Node
 var current_fog_depth: int = -1
 var fog_volume: FogVolume
+var fog_volume_rear: FogVolume
 
 func setup(lane_manager: Node) -> void:
 	lm = lane_manager
 	process_mode = Node.PROCESS_MODE_ALWAYS # Ensure fog can animate while game is paused
 	
+	# Material for the front moving fog
+	var mat_front = FogMaterial.new()
+	mat_front.density = 5.0 
+	mat_front.albedo = Color(0.95, 0.95, 0.95)
+	mat_front.emission = Color(0.02, 0.02, 0.03)
+	mat_front.edge_fade = 5.0
+	
+	# Material strictly for the rear boundary fog
+	var mat_rear = FogMaterial.new()
+	mat_rear.density = 5.0
+	mat_rear.albedo = Color(0.0, 0.0, 0.0) # Absolute darkness
+	mat_rear.emission = Color(0.0, 0.0, 0.0)
+	mat_rear.edge_fade = 5.0
+	
+	# 1. Front dynamic fog (Progresses forward with waves)
 	fog_volume = FogVolume.new()
 	fog_volume.size = Vector3(200, 20, 200)
-	
-	var mat = FogMaterial.new()
-	mat.density = 5.0 
-	mat.albedo = Color(0.95, 0.95, 0.95)
-	mat.emission = Color(0.02, 0.02, 0.03)
-	mat.edge_fade = 5.0
-	fog_volume.material = mat
+	fog_volume.material = mat_front
 	add_child(fog_volume)
+	fog_volume.global_position = Vector3(1000, 1.0, 0)
 	
-	fog_volume.global_position = Vector3(1000, 10, 0)
+	# 2. Rear static fog (Permanently covers X=-50 to X=-5 to frame the Core base)
+	fog_volume_rear = FogVolume.new()
+	# Huge Z size to make it extend infinitely side-to-side
+	fog_volume_rear.size = Vector3(200, 20, 100) 
+	fog_volume_rear.material = mat_rear
+	add_child(fog_volume_rear)
+	fog_volume_rear.global_position = Vector3(-105.0, 1.0, (lm.num_lanes * lm.GRID_SCALE) / 2.0)
 	
 	# Use is_instance_valid for GDScript Autoloads (Engine.has_singleton is for C++ modules)
 	if is_instance_valid(GameManager):
@@ -54,8 +71,15 @@ func set_fog_depth(depth: int) -> void:
 	
 	current_fog_depth = depth
 	var target_x = lm.tile_to_world(Vector2i(depth, 0)).x
-	# Fog volume center adjusted to smother entirely forward 
-	var final_pos = Vector3(target_x + 100.0 - 5.0, 0, (lm.num_lanes * lm.GRID_SCALE) / 2.0)
+	var middle_z = (lm.num_lanes * lm.GRID_SCALE) / 2.0
+	
+	# Rear fog re-centering in case lanes were dynamically added
+	if is_instance_valid(fog_volume_rear):
+		fog_volume_rear.global_position = Vector3(-105.0, 1.0, middle_z)
+	
+	# Fog volume center adjusted to smother entirely forward
+	# Raised Y coordinate ensures consistency with the blocks generating below
+	var final_pos = Vector3(target_x + 100.0 - 5.0, 1.0, middle_z)
 	
 	if is_instance_valid(GameManager) and GameManager.current_state == GameManager.GameState.IDLE:
 		fog_volume.global_position = final_pos

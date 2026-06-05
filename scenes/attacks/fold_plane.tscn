@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://1uckad6v513s" path="res://scripts/entities/projectile.gd" id="1_script"]
 [ext_resource type="PackedScene" uid="uid://cxd3vsr4u6b7j" path="res://assets/buildables/plane/plane.gltf" id="2_mesh"]
+[ext_resource type="Script" uid="uid://p7nrchkroanc" path="res://scripts/components/highlight_component.gd" id="3_rto6w"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_plane"]
 
@@ -14,4 +15,7 @@ shape = SubResource("BoxShape3D_plane")
 [node name="Model" type="Node3D" parent="." unique_id=1130305041]
 
 [node name="plane" parent="Model" unique_id=1236899251 instance=ExtResource("2_mesh")]
-transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0)
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, -0.5, 0)
+
+[node name="HighlightComponent" type="Node" parent="." unique_id=1236904817]
+script = ExtResource("3_rto6w")

@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://dom6dpbqvf46m"]
 
 [ext_resource type="Resource" uid="uid://um15w27vhhhx" path="res://resources/elements/aqua.tres" id="1_023wo"]
-[ext_resource type="Texture2D" uid="uid://c5j8rmt6jfun8" path="res://assets/icons/aquachalk.png" id="2_023wo"]
+[ext_resource type="Texture2D" uid="uid://c5j8rmt6jfun8" path="res://assets/items/aquachalk.png" id="2_023wo"]
 [ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="3_k4oop"]
 
 [resource]
@@ -9,7 +9,10 @@ script = ExtResource("3_k4oop")
 item_name = "Aqua Chalk"
 icon = ExtResource("2_023wo")
 color = Color(0.12941177, 0.7529412, 1, 1)
-damage = 1.0
+stack_size = 64.0
+rarity = "D"
+item_category = "Item: Resource"
+damage = 2.0
 element = ExtResource("1_023wo")
 is_ore = true
 ore_block_name = "Aqua Chalk Deposit"

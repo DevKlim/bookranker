@@ -1,15 +1,19 @@
-[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://c3shvda0qh80h"]
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://dyh48itvbvlg8"]
 
 [ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="1_7btdv"]
 [ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="2_rywmb"]
 
 [resource]
 script = ExtResource("2_rywmb")
-item_name = "Shield (Mod)"
+item_name = "Shield"
 icon = ExtResource("1_7btdv")
 equipment_type = 5
+item_category = "Mod: Building"
 modifiers = {
 "cost": 2.0,
-"effects": {},
+"effects": {
+"regen_shield": 10.0
+},
+"permanent": false,
 "type": "building"
 }

@@ -1,0 +1,34 @@
+[gd_scene format=3 uid="uid://cjts61iha8kma"]
+
+[ext_resource type="Script" uid="uid://ddmg2upcqg26n" path="res://scripts/entities/buildings/marble_hoop.gd" id="1_t5v7q"]
+[ext_resource type="Script" uid="uid://dad3f8h2j4k5l" path="res://scripts/components/inventory_component.gd" id="3_pa3j7"]
+[ext_resource type="Script" uid="uid://dg4gfri6lu5o2" path="res://scripts/components/elemental_component.gd" id="4_fxmgs"]
+[ext_resource type="PackedScene" uid="uid://oayfs7b4ssrm" path="res://assets/buildables/marble_ring/marble_ring.gltf" id="4_t5v7q"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_gj732"]
+
+[node name="Marble Hoop" type="StaticBody3D" unique_id=396428616]
+script = ExtResource("1_t5v7q")
+grid_layer = "addon"
+max_health = 20.0
+power_consumption = 0.0
+default_input_mask = 1
+default_output_mask = 4
+layout_config = [Vector2i(0, 0)]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1126929179]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("BoxShape3D_gj732")
+
+[node name="InventoryComponent" type="Node" parent="." unique_id=486951350]
+script = ExtResource("3_pa3j7")
+max_slots = 0
+can_receive = false
+can_output = false
+
+[node name="ElementalComponent" type="Node" parent="." unique_id=192784803]
+script = ExtResource("4_fxmgs")
+
+[node name="blockbench_export" parent="." unique_id=1929770230 instance=ExtResource("4_t5v7q")]
+transform = Transform3D(2.5, 0, 0, 0, 2.5, 0, 0, 0, 2.5, 0, -0.25, 0)
+

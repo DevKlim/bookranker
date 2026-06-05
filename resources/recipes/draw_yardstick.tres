@@ -10,10 +10,10 @@ script = ExtResource("4_qwjrg")
 category = "chalkboard"
 recipe_name = "Yardstick"
 inputs = [{
-"count": 3,
+"count": 12,
 "resource": ExtResource("1_fiy45")
 }, {
-"count": 3,
+"count": 24,
 "resource": ExtResource("2_xtit1")
 }]
 outputs = [{

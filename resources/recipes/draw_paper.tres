@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://b48pb546mvcec"]
+
+[ext_resource type="Resource" uid="uid://dom6dpbqvf46m" path="res://resources/items/aquachalk.tres" id="1_463li"]
+[ext_resource type="Resource" uid="uid://cgonrnui0f147" path="res://resources/items/aerochalk.tres" id="2_8lqv8"]
+[ext_resource type="Resource" uid="uid://d1jxdol00rp3u" path="res://resources/items/paper.tres" id="3_f71jl"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="4_32og7"]
+
+[resource]
+script = ExtResource("4_32og7")
+category = "chalkboard"
+recipe_name = "Paper"
+craft_time = 1.5
+inputs = [{
+"count": 2,
+"resource": ExtResource("1_463li")
+}, {
+"count": 2,
+"resource": ExtResource("2_8lqv8")
+}]
+outputs = [{
+"count": 2,
+"resource": ExtResource("3_f71jl")
+}]

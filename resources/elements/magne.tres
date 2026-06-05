@@ -9,14 +9,16 @@ element_name = "Magne"
 icon = ExtResource("1_xdrny")
 color = Color(0.6627451, 0.6627451, 0.6627451, 1)
 application_cooldown = 0.2
+cooldown_equation = "base_cooldown * max(0.1, 1.0 - (magical_defense * magical_defense_weight))"
+stat_weights = {
+"magical_defense": 1.0
+}
 reaction_rules = {
-"aero": "tailwind",
 "aqua": "rust",
-"chem": "pollute",
+"channel": "pulse",
 "igni": "fuse",
-"tera": "graviton",
-"volt": "conduct"
+"volt": "channel"
 }
 stat_modifiers = {
-"defense_flat": 10.0
+"defense": 10.0
 }

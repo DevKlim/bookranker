@@ -91,6 +91,7 @@ func import_items(list: Array) -> void:
 			"weapon": res.equipment_type = ItemResClass.EquipmentType.WEAPON
 			"armor": res.equipment_type = ItemResClass.EquipmentType.ARMOR
 			"accessory", "artifact": res.equipment_type = ItemResClass.EquipmentType.ACCESSORY
+			"mod": res.equipment_type = ItemResClass.EquipmentType.MOD
 			_: res.equipment_type = ItemResClass.EquipmentType.NONE
 		
 		res.is_ore = false
@@ -104,5 +105,24 @@ func import_items(list: Array) -> void:
 						res.is_ore = true
 						res.ore_block_name = str(b.get("name", ""))
 						break
+
+		res.set("rarity", str(entry.get("rarity", "C")))
+		if entry.has("category"):
+			res.set("item_category", str(entry["category"]))
+		else:
+			if res.is_tool: res.set("item_category", "Item: Tool")
+			elif res.equipment_type == ItemResClass.EquipmentType.WEAPON: res.set("item_category", "Item: Weapon")
+			elif res.equipment_type == ItemResClass.EquipmentType.ARMOR: res.set("item_category", "Item: Armor")
+			elif res.equipment_type == ItemResClass.EquipmentType.ACCESSORY: res.set("item_category", "Item: Accessory")
+			elif res.equipment_type == ItemResClass.EquipmentType.MOD:
+				var target_type = res.modifiers.get("type", "building")
+				res.set("item_category", "Mod: " + target_type.capitalize())
+			elif res.is_ore: res.set("item_category", "Item: Resource")
+			else: res.set("item_category", "Item: Material")
+
+		if entry.has("tooltip_overrides") and entry["tooltip_overrides"] is Dictionary:
+			res.custom_tooltip_labels = entry["tooltip_overrides"]
+		else:
+			res.custom_tooltip_labels = {}
 
 		ResourceSaver.save(res, path)

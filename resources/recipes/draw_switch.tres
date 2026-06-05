@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://nnh0vta5pb64"]
+
+[ext_resource type="Resource" uid="uid://blhc64oe47vne" path="res://resources/items/luxchalk.tres" id="1_grtxy"]
+[ext_resource type="Resource" uid="uid://fnimcv81cy5p" path="res://resources/items/cardboard.tres" id="2_v576x"]
+[ext_resource type="Resource" uid="uid://switch123" path="res://resources/buildables/switch.tres" id="3_mmfhq"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="4_vo858"]
+
+[resource]
+script = ExtResource("4_vo858")
+category = "chalkboard"
+recipe_name = "Switch"
+tier = 2
+craft_time = 1.0
+inputs = [{
+"count": 4,
+"resource": ExtResource("1_grtxy")
+}, {
+"count": 4,
+"resource": ExtResource("2_v576x")
+}]
+outputs = [{
+"count": 1,
+"resource": ExtResource("3_mmfhq")
+}]

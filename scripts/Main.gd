@@ -1,9 +1,6 @@
 extends Node3D
 class_name MainLevel
 
-## The main script for the primary game scene in 3D.
-## Refactored into separate controllers for camera, building, and selection.
-
 @export_category("Rendering (Retro Aesthetic)")
 @export var render_scale: float = 0.55
 @export var enable_msaa: Viewport.MSAA = Viewport.MSAA_DISABLED
@@ -29,14 +26,14 @@ class_name MainLevel
 @onready var dev_map: GridMap = $DevMap
 @onready var core: Core = $Core
 
-var player: CharacterBody3D 
-const PLAYER_SCENE = preload("res://scenes/allies/player.tscn")
-
 var build_preview_container: Node3D
 var indicator_container: Node3D
 
 enum LayerMode { ALL, BUILDING_ONLY, WIRE_ONLY }
 var current_layer_mode: LayerMode = LayerMode.ALL
+
+var player: CharacterBody3D 
+const PLAYER_SCENE = preload("res://scenes/allies/player.tscn")
 
 var camera_controller
 var build_controller
@@ -44,37 +41,24 @@ var selection_controller
 var level_mechanics: Node
 
 func _ready() -> void:
-	# --- Retro Aesthetic Settings ---
 	get_viewport().scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
 	get_viewport().scaling_3d_scale = render_scale
 	get_viewport().msaa_3d = enable_msaa
 	get_viewport().screen_space_aa = enable_ssaa
-	# --------------------------------
 
 	var env_node = get_node_or_null("WorldEnvironment")
 	if env_node and env_node.environment:
 		var env = env_node.environment
-		# Use Canvas mode to bypass orthographic projection skybox distortion
 		env.background_mode = Environment.BG_CANVAS
 		env.volumetric_fog_enabled = true
 		env.volumetric_fog_density = 0.0
 
-	# Instantiate the Y2K Screen-Space Background
-	var bg_layer = CanvasLayer.new()
-	bg_layer.layer = -100
-	bg_layer.name = "Y2KBackground"
-	add_child(bg_layer)
+	if ClassDB.class_exists("RetroVisuals") or ResourceLoader.exists("res://scripts/utils/retro_visuals.gd"):
+		var rv = load("res://scripts/utils/retro_visuals.gd")
+		rv.setup_math_skybox(self, -100)
+		rv.setup_crt_filter(self, 120)
 
-	var bg_rect = ColorRect.new()
-	bg_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	
-	var bg_mat = ShaderMaterial.new()
-	var bg_shader = load("res://shaders/y2k_polkadot.gdshader")
-	if bg_shader:
-		bg_mat.shader = bg_shader
-	bg_rect.material = bg_mat
-	bg_layer.add_child(bg_rect)
+	GameManager.load_level(GameManager.pending_level)
 
 	var mech_path = "res://scripts/levels/level_1_mechanics.gd"
 	if ResourceLoader.exists(mech_path):
@@ -136,6 +120,20 @@ func _ready() -> void:
 	add_child(selection_controller)
 	
 	PlayerManager.equipped_item_changed.connect(_on_equipped_item_changed)
+	
+	if is_instance_valid(core):
+		var minv = core.get_node_or_null("ModInventory")
+		var mhand = core.get_node_or_null("ModHandlerComponent")
+		if minv and mhand:
+			mhand.initialize(core, minv)
+
+	# Inject HUD for Core Mods
+	if game_ui:
+		var hud_script = load("res://scripts/ui/core_mods_hud.gd")
+		if hud_script:
+			var hud = hud_script.new()
+			hud.name = "CoreModsHUD"
+			game_ui.add_child(hud)
 
 func _spawn_player() -> void:
 	player = PLAYER_SCENE.instantiate()
@@ -143,19 +141,27 @@ func _spawn_player() -> void:
 	player.add_to_group("player")
 	add_child(player)
 	
+	PlayerManager.player_entity = player 
+	
 	var target_pos = LaneManager.get_valid_ally_spawn_pos()
 	player.global_position = target_pos
 
 func _process(delta: float) -> void:
 	camera_controller.handle_camera_movement(delta)
 	
-	# Determine transparency for Core
 	var ray_for_transparency = get_mouse_raycast()
 	var hovering_core = false
 	if ray_for_transparency and ray_for_transparency.get("collider") == core:
 		hovering_core = true
+		
+	var is_building_near = false
+	if BuildManager.is_building:
+		var plane_pos = get_plane_intersection()
+		if plane_pos.x < 15.0:
+			is_building_near = true
+
 	if is_instance_valid(core):
-		core.set_transparent(hovering_core)
+		core.set_transparent(hovering_core or is_building_near)
 
 	var interaction_exclude =[]
 	if is_instance_valid(core): interaction_exclude.append(core.get_rid())
@@ -167,10 +173,7 @@ func _process(delta: float) -> void:
 					if child is CollisionObject3D:
 						interaction_exclude.append(child.get_rid())
 	
-	# 1. Selection Ray: Standard mask
 	var selection_ray = get_mouse_raycast(interaction_exclude) 
-	
-	# 2. Terrain Ray: Mask 1 only
 	var terrain_ray = get_mouse_raycast(interaction_exclude, 1)
 
 	var mouse_world_pos = Vector3.ZERO
@@ -217,7 +220,9 @@ func _input(event: InputEvent) -> void:
 
 	if event.is_action_pressed("ui_cancel"):
 		var handled = false
-		if game_ui.is_pause_menu_open():
+		if game_ui.context_menu and game_ui.context_menu.visible:
+			game_ui.hide_context_menu(); handled = true
+		elif game_ui.is_pause_menu_open():
 			game_ui.toggle_pause_menu(); handled = true
 		elif game_ui.is_any_menu_open():
 			game_ui.close_all_menus(); handled = true
@@ -306,7 +311,6 @@ func handle_debug_display(terrain_ray: Dictionary, sel_ray: Dictionary, world_po
 		
 		var mode_name = LayerMode.keys()[current_layer_mode]
 		
-		# Incorporate level-specific debug information
 		var extra_debug = ""
 		if is_instance_valid(level_mechanics) and level_mechanics.has_method("get_debug_text"):
 			extra_debug = level_mechanics.get_debug_text()

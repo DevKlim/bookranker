@@ -1,0 +1,106 @@
+[gd_scene format=3 uid="uid://ccdooqejxrain"]
+
+[ext_resource type="Script" uid="uid://x6dx7a44w4vc" path="res://scripts/entities/particles/rain_vfx.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://cin2gb51p4cfo" path="res://assets/textures/particles/trace/trace_01_a.png" id="3_7eots"]
+[ext_resource type="Texture2D" uid="uid://b74vujbuj2l8b" path="res://assets/textures/particles/smokes/smoke_04_a.png" id="4_smoke"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_rain"]
+emission_shape = 3
+emission_box_extents = Vector3(0.5, 0.1, 0.5)
+direction = Vector3(0, -1, 0)
+spread = 0.0
+initial_velocity_min = 12.0
+initial_velocity_max = 16.0
+gravity = Vector3(0, -9, 0)
+color = Color(0.4, 0.7, 1, 0.6)
+collision_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rain"]
+transparency = 1
+blend_mode = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_texture = ExtResource("3_7eots")
+billboard_mode = 2
+
+[sub_resource type="QuadMesh" id="QuadMesh_rain"]
+material = SubResource("StandardMaterial3D_rain")
+size = Vector2(0.1, 0.6)
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_cloud"]
+emission_shape = 3
+emission_box_extents = Vector3(0.5, 0.1, 0.5)
+gravity = Vector3(0, 0, 0)
+scale_max = 1.5
+color = Color(0.1, 0.15, 0.25, 0.8)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cloud"]
+transparency = 1
+blend_mode = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_texture = ExtResource("4_smoke")
+billboard_mode = 3
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="QuadMesh" id="QuadMesh_cloud"]
+material = SubResource("StandardMaterial3D_cloud")
+
+[sub_resource type="Gradient" id="Gradient_splash"]
+colors = PackedColorArray(0.4, 0.7, 1, 0.8, 0.4, 0.7, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_splash"]
+gradient = SubResource("Gradient_splash")
+
+[sub_resource type="Curve" id="Curve_splash"]
+_data = [Vector2(0, 0.1), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_splash"]
+curve = SubResource("Curve_splash")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_splash"]
+emission_shape = 3
+emission_box_extents = Vector3(0.5, 0, 0.5)
+gravity = Vector3(0, 0, 0)
+scale_curve = SubResource("CurveTexture_splash")
+color_ramp = SubResource("GradientTexture1D_splash")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_splash"]
+transparency = 1
+blend_mode = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_texture = ExtResource("4_smoke")
+
+[sub_resource type="QuadMesh" id="QuadMesh_splash"]
+material = SubResource("StandardMaterial3D_splash")
+orientation = 1
+
+[node name="Rain Particles Root" type="Node3D" unique_id=1831805806]
+script = ExtResource("1_script")
+
+[node name="GPUParticlesCollisionBox3D" type="GPUParticlesCollisionBox3D" parent="." unique_id=1127598040]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -4.499939, 0)
+size = Vector3(2, 1.0001221, 2)
+
+[node name="RainLayer" type="GPUParticles3D" parent="GPUParticlesCollisionBox3D" unique_id=445546294]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.499939, 0)
+amount = 10
+lifetime = 0.5
+process_material = SubResource("ParticleProcessMaterial_rain")
+draw_pass_1 = SubResource("QuadMesh_rain")
+
+[node name="CloudLayer" type="GPUParticles3D" parent="." unique_id=1960503203]
+lifetime = 2.0
+process_material = SubResource("ParticleProcessMaterial_cloud")
+draw_pass_1 = SubResource("QuadMesh_cloud")
+
+[node name="SplashLayer" type="GPUParticles3D" parent="." unique_id=1618804938]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -4, 0)
+amount = 3
+lifetime = 0.3
+process_material = SubResource("ParticleProcessMaterial_splash")
+draw_pass_1 = SubResource("QuadMesh_splash")

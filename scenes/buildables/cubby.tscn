@@ -6,6 +6,7 @@
 [ext_resource type="Script" uid="uid://dg4gfri6lu5o2" path="res://scripts/components/elemental_component.gd" id="4_ltt50"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_ljxwx"]
+size = Vector3(0.8, 1, 1)
 
 [node name="Cubby" type="StaticBody3D" unique_id=112632989]
 script = ExtResource("1_0jsyl")
@@ -15,7 +16,7 @@ default_output_mask = 4
 layout_config = [Vector2i(0, 0)]
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1072209423]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.00012207031, 0.5, 0)
 shape = SubResource("BoxShape3D_ljxwx")
 
 [node name="InventoryComponent" type="Node" parent="." unique_id=719972625]

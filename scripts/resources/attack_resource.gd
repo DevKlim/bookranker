@@ -6,6 +6,10 @@ extends Resource
 @export var cooldown: float = 1.0
 @export var animation_name: String = "attack"
 
+@export_group("Casting")
+@export var cast_time: float = 0.0
+@export var on_cast_scene: PackedScene
+
 @export_group("Damage & Scaling")
 @export var base_damage: float = 10.0
 ## The stat name on the source entity to scale off (e.g. "attack_damage", "lux_stat").
@@ -22,36 +26,30 @@ extends Resource
 @export var ignore_element_cd: bool = false
 
 @export_group("Range & Area")
-## Minimum distance in tiles.
 @export var min_range: int = 0
-## Maximum distance in tiles.
 @export var max_range: int = 1
-## Width in lanes (0 = same lane, 1 = 3 lanes total).
 @export var range_width: int = 0
-## If true, hits all entities in the target tile(s).
 @export var is_aoe: bool = false
-## Custom relative grid coordinates to hit. X is Forward, Y is Right. e.g.[Vector2i(1, 0), Vector2i(1, 1)]
 @export var custom_aoe_tiles: Array[Vector2i] =[]
-## If aoe is false and this is set, does a physics overlap check instead of grid
 @export var hitbox_extents: Vector3 = Vector3.ZERO
+@export var hitbox_offset: Vector3 = Vector3.ZERO
+## Orients the physical layout/hitbox to match the source's current 3D rotation
+@export var orient_to_source_direction: bool = false
 
 @export_group("Visuals")
 @export var spawn_projectile: bool = false
 @export var projectile_scene: PackedScene
 @export var projectile_texture: Texture2D
 @export var projectile_speed: float = 10.0
+@export var projectile_lifetime: float = 0.0
 @export var projectile_color: Color = Color.WHITE
 
-## Scene to spawn at the attacker/target location (e.g. Swing effect, Particle burst)
 @export var visual_scene: PackedScene
-## Where to spawn the visual: 0 = Attacker, 1 = Target, 2 = Midpoint
 @export_enum("Attacker", "Target", "Midpoint") var visual_spawn_point: int = 0
-## If true, the visual becomes a child of the spawn target (moves with them).
 @export var attach_visual_to_source: bool = false
 @export var visual_offset: Vector3 = Vector3(0, 0.5, 0)
 @export var visual_duration: float = 0.5
 
 @export_group("Chaining")
-## The next attack to trigger automatically after this one.
 @export var chain_next: AttackResource
 @export var chain_delay: float = 0.5

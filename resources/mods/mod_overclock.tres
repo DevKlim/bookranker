@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://jncosewid0xj"]
+
+[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="1_aerqs"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="2_n3oyb"]
+
+[resource]
+script = ExtResource("2_n3oyb")
+item_name = "Overclock Core"
+icon = ExtResource("1_aerqs")
+equipment_type = 5
+rarity = "B"
+item_category = "Mod: Building"
+modifiers = {
+"cost": 3.0,
+"effects": {
+"DoT": 2.0,
+"attack_speed_mult": 1.0,
+"power_consumption_mult": 0.5,
+"process_speed_mult": 1.0
+},
+"permanent": false,
+"type": "building"
+}

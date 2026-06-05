@@ -1,12 +1,16 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://d1d73w5hn00nd"]
 
-[ext_resource type="Texture2D" uid="uid://c1um682bwqmo3" path="res://assets/icons/sharpened_pencil.png" id="1_6tpi4"]
+[ext_resource type="Resource" uid="uid://cyygfsa2koo6x" path="res://resources/attacks/sharp_pencil_stab.tres" id="1_5py87"]
+[ext_resource type="Texture2D" uid="uid://c1um682bwqmo3" path="res://assets/items/sharpened_pencil.png" id="1_6tpi4"]
 [ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="2_5py87"]
 
 [resource]
 script = ExtResource("2_5py87")
 item_name = "Sharp Pencil"
 icon = ExtResource("1_6tpi4")
-stack_size = 1
+stack_size = 1.0
 equipment_type = 2
+rarity = "D"
+item_category = "Item: Weapon"
+attack_config = ExtResource("1_5py87")
 damage = 2.0

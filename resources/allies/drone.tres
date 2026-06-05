@@ -10,6 +10,7 @@ ally_name = "Drone"
 scene = ExtResource("2_8v5gq")
 icon = ExtResource("1_pkj5g")
 speed = 60.0
+space = 20.0
 respawns_count = 3
 metadata/respawns_count = 3
 metadata/respawns_unlimited = false

@@ -7,13 +7,12 @@
 script = ExtResource("1_cm838")
 element_name = "Lux"
 icon = ExtResource("1_it45x")
+color = Color(1, 0.98039216, 0.8039216, 1)
 application_cooldown = 0.5
 reaction_rules = {
 "aqua": "prism",
 "igni": "plasma",
-"magne": "plasma",
-"tera": "crystal",
-"volt": "ray"
+"tera": "crystal"
 }
 stat_modifiers = {
 "lux_stat": 10.0

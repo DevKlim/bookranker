@@ -29,9 +29,10 @@ func _ready():
 	# Initial resize based on inspector value
 	if slots.size() != max_slots:
 		slots.resize(max_slots)
-		# Fill strictly if empty (resize fills with nulls for untyped arrays usually)
-		for i in range(slots.size()):
-			if slots[i] == null: slots[i] = null
+		
+	# Fill strictly if empty (resize fills with nulls for untyped arrays usually)
+	for i in range(slots.size()):
+		if typeof(slots[i]) == TYPE_NIL: slots[i] = null
 			
 	# Delay emitting the initial changed signal so late-joining UI can accurately populate its display upon open!
 	call_deferred("emit_signal", "inventory_changed")
@@ -39,10 +40,9 @@ func _ready():
 ## Dynamically update slot count (e.g. from stats/upgrades)
 func set_capacity(new_count: int) -> void:
 	if new_count < 0: new_count = 0
-	if new_count == max_slots: return
-	
 	max_slots = new_count
-	slots.resize(max_slots)
+	if slots.size() != max_slots:
+		slots.resize(max_slots)
 	emit_signal("inventory_changed")
 
 ## Defines a strict type restriction for a specific slot index.
@@ -54,7 +54,7 @@ func is_allowed_in_slot(item: Resource, index: int) -> bool:
 	if not is_item_allowed(item): return false
 	
 	# Check specific slot restriction
-	if slot_restrictions.has(index):
+	if slot_restrictions.has(index) and item != null:
 		if not (item is ItemResource): return false # Buildables can't be equipment
 		if item.equipment_type != slot_restrictions[index]:
 			return false
@@ -65,7 +65,7 @@ func is_allowed_in_slot(item: Resource, index: int) -> bool:
 	return true
 
 func is_item_allowed(item: Resource) -> bool:
-	if not item: return false
+	if item == null: return true # A null item means emptying/clearing a slot
 	if not (item is ItemResource or item is BuildableResource): return false
 	
 	if not denied_items.is_empty():
@@ -109,7 +109,19 @@ func add_item(item: Resource, count: int = 1) -> int:
 						emit_signal("inventory_changed")
 						return 0
 
-	# 2. Try empty slots (Respecting filters)
+	# 2. Try empty restricted slots first (Auto-equip)
+	if count > 0 and item is ItemResource and item.equipment_type != ItemResource.EquipmentType.NONE:
+		for i in range(max_slots):
+			if slots[i] == null and slot_restrictions.has(i) and slot_restrictions[i] == item.equipment_type:
+				if is_allowed_in_slot(item, i):
+					var to_add = min(cap, count)
+					slots[i] = { "item": item, "count": to_add }
+					count -= to_add
+					if count == 0:
+						emit_signal("inventory_changed")
+						return 0
+
+	# 3. Try empty slots (Respecting filters)
 	if count > 0:
 		for i in range(max_slots):
 			if slots[i] == null:

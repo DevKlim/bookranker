@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://cnb8360xanvu4"]
 
-[ext_resource type="Resource" uid="uid://coghxhqspfcp0" path="res://resources/items/graphite.tres" id="1_v01xy"]
-[ext_resource type="Resource" uid="uid://fnimcv81cy5p" path="res://resources/items/cardboard.tres" id="2_wnj78"]
+[ext_resource type="Resource" uid="uid://bufkycpx6nel1" path="res://resources/items/marble.tres" id="1_v01xy"]
+[ext_resource type="Resource" uid="uid://blhc64oe47vne" path="res://resources/items/luxchalk.tres" id="3_wnj78"]
 [ext_resource type="Resource" uid="uid://cgonrnui0f147" path="res://resources/items/aerochalk.tres" id="3_xr03o"]
 [ext_resource type="Resource" uid="uid://cuotenf3y88vd" path="res://resources/buildables/box_fan.tres" id="4_2r7p6"]
 [ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="5_6siur"]
@@ -10,15 +10,17 @@
 script = ExtResource("5_6siur")
 category = "chalkboard"
 recipe_name = "Box Fan"
+tier = 2
+craft_time = 4.0
 inputs = [{
-"count": 3,
+"count": 8,
 "resource": ExtResource("1_v01xy")
 }, {
-"count": 2,
-"resource": ExtResource("2_wnj78")
+"count": 16,
+"resource": ExtResource("3_xr03o")
 }, {
 "count": 2,
-"resource": ExtResource("3_xr03o")
+"resource": ExtResource("3_wnj78")
 }]
 outputs = [{
 "count": 1,

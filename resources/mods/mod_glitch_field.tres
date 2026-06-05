@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://dd3ekvb71xc7t"]
+
+[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="1_ttnc0"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="2_vk1rd"]
+
+[resource]
+script = ExtResource("2_vk1rd")
+item_name = "Glitch Field"
+icon = ExtResource("1_ttnc0")
+equipment_type = 5
+rarity = "SS"
+item_category = "Mod: Core"
+modifiers = {
+"cost": 5.0,
+"effects": {
+"random_element_burst": 1.0
+},
+"permanent": false,
+"type": "core"
+}

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="BuildableResource" format=3 uid="uid://vwdi2pyu3gsf"]
+
+[ext_resource type="Texture2D" uid="uid://c0dwob7c82bdu" path="res://assets/icons/mystapus.png" id="1_c2oqk"]
+[ext_resource type="Script" uid="uid://qpm1dylmnjld" path="res://scripts/resources/buildable_resource.gd" id="1_nomeh"]
+[ext_resource type="PackedScene" uid="uid://bb6nfve6gao62" path="res://scenes/buildables/mystapus.tscn" id="1_slyr6"]
+
+[resource]
+script = ExtResource("1_nomeh")
+buildable_name = "Mystapus"
+description = "Tentacle smashes enemies. Requires Slipstream."
+icon = ExtResource("1_c2oqk")
+layer = 3
+rarity = "SS"
+build_category = "Building: Support"
+power_consumption = 0.0
+has_input = false
+has_output = false
+scene = ExtResource("1_slyr6")

@@ -1,4 +1,4 @@
-extends Panel
+textends Panel
 
 ## Handles the developer UI for controlling waves and spawning enemies.
 ## Self-contained UI component that styles itself and connects to WaveManager.
@@ -8,7 +8,8 @@ var wave_select: OptionButton
 func _ready() -> void:
 	_setup_visuals()
 	_build_ui()
-	_populate_waves()
+	# Defer population so GameManager has a chance to initialize Level configs
+	call_deferred("_populate_waves")
 
 func _setup_visuals() -> void:
 	# Removed dark background to integrate directly into the white glass window.
@@ -124,5 +125,9 @@ func _on_stop_wave_button_pressed() -> void:
 		GameManager._on_wave_cleared()
 
 func _on_reload_pressed() -> void:
-	WaveManager._load_waves_config()
+	var current_level = GameManager.game_data.get("level", 1)
+	GameManager.load_level(current_level)
+	
+	# Await for process frame so WaveManager can parse the JSON back into its state properly
+	await get_tree().process_frame
 	_populate_waves()

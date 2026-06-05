@@ -8,7 +8,7 @@ var progress = 0.0
 var visual_node: Node3D = null
 
 func _physics_process(delta: float) -> void:
-	super._physics_process(delta)
+	# Do not call super._physics_process(delta) to prevent BaseBuilding auto-output conflicts
 	if not is_active: return
 	
 	if stored_item:
@@ -97,7 +97,7 @@ func _try_pass_item():
 	var neighbor = LaneManager.get_entity_at(target_tile, "wire")
 	var valid_stream = false
 	
-	if is_instance_valid(neighbor) and neighbor.get("display_name") in["Slipstream", "Tarstream"]:
+	if is_instance_valid(neighbor) and neighbor.get("display_name") in ["Slipstream", "Tarstream"]:
 		valid_stream = true
 	else:
 		neighbor = LaneManager.get_entity_at(target_tile, "building")

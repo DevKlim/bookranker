@@ -37,6 +37,13 @@ func is_powered(coord: Vector2i) -> bool:
 		return true
 	return _powered_tiles.get(coord, false)
 
+func _is_wire_disabled(coord: Vector2i) -> bool:
+	if not is_instance_valid(LaneManager): return false
+	var b = LaneManager.get_entity_at(coord, "building")
+	if is_instance_valid(b) and "is_switch" in b and b.get("switch_state") == false:
+		return true
+	return false
+
 func update_network() -> void:
 	# 1. Reset
 	_powered_tiles.clear()
@@ -49,11 +56,12 @@ func update_network() -> void:
 	var visited: Dictionary = {}
 
 	if has_wire(POWER_SOURCE_COORD):
-		queue.append(POWER_SOURCE_COORD)
-		visited[POWER_SOURCE_COORD] = true
-		_powered_tiles[POWER_SOURCE_COORD] = true
-		if is_instance_valid(_wires[POWER_SOURCE_COORD]) and _wires[POWER_SOURCE_COORD].has_method("set_powered"):
-			_wires[POWER_SOURCE_COORD].set_powered(true)
+		if not _is_wire_disabled(POWER_SOURCE_COORD):
+			queue.append(POWER_SOURCE_COORD)
+			visited[POWER_SOURCE_COORD] = true
+			_powered_tiles[POWER_SOURCE_COORD] = true
+			if is_instance_valid(_wires[POWER_SOURCE_COORD]) and _wires[POWER_SOURCE_COORD].has_method("set_powered"):
+				_wires[POWER_SOURCE_COORD].set_powered(true)
 	
 	while not queue.is_empty():
 		var current = queue.pop_front()
@@ -61,6 +69,13 @@ func update_network() -> void:
 		var neighbors = _get_neighbors(current)
 		for n in neighbors:
 			if has_wire(n) and not visited.has(n):
+				if _is_wire_disabled(n):
+					visited[n] = true
+					_powered_tiles[n] = false
+					if is_instance_valid(_wires[n]) and _wires[n].has_method("set_powered"):
+						_wires[n].set_powered(false)
+					continue
+					
 				visited[n] = true
 				_powered_tiles[n] = true
 				if is_instance_valid(_wires[n]) and _wires[n].has_method("set_powered"):

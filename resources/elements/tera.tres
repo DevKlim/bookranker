@@ -9,8 +9,11 @@ element_name = "Tera"
 icon = ExtResource("1_oqpgn")
 color = Color(0.54509807, 0.27058825, 0.07450981, 1)
 application_cooldown = 0.2
+cooldown_equation = "base_cooldown * max(0.1, 1.0 - (magical_defense * magical_defense_weight))"
+stat_weights = {
+"magical_defense": 1.0
+}
 reaction_rules = {
-"aero": "tailwind",
 "aqua": "mortar",
 "chem": "pollute",
 "igni": "scorch",
@@ -20,6 +23,6 @@ reaction_rules = {
 "volt": "ground"
 }
 stat_modifiers = {
-"max_health_mult": 0.2,
+"health_mult": 0.2,
 "weight": 50.0
 }

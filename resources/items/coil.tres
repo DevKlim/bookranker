@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://dt5s6ue2itsbp"]
+
+[ext_resource type="Resource" uid="uid://vri77kv5coty" path="res://resources/elements/volt.tres" id="1_7jnws"]
+[ext_resource type="Texture2D" uid="uid://cgu3rviigowp6" path="res://assets/items/coil.png" id="2_5ixgl"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="2_jfh7h"]
+
+[resource]
+script = ExtResource("2_jfh7h")
+item_name = "coil"
+icon = ExtResource("2_5ixgl")
+stack_size = 64.0
+item_category = "Item: Material"
+damage = 1.0
+element = ExtResource("1_7jnws")

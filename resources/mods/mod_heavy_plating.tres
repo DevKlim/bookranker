@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://b6em2ky2x11jn"]
+
+[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="1_2s4un"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="2_s4rf7"]
+
+[resource]
+script = ExtResource("2_s4rf7")
+item_name = "Heavy Plating"
+icon = ExtResource("1_2s4un")
+equipment_type = 5
+rarity = "B"
+item_category = "Mod: Building"
+modifiers = {
+"cost": 0,
+"effects": {
+"defense": 5.0,
+"health_mult": 1.0,
+"speed_mult": -0.2,
+"weight": 50.0
+},
+"permanent": false,
+"type": "building"
+}

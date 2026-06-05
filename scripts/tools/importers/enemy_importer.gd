@@ -36,15 +36,29 @@ func import_enemies(list: Array) -> void:
 			res.scene = load(entry["template"])
 			
 		if entry.has("logic") and entry["logic"] is Dictionary:
-			res.health = entry["logic"].get("health", 50.0)
+			res.max_health = entry["logic"].get("max_health", entry["logic"].get("health", 50.0))
 			res.speed = entry["logic"].get("speed", 50.0)
 			res.defense = entry["logic"].get("defense", 0.0)
-			res.magical_defense = entry["logic"].get("magical_defense", 0.0)
+			res.firewall = entry["logic"].get("firewall", entry["logic"].get("magical_defense", 0.0))
 			res.elemental_cd = entry["logic"].get("elemental_cd", 0.0)
 			res.elemental_resistances = entry["logic"].get("resistances", {})
+			res.security = entry["logic"].get("security", 0.0)
+			res.space = entry["logic"].get("space", entry["logic"].get("weight", 10.0))
+			res.networking = entry["logic"].get("networking", 0.0)
+			res.luck_stat = entry["logic"].get("luck_stat", 0.0)
+			res.compute = entry["logic"].get("compute", 1.0)
+			res.scale = entry["logic"].get("scale", entry["logic"].get("size", 1.0))
+			res.ping = entry["logic"].get("ping", 1.0)
+			res.malware = entry["logic"].get("malware", 0.0)
+			
+			res.security_regen_delay = float(entry["logic"].get("security_regen_delay", 5.0))
+			res.security_regen_time = float(entry["logic"].get("security_regen_time", 5.0))
+			res.innate_reapply_interval = float(entry["logic"].get("innate_reapply_interval", 1.0))
+			res.innate_instant_react = bool(entry["logic"].get("innate_instant_react", true))
+
 		if entry.has("params") and entry["params"] is Dictionary:
 			res.attack_damage = entry["params"].get("attack_damage", 10.0)
-			res.attack_speed = entry["params"].get("attack_speed", 1.0)
+			res.process_speed = entry["params"].get("process_speed", entry["params"].get("attack_speed", 1.0))
 			res.attack_range_depth = int(entry["params"].get("attack_range", 1))
 			res.attack_range_width = int(entry["params"].get("attack_width", 0))
 
@@ -103,8 +117,11 @@ func _generate_enemy_scene(data: Dictionary, save_path: String) -> void:
 	
 	# Explicitly add MoveComponent
 	_add_component(inst, COMP_MOVE, "MoveComponent")
-	
 	_add_component(inst, COMP_ELEMENTAL, "ElementalComponent")
+	
+	if data.has("tags") and data["tags"] is Array:
+		if "dps_meter" in data["tags"]:
+			_add_component(inst, "res://scripts/components/dps_meter_component.gd", "DPSMeterComponent")
 	
 	_apply_logic_params(inst, data)
 	_save_scene(inst, save_path)

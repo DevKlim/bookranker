@@ -15,15 +15,6 @@ This document details all elemental combinations. It is the source of truth for 
 
 Direct interactions between the 5 base primitives (Igni, Volt, Magne, Aqua, Tera).
 
-### Light (Igni + Volt)
-*   **Tier:** 1.5
-*   **Tags:** [C] [M] [T]
-*   **Mechanic:**
-    *   **[C] Highlight:** Target glows. Disables stealth/dodge chances. Incoming Igni/Volt damage is multiplied by 1.1x.
-    *   **[M] Spotlight:** Building emits a cone of light that reveals stealth enemies within 15 tiles.
-    *   **[T]** Use `LaneManager` spatial hash to flag enemies as "revealed" rather than raycasting every frame.
-*   **Formations:** +Lux -> Plasma
-
 ### Fuse (Igni + Magne)
 *   **Tier:** 1.5
 *   **Tags:** [C] [M] [T]
@@ -48,31 +39,6 @@ Direct interactions between the 5 base primitives (Igni, Volt, Magne, Aqua, Tera
     *   **[C] Vapor:** Creates a puff of steam. No extra damage, reaction stays on unit.
     *   **[M] Pressure:** Building builds up steam, increasing fire rate temporarily but risks overheating.
 *   **Formations:** +Aero -> Fog
-
-### Conduct (Volt + Magne)
-*   **Tier:** 1.5
-*   **Tags:** [C] [M]
-*   **Mechanic:**
-    *   **[C] Induction:** Damage taken by nearby enemy within 1 tile is applied to this enemy as flat True Damage (20% of original).
-    *   **[M] Overclock:** Increases `processing_speed` by 5%, but increases `power_consumption` by 10%.
-    *   **[T]** Use `LaneManager.get_enemies_at` for neighbor lookups. Do not use Area3D.
-*   **Formations:** +Tera -> Magnetite
-
-### Ripple (Volt + Aqua)
-*   **Tier:** 1.5
-*   **Tags:** [C] [M]
-*   **Mechanic:**
-    *   **[C] Chain:** Damage taken by this enemy is echoed to 3 nearby enemies within 2 tiles as flat Damage (20% of original).
-    *   **[M] Wireless:** Connects to the Power Grid without wires (Range 3 tiles).
-*   **Formations:** +Aero -> Storm
-
-### Ground (Volt + Tera)
-*   **Tier:** 1.5
-*   **Tags:** [C] [M] [CANCEL]
-*   **Mechanic:**
-    *   **[C] Dissipate:** Removes Volt instantly. Tera remains.
-    *   **[M] Earthing:** Building becomes immune to Stun/EMP effects.
-*   **Formations:** None
 
 ### Rust (Magne + Aqua)
 *   **Tier:** 1.5
@@ -127,15 +93,6 @@ Modifiers that spread or alter the state of primitives.
     *   **[M] Obscure:** Building becomes untargetable by ranged enemy attacks.
 *   **Formations:** +Aqua -> Rain
 
-
-
-### Pollute (Chem + Any Primitive)
-*   **Tier:** 2.0
-*   **Tags:** [C] [M]
-*   **Mechanic:**
-    *   **[C] Tox:** Extends the duration of the Primitive by 5.0s.
-    *   **[M] Waste:** Doubles output yield, but damages adjacent buildings for 1 DPS.
-
 ---
 
 ## Tier 3: High Magic (Lux)
@@ -167,15 +124,8 @@ Lux is the Apex Catalyst.
 
 ## Tier 4: Complex (Stateful)
 
-### Plasma (Light + Igni/Magne || Plasma + Light/Igne/Magne)
-*   **Tier:** 4.0
-*   **Tags:** [C] [M]
-*   **Mechanic:**
-    *   **[C] Melt:** Incoming Igni/Volt damage is multiplied by 1.25x. If Plasma exists on the unit previously, incoming damage is instead multiplied by 1.5x
-    *   **[M] Cutter:** Mining speed becomes instantaneous. Yield reduced by 50% (Vaporized).
-
 ### Slime (??? + ???)
-*   **Source:** Applied intrinsically by **Ink-based** weapons and environments (e.g., Tarstream, Picasso weapon, or Origami folds infused with Ink Deposits).
+*   **Source:** Applied intrinsically by **Ink-based** weapons and environments (Tarstream, Picasso weapon, or Origami folds infused with Ink Deposits).
 *   **Tier:** 4.0 Reaction
 *   **Tags:** [C] [M]
 *   **Mechanic:**
@@ -188,13 +138,6 @@ Lux is the Apex Catalyst.
 *   **Mechanic:**
     *   **[C] Downpour:** Creates a rain cloud on that tile that applies Aqua to anyone on that tile every 2 seconds.
     *   **[M] Wash:** Continuously cleanses negative modifiers and heat from the building.
-
-### Chloro (Mortar + Light + Chem)
-*   **Tier:** 4.0
-*   **Tags:** [C] [M]
-*   **Mechanic:**
-    *   **[C] Entangle:** Grow roots and entangle enemy for 2 seconds. Then sprout flowers on the same tile for 30 seconds.
-    *   **[M] Garden:** Generates "Biomass" fuel.
 
 ### Golem (Mortar + Structure + Lux)
 *   **Tier:** 4.0

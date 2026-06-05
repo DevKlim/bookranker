@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://1uckad6v513s" path="res://scripts/entities/projectile.gd" id="1_script"]
 [ext_resource type="PackedScene" uid="uid://bljac0gvsmxkm" path="res://assets/buildables/crane/crane.gltf" id="2_mesh"]
+[ext_resource type="Script" uid="uid://p7nrchkroanc" path="res://scripts/components/highlight_component.gd" id="3_6faib"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_crane"]
 
@@ -15,3 +16,6 @@ shape = SubResource("BoxShape3D_crane")
 
 [node name="crane" parent="Model" unique_id=1509918912 instance=ExtResource("2_mesh")]
 transform = Transform3D(4, 0, 0, 0, 4, 0, 0, 0, 4, 0, 0, 0)
+
+[node name="HighlightComponent" type="Node" parent="." unique_id=1607435616]
+script = ExtResource("3_6faib")

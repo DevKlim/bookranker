@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="BuildableResource" format=3 uid="uid://j3sp7eq84hui"]
+
+[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="1_wri8t"]
+[ext_resource type="PackedScene" uid="uid://b3qargnfm5x72" path="res://scenes/buildables/backpack.tscn" id="2_acosk"]
+[ext_resource type="Script" uid="uid://qpm1dylmnjld" path="res://scripts/resources/buildable_resource.gd" id="3_gjuah"]
+
+[resource]
+script = ExtResource("3_gjuah")
+buildable_name = "backpack"
+description = "Looting equipment"
+icon = ExtResource("1_wri8t")
+build_category = "Building: Support"
+max_health = 5.0
+power_consumption = 0.0
+has_input = false
+has_output = false
+default_output_mask = 4
+scene = ExtResource("2_acosk")

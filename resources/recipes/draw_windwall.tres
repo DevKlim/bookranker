@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://bnugb8ic588kv"]
+
+[ext_resource type="Resource" uid="uid://cgonrnui0f147" path="res://resources/items/aerochalk.tres" id="1_ik4qp"]
+[ext_resource type="Resource" uid="uid://fnimcv81cy5p" path="res://resources/items/cardboard.tres" id="2_reojq"]
+[ext_resource type="Resource" uid="uid://bufkycpx6nel1" path="res://resources/items/marble.tres" id="3_uuffo"]
+[ext_resource type="Resource" uid="uid://u48pfbyjljr7" path="res://resources/buildables/windwall.tres" id="4_epjmv"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="5_l26g3"]
+
+[resource]
+script = ExtResource("5_l26g3")
+category = "chalkboard"
+recipe_name = "Windwall"
+tier = 2
+craft_time = 4.0
+inputs = [{
+"count": 16,
+"resource": ExtResource("1_ik4qp")
+}, {
+"count": 4,
+"resource": ExtResource("2_reojq")
+}, {
+"count": 8,
+"resource": ExtResource("3_uuffo")
+}]
+outputs = [{
+"count": 1,
+"resource": ExtResource("4_epjmv")
+}]

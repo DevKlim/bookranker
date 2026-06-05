@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://gvqddjpsd7er"]
 
 [ext_resource type="Script" uid="uid://dj7657xb6odwr" path="res://scripts/resources/attack_resource.gd" id="1_klv6h"]
+[ext_resource type="PackedScene" uid="uid://dsfsdfsdfsdf" path="res://scenes/attacks/pencil_swing_vfx.tscn" id="2_vfx"]
 
 [resource]
 script = ExtResource("1_klv6h")
@@ -11,4 +12,10 @@ damage_equation = "(base_damage + (attack_damage * attack_damage_weight) + globa
 stat_weights = {
 "attack_damage": 0.5
 }
+visual_scene = ExtResource("2_vfx")
 min_range = 1
+max_range = 1
+is_aoe = true
+range_width = 1
+spawn_point = 0
+visual_duration = 0.5

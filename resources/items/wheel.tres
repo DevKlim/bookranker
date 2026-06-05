@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://d3pn70g1liqmt"]
+
+[ext_resource type="Resource" uid="uid://bq4u2yuym3lir" path="res://resources/elements/dark.tres" id="1_xkdh6"]
+[ext_resource type="Texture2D" uid="uid://jcnuxo5f02tk" path="res://assets/items/wheel.png" id="2_bkkqb"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="3_vh7q5"]
+
+[resource]
+script = ExtResource("3_vh7q5")
+item_name = "Wheel"
+icon = ExtResource("2_bkkqb")
+stack_size = 64.0
+item_category = "Item: Material"
+damage = 1.0
+element = ExtResource("1_xkdh6")

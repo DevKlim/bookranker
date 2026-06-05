@@ -1,0 +1,51 @@
+[gd_scene format=3 uid="uid://34h2igb6s66n"]
+
+[sub_resource type="GDScript" id="GDScript_ionize"]
+script/source = "extends Node3D
+func _ready():
+    var tween = create_tween()
+    tween.set_parallel(true)
+    for child in get_children():
+        if child is MeshInstance3D:
+            var start_pos = child.position
+            child.position = start_pos * 2.0
+            child.scale = Vector3.ZERO
+            tween.tween_property(child, \"position\", Vector3.ZERO, 0.3).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK)
+            tween.tween_property(child, \"scale\", Vector3.ONE, 0.15)
+            tween.tween_property(child, \"scale\", Vector3.ZERO, 0.1).set_delay(0.2)
+    tween.chain().tween_callback(queue_free)"
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ion"]
+transparency = 1
+blend_mode = 1
+shading_mode = 0
+albedo_color = Color(0, 1, 1, 0.8)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_ion"]
+material = SubResource("StandardMaterial3D_ion")
+top_radius = 0.0
+bottom_radius = 0.1
+height = 1.0
+
+[node name="IonizePins" type="Node3D" unique_id=655170193]
+script = SubResource("GDScript_ionize")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1749300318]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0, 1)
+mesh = SubResource("CylinderMesh_ion")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="." unique_id=283744864]
+transform = Transform3D(-1, 8.74228e-08, 3.82137e-15, 0, -4.37114e-08, 1, 8.74228e-08, 1, 4.37114e-08, 0, 0, -1)
+mesh = SubResource("CylinderMesh_ion")
+
+[node name="MeshInstance3D3" type="MeshInstance3D" parent="." unique_id=753953164]
+transform = Transform3D(-4.371139e-08, -1, 4.371139e-08, 3.821371e-15, 4.371139e-08, 1, -1, 4.371139e-08, 1.9106855e-15, 1, 0, 0)
+mesh = SubResource("CylinderMesh_ion")
+
+[node name="MeshInstance3D4" type="MeshInstance3D" parent="." unique_id=1033685311]
+transform = Transform3D(1.3113416e-07, 1, -4.371139e-08, 3.821371e-15, 4.371139e-08, 1, 1, -1.3113416e-07, 1.9106855e-15, -1, 0, 0)
+mesh = SubResource("CylinderMesh_ion")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=852470505]
+light_color = Color(0, 1, 1, 1)
+omni_range = 3.0

@@ -1,0 +1,43 @@
+[gd_scene format=3 uid="uid://ccdooqejxboil"]
+[ext_resource type="Texture2D" uid="uid://b74vujbuj2l8b" path="res://assets/textures/particles/smokes/smoke_04_a.png" id="1_boil"]
+[sub_resource type="Gradient" id="Gradient_boil"]
+offsets = PackedFloat32Array(0, 0.2, 0.8, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 0.4, 1, 1, 1, 0.4, 1, 1, 1, 0)
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_boil"]
+gradient = SubResource("Gradient_boil")
+[sub_resource type="Curve" id="Curve_boil"]
+_data =[Vector2(0, 0.5), 0.0, 0.0, 0, 0, Vector2(1, 1.5), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_boil"]
+curve = SubResource("Curve_boil")
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_boil"]
+emission_shape = 1
+emission_sphere_radius = 0.5
+angle_max = 360.0
+direction = Vector3(0, 1, 0)
+initial_velocity_min = 0.5
+initial_velocity_max = 1.0
+gravity = Vector3(0, 1, 0)
+scale_curve = SubResource("CurveTexture_boil")
+color_ramp = SubResource("GradientTexture1D_boil")
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_boil"]
+render_priority = -1
+transparency = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_color = Color(1, 0.8, 0.6, 0.4)
+albedo_texture = ExtResource("1_boil")
+billboard_mode = 3
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+[sub_resource type="QuadMesh" id="QuadMesh_boil"]
+material = SubResource("StandardMaterial3D_boil")
+
+[node name="BoilSteam" type="GPUParticles3D"]
+emitting = true
+amount = 8
+lifetime = 1.5
+process_material = SubResource("ParticleProcessMaterial_boil")
+draw_pass_1 = SubResource("QuadMesh_boil")

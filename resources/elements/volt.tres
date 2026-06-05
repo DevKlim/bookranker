@@ -9,12 +9,17 @@ element_name = "Volt"
 icon = ExtResource("1_tb47u")
 color = Color(1, 1, 0, 1)
 application_cooldown = 0.2
+cooldown_equation = "base_cooldown * max(0.1, 1.0 - (magical_defense * magical_defense_weight))"
+stat_weights = {
+"magical_defense": 1.0
+}
 reaction_rules = {
 "aero": "tailwind",
-"aqua": "ripple",
-"chem": "pollute",
+"aqua": "channel",
+"channel": "arc",
 "igni": "light",
-"lux": "ray",
-"magne": "conduct",
+"light": "plasma",
+"magne": "channel",
+"plasma": "ionize",
 "tera": "ground"
 }

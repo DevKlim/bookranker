@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="BuildableResource" format=3 uid="uid://u48pfbyjljr7"]
+
+[ext_resource type="PackedScene" uid="uid://cqbo6da3bkifn" path="res://scenes/buildables/windwall.tscn" id="1_1wy2e"]
+[ext_resource type="Script" uid="uid://qpm1dylmnjld" path="res://scripts/resources/buildable_resource.gd" id="1_130bt"]
+[ext_resource type="Texture2D" uid="uid://ppkp6a1askkc" path="res://assets/icons/windwall.png" id="1_oiy8r"]
+
+[resource]
+script = ExtResource("1_130bt")
+buildable_name = "Windwall"
+description = "Spawns a slow moving wall of gusts."
+icon = ExtResource("1_oiy8r")
+rarity = "A"
+build_category = "Building: Support"
+build_cooldown = 5000.0
+max_health = 50.0
+power_consumption = 0.0
+has_input = false
+has_output = false
+default_input_mask = 1
+default_output_mask = 4
+scene = ExtResource("1_1wy2e")

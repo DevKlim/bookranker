@@ -49,7 +49,7 @@ func rotate_buildable():
 		emit_signal("remove_mode_changed", current_remove_mode)
 		return
 		
-	if selected_buildable and selected_buildable.layer != BuildableResource.BuildLayer.MECH:
+	if selected_buildable and selected_buildable.layer != BuildableResource.BuildLayer.MECH and selected_buildable.layer != BuildableResource.BuildLayer.ADDON:
 		return 
 	current_rotation_index = (current_rotation_index + 1) % 4
 	_update_current_layout_cache()
@@ -112,6 +112,17 @@ func can_build_at(world_pos: Vector3) -> bool:
 			if not lane_manager.is_valid_tile(t): return false
 			if lane_manager.get_entity_at(t, "building") != null: return false
 		return true
+		
+	if selected_buildable.layer == BuildableResource.BuildLayer.ADDON:
+		var dynamic_layout = _get_dynamic_layout(origin_logic)
+		for tile_offset in dynamic_layout:
+			var t = origin_logic + tile_offset
+			if not lane_manager.is_valid_tile(t): return false
+			var base_building = lane_manager.get_entity_at(t, "building")
+			if not is_instance_valid(base_building): return false
+			if not base_building.is_in_group("stream"): return false
+			if lane_manager.get_entity_at(t, "addon") != null: return false
+		return true
 
 	if selected_buildable.layer == BuildableResource.BuildLayer.WIRING:
 		if not lane_manager.is_valid_tile(origin_logic): return false
@@ -126,6 +137,7 @@ func has_removable_at(world_pos: Vector3) -> bool:
 	var logic_coord = _get_logic_coord(world_pos)
 	if current_remove_mode == RemoveMode.ALL or current_remove_mode == RemoveMode.BUILDING_ONLY:
 		if lane_manager.get_entity_at(logic_coord, "building") != null: return true
+		if lane_manager.get_entity_at(logic_coord, "addon") != null: return true
 	if current_remove_mode == RemoveMode.ALL or current_remove_mode == RemoveMode.WIRE_ONLY:
 		if lane_manager.get_entity_at(logic_coord, "wire") != null: return true
 	return false
@@ -139,6 +151,10 @@ func place_buildable(world_pos: Vector3):
 	match selected_buildable.layer:
 		BuildableResource.BuildLayer.MECH:
 			_place_mech(snapped_pos, logic_coord)
+			PlayerManager.consume_build_resource(selected_buildable)
+			
+		BuildableResource.BuildLayer.ADDON:
+			_place_addon(snapped_pos, logic_coord)
 			PlayerManager.consume_build_resource(selected_buildable)
 				
 		BuildableResource.BuildLayer.WIRING:
@@ -156,11 +172,17 @@ func place_buildable(world_pos: Vector3):
 func remove_buildable_at(world_pos: Vector3):
 	var logic_coord = _get_logic_coord(world_pos)
 	if current_remove_mode == RemoveMode.ALL or current_remove_mode == RemoveMode.BUILDING_ONLY:
+		_remove_at_tile(logic_coord, "addon")
 		_remove_at_tile(logic_coord, "building")
 	if current_remove_mode == RemoveMode.ALL or current_remove_mode == RemoveMode.WIRE_ONLY:
 		_remove_at_tile(logic_coord, "wire")
 
 func _remove_at_tile(coord: Vector2i, layer_filter: String = ""):
+	if layer_filter == "" or layer_filter == "addon":
+		var addon = lane_manager.get_entity_at(coord, "addon")
+		if addon and is_instance_valid(addon):
+			addon.queue_free()
+			
 	if layer_filter == "" or layer_filter == "building":
 		var building = lane_manager.get_entity_at(coord, "building")
 		if building and is_instance_valid(building):
@@ -184,10 +206,8 @@ func _place_mech(_visual_pos: Vector3, logic_coord: Vector2i):
 		var vo = selected_buildable.display_offset
 		instance.visual_offset = Vector3(vo.x, vo.y, 0)
 	
-	get_tree().current_scene.get_node("Buildings").add_child(instance, true)
-	
 	var world_base = LaneManager.tile_to_world(logic_coord)
-	instance.global_position = world_base + LaneManager.get_layer_offset("building")
+	instance.position = world_base + LaneManager.get_layer_offset("building")
 	
 	if instance.has_method("set_build_rotation"):
 		instance.set_build_rotation(current_rotation_index)
@@ -199,6 +219,8 @@ func _place_mech(_visual_pos: Vector3, logic_coord: Vector2i):
 			2: rads = 0.0
 			3: rads = -PI * 0.5
 		instance.rotation = Vector3(0, rads, 0)
+
+	get_tree().current_scene.get_node("Buildings").add_child(instance, true)
 	
 	var dynamic_layout = _get_dynamic_layout(logic_coord)
 	for tile_offset in dynamic_layout:
@@ -207,6 +229,42 @@ func _place_mech(_visual_pos: Vector3, logic_coord: Vector2i):
 			LaneManager.register_entity(instance, t, "building")
 	
 	LaneManager.register_entity(instance, logic_coord, "building")
+	
+func _place_addon(_visual_pos: Vector3, logic_coord: Vector2i):
+	var instance = selected_buildable.scene.instantiate()
+	
+	if selected_buildable.buildable_name != "":
+		instance.name = selected_buildable.buildable_name
+		if "display_name" in instance:
+			instance.display_name = selected_buildable.buildable_name
+	
+	if "visual_offset" in instance:
+		var vo = selected_buildable.display_offset
+		instance.visual_offset = Vector3(vo.x, vo.y, 0)
+	
+	var world_base = LaneManager.tile_to_world(logic_coord)
+	instance.position = world_base + LaneManager.get_layer_offset("addon")
+	
+	if instance.has_method("set_build_rotation"):
+		instance.set_build_rotation(current_rotation_index)
+	else:
+		var rads = 0.0
+		match current_rotation_index:
+			0: rads = PI
+			1: rads = PI * 0.5
+			2: rads = 0.0
+			3: rads = -PI * 0.5
+		instance.rotation = Vector3(0, rads, 0)
+
+	get_tree().current_scene.get_node("Buildings").add_child(instance, true)
+	
+	var dynamic_layout = _get_dynamic_layout(logic_coord)
+	for tile_offset in dynamic_layout:
+		var t = logic_coord + tile_offset
+		if t != logic_coord: 
+			LaneManager.register_entity(instance, t, "addon")
+	
+	LaneManager.register_entity(instance, logic_coord, "addon")
 
 func _place_wiring(_visual_pos: Vector3, logic_coord: Vector2i):
 	var instance = selected_buildable.scene.instantiate()
@@ -214,10 +272,10 @@ func _place_wiring(_visual_pos: Vector3, logic_coord: Vector2i):
 		var vo = selected_buildable.display_offset
 		instance.visual_offset = Vector3(vo.x, vo.y, 0)
 	
-	get_tree().current_scene.get_node("Wiring").add_child(instance)
-	
 	var world_base = LaneManager.tile_to_world(logic_coord)
-	instance.global_position = world_base + LaneManager.get_layer_offset("wire")
+	instance.position = world_base + LaneManager.get_layer_offset("wire")
+
+	get_tree().current_scene.get_node("Wiring").add_child(instance)
 	
 	wiring_manager.add_wire(logic_coord, instance)
 	instance.tree_exiting.connect(wiring_manager.remove_wire.bind(logic_coord))

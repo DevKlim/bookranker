@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://cgonrnui0f147"]
 
 [ext_resource type="Resource" uid="uid://bocnm61fjtt88" path="res://resources/elements/aero.tres" id="1_xtsq3"]
-[ext_resource type="Texture2D" uid="uid://dshjbd8tn723v" path="res://assets/icons/aerochalk.png" id="2_xtsq3"]
+[ext_resource type="Texture2D" uid="uid://dshjbd8tn723v" path="res://assets/items/aerochalk.png" id="2_xtsq3"]
 [ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="3_41rbk"]
 
 [resource]
@@ -9,7 +9,10 @@ script = ExtResource("3_41rbk")
 item_name = "Aero Chalk"
 icon = ExtResource("2_xtsq3")
 color = Color(0.7072497, 0.99836546, 0.77929485, 1)
-damage = 1.0
+stack_size = 64.0
+rarity = "D"
+item_category = "Item: Resource"
+damage = 2.0
 element = ExtResource("1_xtsq3")
 is_ore = true
 ore_block_name = "Aero Chalk Deposit"

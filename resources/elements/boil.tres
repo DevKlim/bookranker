@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://1boil0000"]
+
+[ext_resource type="Texture2D" uid="uid://dlfgf8afivgo8" path="res://assets/icons/boil.png" id="1_66hmb"]
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_boil"]
+
+[resource]
+script = ExtResource("1_boil")
+element_name = "Boil"
+icon = ExtResource("1_66hmb")
+color = Color(1, 0.54901963, 0, 1)
+duration = 8.0
+reaction_rules = {
+"aero": "dew",
+"aqua": "aqua"
+}
+stat_modifiers = {
+"speed_mult": -0.2
+}

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://ta6pdd42mpp1"]
+
+[ext_resource type="PackedScene" uid="uid://dxhkx2odymmkp" path="res://scenes/attacks/knife.tscn" id="1_wiw2y"]
+[ext_resource type="Script" uid="uid://dj7657xb6odwr" path="res://scripts/resources/attack_resource.gd" id="2_ldb5b"]
+
+[resource]
+script = ExtResource("2_ldb5b")
+id = "knife"
+cooldown = 0.7
+base_damage = 1.0
+damage_equation = "(base_damage + (attack_damage * attack_damage_weight) + global_flat_damage) * (1.0 + damage_mult)"
+stat_weights = {
+"attack_damage": 1.5
+}
+max_range = 3
+orient_to_source_direction = true
+spawn_projectile = true
+projectile_scene = ExtResource("1_wiw2y")
+projectile_speed = 30.0
+projectile_lifetime = 1.5
+visual_offset = Vector3(0, 1, 0)
+visual_duration = 1.0

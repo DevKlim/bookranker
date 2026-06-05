@@ -1,0 +1,86 @@
+[gd_scene format=3 uid="uid://dak0ea0ecn2sa"]
+
+[ext_resource type="Script" uid="uid://cc6017vxbci1x" path="res://scripts/entities/particles/hurt_vfx.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://b6obbdlgud7fj" path="res://assets/textures/particles/effect/effect_03_a.png" id="2_kmbye"]
+
+[sub_resource type="Animation" id="Animation_hurt"]
+length = 0.35
+step = 0.05
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Pivot/Hit:scale")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.2),
+"transitions": PackedFloat32Array(1, 0.3),
+"update": 0,
+"values": [Vector3(2.5, 2.5, 2.5), Vector3(0.5, 0.5, 0.5)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Pivot/Hit:modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.15, 0.35),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(1, 0.1, 0.1, 1), Color(1, 0.1, 0.1, 1), Color(1, 0.1, 0.1, 0)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("OmniLight3D:light_energy")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.3),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [3.0, 0.0]
+}
+tracks/3/type = "method"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath(".")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0.4),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"queue_free"
+}]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_hurt"]
+_data = {
+&"play": SubResource("Animation_hurt")
+}
+
+[node name="HurtVFX" type="Node3D" unique_id=1171724002]
+script = ExtResource("1_script")
+
+[node name="Pivot" type="Node3D" parent="." unique_id=2047033181]
+
+[node name="Hit" type="Sprite3D" parent="Pivot" unique_id=240407556]
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0)
+modulate = Color(1, 0.1, 0.1, 0)
+pixel_size = 0.002
+billboard = 1
+no_depth_test = true
+render_priority = 60
+texture = ExtResource("2_kmbye")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=472263837]
+light_color = Color(1, 0.3, 0.1, 1)
+light_energy = 0.0
+omni_range = 3.0
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1656901213]
+libraries/ = SubResource("AnimationLibrary_hurt")
+autoplay = &"play"

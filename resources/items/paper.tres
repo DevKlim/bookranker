@@ -1,10 +1,12 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://d1jxdol00rp3u"]
 
-[ext_resource type="Texture2D" uid="uid://cuma72uhqr8ox" path="res://assets/icons/paper.png" id="1_4untc"]
+[ext_resource type="Texture2D" uid="uid://cuma72uhqr8ox" path="res://assets/items/paper.png" id="1_4untc"]
 [ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="2_xrelv"]
 
 [resource]
 script = ExtResource("2_xrelv")
 item_name = "Paper"
 icon = ExtResource("1_4untc")
-stack_size = 200
+stack_size = 64.0
+rarity = "F"
+item_category = "Item: Material"

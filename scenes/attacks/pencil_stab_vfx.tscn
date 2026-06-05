@@ -1,0 +1,71 @@
+[gd_scene format=3 uid="uid://cl60ft3o4bi3w"]
+
+[ext_resource type="Script" uid="uid://cx46gbfylxls8" path="res://scripts/entities/attack_visual.gd" id="1_atkvis"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_stab"]
+top_radius = 0.01
+bottom_radius = 0.1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_stab"]
+transparency = 1
+blend_mode = 1
+shading_mode = 0
+albedo_color = Color(1, 0.9, 0.2, 0)
+
+[sub_resource type="Animation" id="Animation_stab"]
+resource_name = "default"
+length = 0.25
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Pivot:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.05, 0.25),
+"transitions": PackedFloat32Array(0.2, 2, 1),
+"update": 0,
+"values": [Vector3(0, 0, 0), Vector3(0, 0, -1.5), Vector3(0, 0, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Pivot/MeshInstance3D:scale")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.05, 0.25),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(0.2, 1, 0.2), Vector3(1.5, 1.5, 1.5), Vector3(0.1, 0.1, 0.1)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Pivot/MeshInstance3D:surface_material_override/0:albedo_color")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.05, 0.25),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(1, 0.9, 0.2, 0), Color(1, 0.9, 0.2, 1), Color(1, 0.9, 0.2, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_stab"]
+_data = {
+&"default": SubResource("Animation_stab")
+}
+
+[node name="PencilStabVFX" type="Node3D" unique_id=1497838020]
+script = ExtResource("1_atkvis")
+
+[node name="Pivot" type="Node3D" parent="." unique_id=2107283314]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Pivot" unique_id=1024043271]
+transform = Transform3D(0.2, 0, 0, 0, -4.371139e-08, -0.2, 0, 1, -8.742278e-09, 0, 0, -1)
+mesh = SubResource("CylinderMesh_stab")
+surface_material_override/0 = SubResource("StandardMaterial3D_stab")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=899981998]
+libraries/ = SubResource("AnimationLibrary_stab")

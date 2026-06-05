@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="BuildableResource" format=3 uid="uid://deskuiid123"]
+
+[ext_resource type="Texture2D" uid="uid://dmmh6cvvmjqfq" path="res://assets/icons/desk.png" id="1_yw604"]
+[ext_resource type="Script" uid="uid://qpm1dylmnjld" path="res://scripts/resources/buildable_resource.gd" id="2_script"]
+[ext_resource type="PackedScene" uid="uid://b2ty1giyrjai3" path="res://scenes/buildables/desk.tscn" id="2_yw604"]
+
+[resource]
+script = ExtResource("2_script")
+buildable_name = "Desk"
+description = "Fires folded paper creations when a Box Fan is behind it."
+icon = ExtResource("1_yw604")
+build_category = "Building: Support"
+max_health = 20.0
+power_consumption = 0.0
+has_input = false
+has_output = false
+default_input_mask = 1
+default_output_mask = 4
+scene = ExtResource("2_yw604")

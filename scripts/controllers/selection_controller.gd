@@ -69,7 +69,7 @@ func update(selection_ray: Dictionary, terrain_ray: Dictionary, mouse_world_pos:
 						collider = null
 					
 					var clicked_unit = false
-					var is_shift_held = Input.is_key_pressed(KEY_SHIFT)
+					var is_shift_held = Input.is_action_pressed("shift")
 					
 					_clean_selected_allies()
 					

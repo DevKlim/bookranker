@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://ii2i3kt4n7gg"]
+
+[ext_resource type="Resource" uid="uid://fnimcv81cy5p" path="res://resources/items/cardboard.tres" id="1_f0l56"]
+[ext_resource type="Resource" uid="uid://cgonrnui0f147" path="res://resources/items/aerochalk.tres" id="2_1pg0h"]
+[ext_resource type="Resource" uid="uid://deskuiid123" path="res://resources/buildables/desk.tres" id="2_aun7j"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="3_1pg0h"]
+
+[resource]
+script = ExtResource("3_1pg0h")
+category = "chalkboard"
+recipe_name = "Desk"
+tier = 2
+craft_time = 4.0
+inputs = [{
+"count": 16,
+"resource": ExtResource("1_f0l56")
+}, {
+"count": 16,
+"resource": ExtResource("2_1pg0h")
+}]
+outputs = [{
+"count": 1,
+"resource": ExtResource("2_aun7j")
+}]

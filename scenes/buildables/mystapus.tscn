@@ -1,0 +1,36 @@
+[gd_scene format=3 uid="uid://bb6nfve6gao62"]
+
+[ext_resource type="Script" uid="uid://dok86r0i8oh82" path="res://scripts/entities/buildings/mystapus.gd" id="1_ekart"]
+[ext_resource type="Script" uid="uid://dad3f8h2j4k5l" path="res://scripts/components/inventory_component.gd" id="3_f34ow"]
+[ext_resource type="PackedScene" uid="uid://0mcjcvqss4q5" path="res://assets/buildables/mystapus/mystapus.gltf" id="4_ekart"]
+[ext_resource type="Script" uid="uid://dg4gfri6lu5o2" path="res://scripts/components/elemental_component.gd" id="4_kwejr"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_e0ksr"]
+
+[node name="Mystapus" type="StaticBody3D" unique_id=1022859987]
+script = ExtResource("1_ekart")
+grid_layer = "addon"
+unpowered_color = Color(1, 1, 1, 1)
+max_energy = 5.0
+power_consumption = 0.0
+default_input_mask = 0
+default_output_mask = 0
+has_input = false
+has_output = false
+layout_config = [Vector2i(0, 0)]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=2025558864]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("BoxShape3D_e0ksr")
+
+[node name="InventoryComponent" type="Node" parent="." unique_id=5985351]
+script = ExtResource("3_f34ow")
+max_slots = 0
+can_receive = false
+can_output = false
+
+[node name="ElementalComponent" type="Node" parent="." unique_id=1058137453]
+script = ExtResource("4_kwejr")
+
+[node name="MystapusModel" parent="." unique_id=2102489301 instance=ExtResource("4_ekart")]
+transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0)

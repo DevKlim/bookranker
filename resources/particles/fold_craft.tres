@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ParticleResource" format=3 uid="uid://4giq5f7bke7c"]
+
+[ext_resource type="PackedScene" uid="uid://dg301pllg6lxp" path="res://scenes/particles/fold_craft.tscn" id="1_65dlj"]
+[ext_resource type="Script" uid="uid://cx7aidq5y2yns" path="res://scripts/resources/particle_resource.gd" id="2_j21f8"]
+
+[resource]
+script = ExtResource("2_j21f8")
+id = "fold_craft"
+scene = ExtResource("1_65dlj")

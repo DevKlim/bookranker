@@ -1,0 +1,64 @@
+[gd_scene format=3 uid="uid://3vc1k3b0p5iu"]
+
+[ext_resource type="Script" uid="uid://dtilvlurfts3d" path="res://scripts/entities/particles/particle_effect.gd" id="1_amno2"]
+[ext_resource type="Texture2D" uid="uid://c7gvi6ne54408" path="res://assets/textures/particles/muzzle/muzzle_02_a.png" id="2_amno2"]
+
+[sub_resource type="Gradient" id="Gradient_gb6ik"]
+offsets = PackedFloat32Array(0, 0, 0.7, 1, 1)
+colors = PackedColorArray(0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0.8, 1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_x5fh6"]
+gradient = SubResource("Gradient_gb6ik")
+
+[sub_resource type="Curve" id="Curve_pmh3l"]
+_data = [Vector2(0, 0.1), 0.0, 0.0, 0, 0, Vector2(0.3, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_d1luu"]
+curve = SubResource("Curve_pmh3l")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_ook8l"]
+direction = Vector3(0, 2, 0)
+spread = 90.0
+initial_velocity_min = 5.0
+initial_velocity_max = 10.0
+gravity = Vector3(0, -18, 0)
+scale_curve = SubResource("CurveTexture_d1luu")
+color_ramp = SubResource("GradientTexture1D_x5fh6")
+collision_mode = 1
+collision_friction = 0.5
+collision_bounce = 0.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_x2rvp"]
+transparency = 1
+blend_mode = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_color = Color(0, 0.63333344, 1, 0.8)
+albedo_texture = ExtResource("2_amno2")
+billboard_mode = 3
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="QuadMesh" id="QuadMesh_63305"]
+material = SubResource("StandardMaterial3D_x2rvp")
+size = Vector2(0.5, 0.5)
+
+[node name="Mystapus Splash" type="Node3D" unique_id=1938107683]
+script = ExtResource("1_amno2")
+base_speed_min = 5.0
+base_speed_max = 10.0
+
+[node name="MainEmitter" type="GPUParticles3D" parent="." unique_id=495798419]
+emitting = false
+amount = 5
+lifetime = 0.8
+one_shot = true
+explosiveness = 0.9
+process_material = SubResource("ParticleProcessMaterial_ook8l")
+draw_pass_1 = SubResource("QuadMesh_63305")
+
+[node name="OmniLight" type="OmniLight3D" parent="." unique_id=41933639]
+light_color = Color(0, 1, 1, 1)
+omni_range = 6.0

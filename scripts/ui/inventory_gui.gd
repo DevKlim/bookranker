@@ -16,7 +16,11 @@ var right_vbox: VBoxContainer
 
 var machine_container: VBoxContainer 
 var status_hbox: HBoxContainer
+var machine_progress: ProgressBar
 var cancel_recipe_btn: Button
+
+# Custom UI Container for Modding / Special Buildings
+var custom_ui_container: VBoxContainer
 
 # Recipe UI Elements
 var recipe_scroll: ScrollContainer
@@ -25,6 +29,10 @@ var recipe_grid: HFlowContainer
 # Ally/Generic Grid
 var generic_grid: GridContainer
 
+# Player Inventory Bottom Panel
+var player_inv_container: VBoxContainer
+var player_inv_grid: GridContainer
+
 # Mod UI
 var mod_lbl: Label
 var mod_grid: GridContainer
@@ -32,8 +40,17 @@ var mod_grid: GridContainer
 # Building Stats UI
 var b_stats_container: VBoxContainer
 var b_stats_hp: Label
-var b_stats_power: Label
+var b_stats_sec: Label
+var b_stats_pwr: Label
 var b_stats_eff: Label
+var b_stats_def: Label
+var b_stats_fw: Label
+var b_stats_net: Label
+var b_stats_comp: Label
+var b_stats_luck: Label
+var b_stats_spc: Label
+var b_stats_ping: Label
+var b_stats_mal: Label
 
 var current_inventory: InventoryComponent
 var current_context: Object = null 
@@ -49,29 +66,7 @@ var dragging: bool = false
 var drag_offset: Vector2
 
 func _apply_liquid_glass(win: Control, corner_radius: float = 12.0) -> void:
-	win.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
-	
-	var bbc = BackBufferCopy.new()
-	bbc.copy_mode = BackBufferCopy.COPY_MODE_VIEWPORT
-	win.add_child(bbc)
-	win.move_child(bbc, 0)
-	
-	var bg = ColorRect.new()
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var mat = ShaderMaterial.new()
-	var shader = load("res://shaders/liquid_glass.gdshader")
-	if shader:
-		mat.shader = shader
-		mat.set_shader_parameter("tint", Color(0.9, 0.9, 0.9, 0.45))
-		mat.set_shader_parameter("corner_radius", corner_radius)
-		mat.set_shader_parameter("bezel_width", 8.0)
-	bg.material = mat
-	win.add_child(bg)
-	win.move_child(bg, 1)
-	
-	win.resized.connect(func(): if mat.shader: mat.set_shader_parameter("rect_size", win.size))
-	win.call_deferred("emit_signal", "resized")
+	WindowUtils.apply_liquid_glass(win, corner_radius)
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT, Control.PRESET_MODE_KEEP_SIZE)
@@ -122,7 +117,7 @@ func _ready() -> void:
 		var pc_style = hc_style.duplicate(); pc_style.bg_color = Color(1.0, 1.0, 1.0, 0.4)
 		close_button.add_theme_stylebox_override("pressed", pc_style)
 		close_button.text = "X"
-		close_button.add_theme_color_override("font_color", Color.WHITE)
+		close_button.add_theme_color_override("font_color", Color.BLACK)
 		close_button.add_theme_color_override("font_hover_color", Color.WHITE)
 		close_button.add_theme_color_override("font_pressed_color", Color.WHITE)
 		close_button.custom_minimum_size = Vector2(24, 20)
@@ -162,17 +157,20 @@ func _ready() -> void:
 	content_bg.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	frame_margin.add_child(content_bg)
 	
-	content_bg.set_drag_forwarding(Callable(self, "_on_bg_get_drag_data"), Callable(self, "_on_bg_can_drop"), Callable(self, "_on_bg_drop"))
+	content_bg.set_drag_forwarding(Callable(), Callable(UIHelper, "can_drop_trash"), Callable(UIHelper, "drop_trash"))
 	
+	var layout_vbox = VBoxContainer.new()
+	layout_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	layout_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content_bg.add_child(layout_vbox)
+
 	recipe_scroll = ScrollContainer.new()
 	recipe_scroll.name = "RecipeScroll"
 	recipe_scroll.custom_minimum_size = Vector2(0, 200) 
 	recipe_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	recipe_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	recipe_scroll.visible = false
-	content_bg.add_child(recipe_scroll)
-	
-	recipe_scroll.set_drag_forwarding(Callable(self, "_on_bg_get_drag_data"), Callable(self, "_on_bg_can_drop"), Callable(self, "_on_bg_drop"))
+	layout_vbox.add_child(recipe_scroll)
 	
 	var margin = MarginContainer.new()
 	margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -194,7 +192,7 @@ func _ready() -> void:
 	var content_margin = MarginContainer.new()
 	content_margin.add_theme_constant_override("margin_left", 20)
 	content_margin.add_theme_constant_override("margin_right", 20)
-	content_margin.add_theme_constant_override("margin_bottom", 20)
+	content_margin.add_theme_constant_override("margin_bottom", 10)
 	content_margin.add_theme_constant_override("margin_top", 10)
 	content_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
 	
@@ -204,7 +202,7 @@ func _ready() -> void:
 	content_container.add_child(content_margin)
 	
 	content_container.get_parent().remove_child(content_container)
-	content_bg.add_child(content_container)
+	layout_vbox.add_child(content_container)
 	
 	var split = HBoxContainer.new()
 	split.add_theme_constant_override("separation", 40)
@@ -216,8 +214,15 @@ func _ready() -> void:
 	split.add_child(left_vbox)
 	
 	right_vbox = VBoxContainer.new()
-	right_vbox.custom_minimum_size = Vector2(200, 0)
+	right_vbox.custom_minimum_size = Vector2(420, 0)
 	split.add_child(right_vbox)
+	
+	# Mount Custom UI Container here
+	custom_ui_container = VBoxContainer.new()
+	custom_ui_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	custom_ui_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	custom_ui_container.visible = false
+	left_vbox.add_child(custom_ui_container)
 	
 	machine_container = VBoxContainer.new()
 	machine_container.visible = false
@@ -233,6 +238,26 @@ func _ready() -> void:
 	var spacer = Control.new()
 	spacer.custom_minimum_size = Vector2(0, 15)
 	machine_container.add_child(spacer)
+	
+	machine_progress = ProgressBar.new()
+	machine_progress.custom_minimum_size = Vector2(200, 15)
+	machine_progress.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	machine_progress.show_percentage = false
+	var sb = StyleBoxFlat.new()
+	sb.bg_color = Color(0.2, 0.2, 0.2, 0.1)
+	sb.border_width_left = 1; sb.border_width_top = 1; sb.border_width_right = 1; sb.border_width_bottom = 1
+	sb.border_color = Color(0, 0, 0, 0.2)
+	sb.corner_radius_top_left = 6; sb.corner_radius_top_right = 6; sb.corner_radius_bottom_left = 6; sb.corner_radius_bottom_right = 6
+	machine_progress.add_theme_stylebox_override("background", sb)
+	var sbf = StyleBoxFlat.new()
+	sbf.bg_color = Color(0.2, 0.8, 0.2)
+	sbf.corner_radius_top_left = 6; sbf.corner_radius_top_right = 6; sbf.corner_radius_bottom_left = 6; sbf.corner_radius_bottom_right = 6
+	machine_progress.add_theme_stylebox_override("fill", sbf)
+	machine_container.add_child(machine_progress)
+	
+	var spacer2 = Control.new()
+	spacer2.custom_minimum_size = Vector2(0, 10)
+	machine_container.add_child(spacer2)
 	
 	cancel_recipe_btn = Button.new()
 	cancel_recipe_btn.text = "Change Recipe"
@@ -261,10 +286,9 @@ func _ready() -> void:
 	mod_grid.add_theme_constant_override("v_separation", 6)
 	right_vbox.add_child(mod_grid)
 
-	# Stats UI using robust VBox/Labels instead of RichTextLabel
 	b_stats_container = VBoxContainer.new()
 	b_stats_container.visible = false
-	b_stats_container.add_theme_constant_override("separation", 4)
+	b_stats_container.add_theme_constant_override("separation", 2)
 	b_stats_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right_vbox.add_child(b_stats_container)
 	
@@ -274,146 +298,66 @@ func _ready() -> void:
 	b_stats_title.add_theme_color_override("font_color", Color.BLACK)
 	b_stats_container.add_child(b_stats_title)
 	
-	b_stats_hp = Label.new()
-	b_stats_hp.add_theme_font_size_override("font_size", 14)
-	b_stats_hp.add_theme_color_override("font_color", Color(0.7, 0.0, 0.0))
-	b_stats_container.add_child(b_stats_hp)
-	
-	b_stats_power = Label.new()
-	b_stats_power.add_theme_font_size_override("font_size", 14)
-	b_stats_power.add_theme_color_override("font_color", Color(0.6, 0.6, 0.0))
-	b_stats_container.add_child(b_stats_power)
-	
-	b_stats_eff = Label.new()
-	b_stats_eff.add_theme_font_size_override("font_size", 14)
-	b_stats_eff.add_theme_color_override("font_color", Color(0.0, 0.6, 0.0))
-	b_stats_container.add_child(b_stats_eff)
+	var stats_grid = GridContainer.new()
+	stats_grid.columns = 2
+	stats_grid.add_theme_constant_override("h_separation", 10)
+	stats_grid.add_theme_constant_override("v_separation", 4)
+	b_stats_container.add_child(stats_grid)
+
+	var _add_stat_lbl = func(color: Color) -> Label:
+		var l = Label.new()
+		l.add_theme_font_size_override("font_size", 13)
+		l.add_theme_color_override("font_color", color)
+		stats_grid.add_child(l)
+		return l
+
+	b_stats_hp = _add_stat_lbl.call(Color(0.7, 0.0, 0.0))
+	b_stats_sec = _add_stat_lbl.call(Color(0.2, 0.6, 1.0))
+	b_stats_pwr = _add_stat_lbl.call(Color(0.6, 0.6, 0.0))
+	b_stats_eff = _add_stat_lbl.call(Color(0.0, 0.6, 0.0))
+	b_stats_def = _add_stat_lbl.call(Color(0.5, 0.5, 0.5))
+	b_stats_fw = _add_stat_lbl.call(Color(0.0, 0.7, 0.7))
+	b_stats_net = _add_stat_lbl.call(Color(0.7, 0.0, 0.7))
+	b_stats_comp = _add_stat_lbl.call(Color(0.7, 0.7, 0.0))
+	b_stats_luck = _add_stat_lbl.call(Color(0.0, 0.8, 0.0))
+	b_stats_spc = _add_stat_lbl.call(Color(0.4, 0.4, 0.4))
+	b_stats_ping = _add_stat_lbl.call(Color(0.1, 0.8, 0.8))
+	b_stats_mal = _add_stat_lbl.call(Color(0.8, 0.1, 0.1))
+
+	# Configure permanent player inventory section below
+	var sep_bottom = HSeparator.new()
+	layout_vbox.add_child(sep_bottom)
+
+	player_inv_container = VBoxContainer.new()
+	var pmargin = MarginContainer.new()
+	pmargin.add_theme_constant_override("margin_left", 20); pmargin.add_theme_constant_override("margin_right", 20)
+	pmargin.add_theme_constant_override("margin_bottom", 20)
+	pmargin.add_child(player_inv_container)
+	layout_vbox.add_child(pmargin)
+
+	var p_lbl = Label.new()
+	p_lbl.text = "Player Inventory"
+	p_lbl.add_theme_color_override("font_color", Color(0.2, 0.2, 0.2))
+	player_inv_container.add_child(p_lbl)
+
+	var p_scroll = ScrollContainer.new()
+	p_scroll.custom_minimum_size = Vector2(0, 150)
+	player_inv_container.add_child(p_scroll)
+
+	player_inv_grid = GridContainer.new()
+	player_inv_grid.columns = 10
+	player_inv_grid.add_theme_constant_override("h_separation", 4)
+	player_inv_grid.add_theme_constant_override("v_separation", 4)
+	p_scroll.add_child(player_inv_grid)
 
 	main_vbox.queue_free()
 	_setup_window_resizing(self, scale_wrapper, scale_root, frame_margin)
+	
+	if PlayerManager.game_inventory:
+		PlayerManager.game_inventory.inventory_changed.connect(_update_player_inventory)
 
 func _setup_window_resizing(win: Control, scale_wrapper: Control, scale_root: Control, content_node: Control) -> void:
-	var m = 12
-	var configs = [[0, -1, Control.CURSOR_VSIZE],[0, 1, Control.CURSOR_VSIZE],[-1, 0, Control.CURSOR_HSIZE],[1, 0, Control.CURSOR_HSIZE],[-1, -1, Control.CURSOR_FDIAGSIZE],[1, -1, Control.CURSOR_BDIAGSIZE],[-1, 1, Control.CURSOR_BDIAGSIZE],[1, 1, Control.CURSOR_FDIAGSIZE] 
-	]
-	
-	var handles =[]
-	var sync_ref =[]
-	
-	for cfg in configs:
-		var handle = Control.new()
-		handle.mouse_default_cursor_shape = cfg[2]
-		handle.top_level = true
-		win.add_child(handle)
-		handles.append({"node": handle, "dx": cfg[0], "dy": cfg[1]})
-		
-		handle.gui_input.connect(func(event):
-			if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-				if event.pressed:
-					win.set_meta("res_drag", true)
-					win.set_meta("res_dx", cfg[0])
-					win.set_meta("res_dy", cfg[1])
-					win.set_meta("res_start_pos", win.global_position)
-					win.set_meta("res_start_size", win.size)
-					win.set_meta("res_start_mouse", event.global_position)
-				else:
-					win.set_meta("res_drag", false)
-			elif event is InputEventMouseMotion and win.get_meta("res_drag", false):
-				var dx = win.get_meta("res_dx")
-				var dy = win.get_meta("res_dy")
-				var s_pos = win.get_meta("res_start_pos")
-				var s_size = win.get_meta("res_start_size")
-				var s_mouse = win.get_meta("res_start_mouse")
-				
-				var delta = event.global_position - s_mouse
-				var absolute_min = Vector2(100, 100) # Can scale very tiny
-				
-				var new_pos = s_pos
-				var new_size = s_size
-				
-				if dx == 1:
-					new_size.x = max(absolute_min.x, s_size.x + delta.x)
-				elif dx == -1:
-					new_size.x = max(absolute_min.x, s_size.x - delta.x)
-					new_pos.x = s_pos.x + (s_size.x - new_size.x)
-					
-				if dy == 1:
-					new_size.y = max(absolute_min.y, s_size.y + delta.y)
-				elif dy == -1:
-					new_size.y = max(absolute_min.y, s_size.y - delta.y)
-					new_pos.y = s_pos.y + (s_size.y - new_size.y)
-					
-				win.global_position = new_pos
-				win.size = new_size
-				win.custom_minimum_size = new_size
-				
-				if sync_ref.size() > 0:
-					sync_ref[0].call()
-		)
-		
-	var sync_handles = func():
-		if not win.is_inside_tree(): return
-		
-		var c_size = scale_wrapper.size
-		if c_size.x < 10 or c_size.y < 10:
-			c_size = win.size - Vector2(0, 30)
-			
-		c_size.x = max(1.0, c_size.x)
-		c_size.y = max(1.0, c_size.y)
-		
-		var target_x = max(1.0, base_min_size.x - 24.0)
-		var target_y = max(1.0, base_min_size.y - 54.0)
-		
-		var s = min(1.0, min(c_size.x / target_x, c_size.y / target_y))
-		if s >= 0.99:
-			s = 1.0 # Prevent floating point compression
-			
-		scale_root.scale = Vector2(s, s)
-		content_node.size = (c_size / s).ceil()
-		content_node.position = Vector2.ZERO
-		
-		for h in handles:
-			var node = h.node
-			var dx = h.dx
-			var dy = h.dy
-			var r_pos = win.global_position
-			var r_size = win.size
-			
-			if dx == 0 and dy == -1:
-				node.global_position = r_pos + Vector2(m, -m)
-				node.size = Vector2(r_size.x - 2*m, 2*m)
-			elif dx == 0 and dy == 1:
-				node.global_position = r_pos + Vector2(m, r_size.y - m)
-				node.size = Vector2(r_size.x - 2*m, 2*m)
-			elif dx == -1 and dy == 0:
-				node.global_position = r_pos + Vector2(-m, m)
-				node.size = Vector2(2*m, r_size.y - 2*m)
-			elif dx == 1 and dy == 0:
-				node.global_position = r_pos + Vector2(r_size.x - m, m)
-				node.size = Vector2(2*m, r_size.y - 2*m)
-			elif dx == -1 and dy == -1:
-				node.global_position = r_pos + Vector2(-m, -m)
-				node.size = Vector2(2*m, 2*m)
-			elif dx == 1 and dy == -1:
-				node.global_position = r_pos + Vector2(r_size.x - m, -m)
-				node.size = Vector2(2*m, 2*m)
-			elif dx == -1 and dy == 1:
-				node.global_position = r_pos + Vector2(-m, r_size.y - m)
-				node.size = Vector2(2*m, 2*m)
-			elif dx == 1 and dy == 1:
-				node.global_position = r_pos + Vector2(r_size.x - m, r_size.y - m)
-				node.size = Vector2(2*m, 2*m)
-				
-	sync_ref.append(sync_handles)
-	win.resized.connect(sync_handles)
-	win.item_rect_changed.connect(sync_handles)
-	win.visibility_changed.connect(func():
-		for h in handles:
-			h.node.visible = win.visible
-		if win.visible:
-			win.call_deferred("emit_signal", "resized")
-	)
-	win.call_deferred("emit_signal", "resized")
+	WindowUtils.setup_window_resizing(win, scale_wrapper, scale_root, content_node, base_min_size)
 
 func _on_header_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
@@ -461,75 +405,67 @@ func _create_slot_panel() -> Panel:
 	return p
 
 func _create_grid_slot_btn(inv: InventoryComponent, idx: int) -> Button:
-	var btn = Button.new()
-	btn.custom_minimum_size = Vector2(64, 64)
-	btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var btn = UIHelper.create_slot_btn_base()
+	btn.set_script(preload("res://scripts/ui/slot_button.gd"))
+	UIHelper.fill_slot_btn(btn, inv.slots[idx])
 	
-	var center = CenterContainer.new()
-	center.set_anchors_preset(Control.PRESET_FULL_RECT)
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	btn.add_child(center)
-	
-	var tr = TextureRect.new()
-	tr.name = "ItemIcon"
-	tr.custom_minimum_size = Vector2(64, 64)
-	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	tr.texture_filter = Control.TEXTURE_FILTER_NEAREST
-	tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	center.add_child(tr)
-	
-	var slot_data = inv.slots[idx]
-	if slot_data:
-		tr.texture = slot_data.item.icon
-		var lbl = Label.new()
-		lbl.text = str(slot_data.count)
-		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		lbl.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-		lbl.offset_right = -4
-		lbl.offset_bottom = -2
-		var font = load("res://assets/fonts/v2-fs-tahoma-8px.otf")
-		if font:
-			lbl.add_theme_font_override("font", font)
-		lbl.add_theme_font_size_override("font_size", 16)
-		lbl.add_theme_color_override("font_outline_color", Color.BLACK)
-		lbl.add_theme_constant_override("outline_size", 4)
-		btn.add_child(lbl)
-	else:
+	if inv.slots[idx] == null:
 		btn.text = "MOD"
+		btn.add_theme_font_size_override("font_size", 24)
 		btn.modulate = Color(1, 1, 1, 0.5)
-	
+	else:
+		btn.set_meta("tooltip_res", inv.slots[idx].item)
+		btn.tooltip_text = " "
+		
+	btn.gui_input.connect(func(event: InputEvent):
+		if event.is_action_pressed("build_copy") and PlayerManager.is_creative_mode:
+			if inv.slots[idx]:
+				var drag_data = _get_slot_drag_data(Vector2.ZERO, {"inv": inv, "slot": idx}, btn)
+				if drag_data:
+					btn.force_drag(drag_data, WindowUtils.create_drag_preview(drag_data.item.icon))
+		elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed and not PlayerManager.is_creative_mode:
+			if inv.slots[idx] and inv.slots[idx].item and inv.slots[idx].item.get("artifact_script"):
+				var artifact = inv.slots[idx].item.get_artifact_instance()
+				if artifact and artifact.has_method("on_right_click"):
+					artifact.on_right_click(inv.slots[idx].item, self)
+	)
+		
+	btn.pressed.connect(func():
+		if Input.is_key_pressed(KEY_SHIFT):
+			UIHelper.handle_shift_click(inv, idx)
+	)
+		
 	btn.set_drag_forwarding(
-		Callable(self, "_get_slot_drag_data").bind({"inv": inv, "slot": idx}), 
-		Callable(self, "_on_slot_can_drop").bind(inv), 
-		Callable(self, "_on_slot_drop").bind(inv, idx)
+		Callable(self, "_get_slot_drag_data").bind({"inv": inv, "slot": idx}, btn), 
+		Callable(self, "_custom_can_drop_building").bind(inv), 
+		Callable(self, "_custom_drop").bind(inv, idx)
 	)
 	return btn
 
 # --- Drag & Drop Implementation ---
 
-func _on_bg_get_drag_data(_pos):
-	return null
+func _custom_can_drop_building(pos, data, inv) -> bool:
+	if typeof(data) == TYPE_DICTIONARY and data.get("type") == "creative_copy": return true
+	return UIHelper.can_drop_building(pos, data, inv)
+	
+func _custom_drop(pos, data, inv, idx) -> void:
+	if typeof(data) == TYPE_DICTIONARY and data.get("type") == "creative_copy":
+		var existing = inv.slots[idx]
+		if not existing:
+			inv.slots[idx] = {"item": data.item, "count": data.count}
+			inv.inventory_changed.emit()
+		elif existing.item == data.item:
+			var space = existing.item.stack_size - existing.count
+			var add = min(space, data.count)
+			existing.count += add
+			inv.inventory_changed.emit()
+		else:
+			inv.slots[idx] = {"item": data.item, "count": data.count}
+			inv.inventory_changed.emit()
+		return
+	UIHelper.drop_inv(pos, data, inv, idx)
 
-func _on_bg_can_drop(_pos, data) -> bool:
-	return typeof(data) == TYPE_DICTIONARY and data.get("type") == "inventory_drag"
-
-func _on_bg_drop(_pos, data) -> void:
-	# Specifically zero-out the exact slot dragged to prevent accidentally eating other identical stacks
-	if data.has("inventory") and data.has("item") and data.has("count"):
-		var inv = data.inventory
-		if data.has("slot_index") and data.slot_index >= 0 and data.slot_index < inv.slots.size():
-			var slot = inv.slots[data.slot_index]
-			if slot and slot.item == data.item:
-				inv.slots[data.slot_index] = null
-				inv.inventory_changed.emit()
-				return
-		
-		# Fallback if slot index wasn't perfectly mapped
-		inv.remove_item(data.item, data.count)
-
-func _get_slot_drag_data(_pos, data_ctx):
+func _get_slot_drag_data(_pos, data_ctx, btn: Control):
 	var inv = data_ctx.inv
 	var slot_idx = data_ctx.slot
 	if not inv or slot_idx >= inv.slots.size() or inv.slots[slot_idx] == null:
@@ -538,14 +474,12 @@ func _get_slot_drag_data(_pos, data_ctx):
 	var item = inv.slots[slot_idx].item
 	var count = inv.slots[slot_idx].count
 	
-	var preview = TextureRect.new()
-	preview.texture = item.icon
-	preview.size = Vector2(64, 64)
-	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	preview.texture_filter = Control.TEXTURE_FILTER_NEAREST
-	preview.z_index = 100
-	set_drag_preview(preview)
+	btn.set_drag_preview(WindowUtils.create_drag_preview(item.icon))
+
+	if PlayerManager.is_creative_mode and Input.is_action_pressed("build_copy"):
+		var stack = 64
+		if item is ItemResource: stack = item.stack_size
+		return { "type": "creative_copy", "item": item, "count": stack }
 	
 	return { 
 		"type": "inventory_drag", 
@@ -555,52 +489,9 @@ func _get_slot_drag_data(_pos, data_ctx):
 		"count": count 
 	}
 
-func _on_slot_can_drop(_pos, data, target_inv: InventoryComponent) -> bool:
-	if typeof(data) != TYPE_DICTIONARY or data.get("type") != "inventory_drag": 
-		return false
-	if not target_inv or not target_inv.can_receive: 
-		return false
-	if not target_inv.is_item_allowed(data.item):
-		return false
-	return true
-
-func _on_slot_drop(_pos, data, target_inv: InventoryComponent, to_index: int) -> void:
-	var source_inv = data.inventory
-	var source_idx = data.slot_index
-	var item = data.item
-	var count = data.count
-	
-	if not is_instance_valid(source_inv) or source_idx >= source_inv.slots.size():
-		return
-	if source_inv.slots[source_idx] == null:
-		return
-
-	var target_slot = target_inv.slots[to_index]
-	
-	if source_inv == target_inv:
-		if target_slot == null:
-			target_inv.slots[to_index] = source_inv.slots[source_idx]
-			source_inv.slots[source_idx] = null
-		else:
-			var temp = target_inv.slots[to_index]
-			target_inv.slots[to_index] = source_inv.slots[source_idx]
-			source_inv.slots[source_idx] = temp
-		target_inv.inventory_changed.emit()
-	else:
-		var remainder = target_inv.add_item(item, count)
-		var taken = count - remainder
-		if taken > 0:
-			# Directly deduct from the source slot rather than calling a broad remove_item
-			# which might accidentally sweep a different slot holding the same item type.
-			var s_slot = source_inv.slots[source_idx]
-			if s_slot and s_slot.item == item:
-				s_slot.count -= taken
-				if s_slot.count <= 0:
-					source_inv.slots[source_idx] = null
-				source_inv.inventory_changed.emit()
-			else:
-				# Safe fallback
-				source_inv.remove_item(item, taken)
+func _on_slot_panel_gui_input(event: InputEvent, inv: Node, idx: int) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT and Input.is_key_pressed(KEY_SHIFT):
+		UIHelper.handle_shift_click(inv, idx)
 
 # ----------------------------------
 
@@ -621,6 +512,9 @@ func open(inventory: InventoryComponent, title: String = "Storage", context: Obj
 		if current_context.has_signal("stats_updated"):
 			if not current_context.stats_updated.is_connected(_update_display):
 				current_context.stats_updated.connect(_update_display)
+		if current_context.get("crafter"):
+			if not current_context.crafter.progress_changed.is_connected(_update_machine_progress):
+				current_context.crafter.progress_changed.connect(_update_machine_progress)
 		for inv_name in["input_inventory", "output_inventory", "fuel_inventory", "mod_inventory"]:
 			var inv = current_context.get(inv_name)
 			if inv and not inv.inventory_changed.is_connected(_update_display):
@@ -630,13 +524,16 @@ func open(inventory: InventoryComponent, title: String = "Storage", context: Obj
 		if not current_inventory.inventory_changed.is_connected(_update_display):
 			current_inventory.inventory_changed.connect(_update_display)
 			
+	# Reset size to base_min_size to allow shrinking on every new menu open
+	size = base_min_size
+	if machine_progress: machine_progress.value = 0.0
+	
 	_update_display()
+	_update_player_inventory()
 	
 	if not visible:
 		var vp_size = get_viewport_rect().size
-		var s_size = size
-		if s_size.x <= 10: s_size = base_min_size
-		position = (vp_size - s_size) / 2.0
+		position = (vp_size - size) / 2.0
 		
 	show()
 	call_deferred("emit_signal", "resized")
@@ -649,12 +546,75 @@ func _disconnect_context_signals():
 		if current_context.has_signal("stats_updated"):
 			if current_context.stats_updated.is_connected(_update_display):
 				current_context.stats_updated.disconnect(_update_display)
+		if current_context.get("crafter"):
+			if current_context.crafter.progress_changed.is_connected(_update_machine_progress):
+				current_context.crafter.progress_changed.disconnect(_update_machine_progress)
 		for inv_name in["input_inventory", "output_inventory", "fuel_inventory", "mod_inventory"]:
 			var inv = current_context.get(inv_name)
 			if inv and inv.is_connected("inventory_changed", _update_display):
 				inv.inventory_changed.disconnect(_update_display)
 
+func _update_machine_progress(percent: float) -> void:
+	if machine_progress:
+		machine_progress.value = percent * 100.0
+
+func _update_player_inventory() -> void:
+	if not player_inv_grid: return
+	for child in player_inv_grid.get_children():
+		child.queue_free()
+		
+	if not PlayerManager.game_inventory: return
+	var slots = PlayerManager.game_inventory.slots
+	for i in range(slots.size()):
+		var btn = UIHelper.create_slot_btn_base()
+		btn.set_script(preload("res://scripts/ui/slot_button.gd"))
+		UIHelper.fill_slot_btn(btn, slots[i])
+		
+		btn.gui_input.connect(func(event: InputEvent):
+			if event.is_action_pressed("build_copy") and PlayerManager.is_creative_mode:
+				var slot = slots[i]
+				if slot:
+					var drag_data = { "type": "creative_copy", "item": slot.item, "count": slot.item.stack_size }
+					btn.force_drag(drag_data, WindowUtils.create_drag_preview(slot.item.icon))
+			elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed and not PlayerManager.is_creative_mode:
+				if slots[i] and slots[i].item and slots[i].item.get("artifact_script"):
+					var artifact = slots[i].item.get_artifact_instance()
+					if artifact and artifact.has_method("on_right_click"):
+						artifact.on_right_click(slots[i].item, self)
+		)
+		
+		if slots[i]:
+			btn.set_meta("tooltip_res", slots[i].item)
+			btn.tooltip_text = " "
+			btn.pressed.connect(func():
+				if Input.is_key_pressed(KEY_SHIFT):
+					UIHelper.handle_shift_click(PlayerManager.game_inventory, i)
+			)
+			btn.set_drag_forwarding(Callable(self, "_get_slot_drag_data").bind({"inv": PlayerManager.game_inventory, "slot": i}, btn), Callable(self, "_custom_can_drop_building").bind(PlayerManager.game_inventory), Callable(self, "_custom_drop").bind(PlayerManager.game_inventory, i))
+		else:
+			btn.set_drag_forwarding(Callable(), Callable(self, "_custom_can_drop_building").bind(PlayerManager.game_inventory), Callable(self, "_custom_drop").bind(PlayerManager.game_inventory, i))
+		player_inv_grid.add_child(btn)
+
+func _recursive_override_size(node: Node, size: Vector2) -> void:
+	if node is Control:
+		if node is TextureRect or node is CenterContainer or node is Panel:
+			node.custom_minimum_size = size
+	for child in node.get_children():
+		_recursive_override_size(child, size)
+
 func _update_display(_arg = null) -> void:
+	if is_instance_valid(custom_ui_container):
+		for child in custom_ui_container.get_children():
+			child.queue_free()
+
+	var has_custom_ui = false
+	if current_context and current_context.has_method("build_custom_ui"):
+		has_custom_ui = true
+		current_context.build_custom_ui(custom_ui_container)
+		custom_ui_container.show()
+	else:
+		custom_ui_container.hide()
+
 	if current_context and "mod_inventory" in current_context and current_context.mod_inventory:
 		mod_lbl.show()
 		mod_grid.show()
@@ -662,32 +622,52 @@ func _update_display(_arg = null) -> void:
 		
 		for child in mod_grid.get_children(): child.queue_free()
 		var m_inv = current_context.mod_inventory
+		if m_inv.slots.size() == 0: mod_lbl.text = "No Mods"
+		else: mod_lbl.text = "Mod Slots"
 		for i in range(m_inv.slots.size()):
 			var btn = _create_grid_slot_btn(m_inv, i)
-			var tooltip = "Mod Slot " + str(i+1)
-			if m_inv.slots[i]:
-				var itm = m_inv.slots[i].item
-				if "item_name" in itm: tooltip = itm.item_name
-				elif "buildable_name" in itm: tooltip = itm.buildable_name
-			btn.tooltip_text = tooltip
+			btn.custom_minimum_size = Vector2(128, 128)
+			_recursive_override_size(btn, Vector2(128, 128))
+			
+			if not m_inv.slots[i]:
+				var tooltip = "Mod Slot " + str(i+1)
+				btn.tooltip_text = tooltip
 			mod_grid.add_child(btn)
 			
-		# Show Building Stats using robust Label nodes
 		if current_context.has_method("get_stat") or current_context.get("health_component"):
 			b_stats_container.show()
-			var hp = 0; var mhp = 0; var pwr = 0; var eff = 1.0
+			var hp = 0; var mhp = 0; var sec = 0; var msec = 0; var pwr = 0; var eff = 1.0; var def = 0; var fw = 0; var net = 0; var comp = 1; var luck = 0; var spc = 10; var ping_val = 1; var mal = 0
 			
 			if current_context.get("health_component"):
 				hp = current_context.health_component.current_health
 				mhp = current_context.health_component.max_health
+				sec = current_context.health_component.current_security
+				msec = current_context.health_component.max_security
 			if current_context.get("power_consumer"):
 				pwr = current_context.power_consumer.power_consumption
 			if current_context.has_method("get_stat"):
-				eff = current_context.get_stat("efficiency", current_context.get("efficiency") if current_context.get("efficiency") != null else 1.0)
+				eff = current_context.get_stat("process_speed", current_context.get("process_speed") if current_context.get("process_speed") != null else 1.0)
+				def = current_context.get_stat("defense", 0.0)
+				fw = current_context.get_stat("firewall", 0.0)
+				net = current_context.get_stat("networking", 0.0)
+				comp = current_context.get_stat("compute", 1.0)
+				luck = current_context.get_stat("luck_stat", 0.0)
+				spc = current_context.get_stat("space", 10.0)
+				ping_val = current_context.get_stat("ping", 1.0)
+				mal = current_context.get_stat("malware", 0.0)
 			
 			b_stats_hp.text = "HP: %d / %d" %[int(hp), int(mhp)]
-			b_stats_power.text = "Power: %d W" % int(pwr)
-			b_stats_eff.text = "Efficiency: %.1fx" % eff
+			b_stats_sec.text = "Sec: %d / %d" %[int(sec), int(msec)]
+			b_stats_pwr.text = "Pwr: %d W" % int(pwr)
+			b_stats_eff.text = "Spd: %.1fx" % eff
+			b_stats_def.text = "Def: %d" % int(def)
+			b_stats_fw.text = "FW: %.1f" % fw
+			b_stats_net.text = "Net: %.1f" % net
+			b_stats_comp.text = "Comp: %.1f" % comp
+			b_stats_luck.text = "Luck: %.1f" % luck
+			b_stats_spc.text = "Spc: %.1f" % spc
+			b_stats_ping.text = "Ping: %.1f" % ping_val
+			b_stats_mal.text = "Mal: %.1f" % mal
 		else:
 			b_stats_container.hide()
 	else:
@@ -695,6 +675,20 @@ func _update_display(_arg = null) -> void:
 		mod_lbl.hide()
 		mod_grid.hide()
 		if b_stats_container: b_stats_container.hide()
+
+	if has_custom_ui:
+		item_panel.hide()
+		generic_grid.hide()
+		machine_container.hide()
+		recipe_scroll.hide()
+		content_container.show()
+		if title_label:
+			var clean_name = "Custom Interface"
+			if "display_name" in current_context and current_context.display_name != "": clean_name = current_context.display_name
+			elif "name" in current_context: clean_name = current_context.name.rstrip("0123456789")
+			title_label.text = "  " + clean_name
+		_check_and_apply_resize()
+		return
 
 	if current_context and current_context.has_method("get_processing_icon"):
 		item_panel.hide()
@@ -716,6 +710,14 @@ func _update_display(_arg = null) -> void:
 			content_container.show()
 			machine_container.show()
 			
+			var recipe = current_context.get("current_recipe")
+			if not recipe and "active_recipe" in current_context: recipe = current_context.active_recipe
+			
+			if recipe and machine_progress:
+				machine_progress.show()
+			elif machine_progress:
+				machine_progress.hide()
+			
 			var clean_name = "Machine"
 			if "display_name" in current_context and current_context.display_name != "":
 				clean_name = current_context.display_name
@@ -724,8 +726,6 @@ func _update_display(_arg = null) -> void:
 			if title_label: title_label.text = "  " + clean_name
 			
 			cancel_recipe_btn.visible = current_context.has_method("clear_recipe")
-			var recipe = current_context.get("current_recipe")
-			if not recipe and "active_recipe" in current_context: recipe = current_context.active_recipe
 
 			for child in status_hbox.get_children():
 				child.queue_free()
@@ -823,6 +823,7 @@ func _update_display(_arg = null) -> void:
 			btn.custom_minimum_size = Vector2(64, 64)
 			btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 			btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			btn.set_script(preload("res://scripts/ui/slot_button.gd"))
 			
 			var center = CenterContainer.new()
 			center.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -838,8 +839,8 @@ func _update_display(_arg = null) -> void:
 			tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			center.add_child(tr)
 			
-			var tooltip = ""
 			var slot_name = ""
+			var tooltip = ""
 			
 			if is_ally:
 				match i:
@@ -861,7 +862,6 @@ func _update_display(_arg = null) -> void:
 				if current_context and current_context.has_method("get_slot_label"):
 					slot_name = current_context.get_slot_label(i)
 					
-			# Display the custom text overlay so labeled boxes are highly visible regardless of contents
 			if slot_name != "":
 				var title_lbl = Label.new()
 				title_lbl.text = slot_name
@@ -881,6 +881,9 @@ func _update_display(_arg = null) -> void:
 				var item = slot_data.item
 				tr.texture = item.icon
 				
+				btn.set_meta("tooltip_res", item)
+				btn.tooltip_text = " "
+				
 				var lbl = Label.new()
 				lbl.text = str(slot_data.count)
 				lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -894,8 +897,6 @@ func _update_display(_arg = null) -> void:
 				lbl.add_theme_color_override("font_outline_color", Color.BLACK)
 				lbl.add_theme_constant_override("outline_size", 4)
 				btn.add_child(lbl)
-				if "item_name" in item: tooltip += item.item_name
-				elif "buildable_name" in item: tooltip += item.buildable_name
 			else:
 				if is_ally:
 					match i:
@@ -903,21 +904,39 @@ func _update_display(_arg = null) -> void:
 						1: btn.text = "WP"
 						2: btn.text = "AR"
 						3: btn.text = "AT"
-				tooltip += "Empty"
+				btn.tooltip_text = tooltip + "Empty"
 			
-			btn.tooltip_text = tooltip
+			btn.gui_input.connect(func(event: InputEvent):
+				if event.is_action_pressed("build_copy") and PlayerManager.is_creative_mode:
+					if current_inventory.slots[i]:
+						var drag_data = _get_slot_drag_data(Vector2.ZERO, {"inv": current_inventory, "slot": i}, btn)
+						if drag_data:
+							btn.force_drag(drag_data, WindowUtils.create_drag_preview(drag_data.item.icon))
+				elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed and not PlayerManager.is_creative_mode:
+					if slot_data and slot_data.item and slot_data.item.get("artifact_script"):
+						var artifact = slot_data.item.get_artifact_instance()
+						if artifact and artifact.has_method("on_right_click"):
+							artifact.on_right_click(slot_data.item, self)
+			)
+			
+			btn.pressed.connect(func():
+				if Input.is_key_pressed(KEY_SHIFT):
+					UIHelper.handle_shift_click(current_inventory, i)
+			)
 			
 			btn.set_drag_forwarding(
-				Callable(self, "_get_slot_drag_data").bind({"inv": current_inventory, "slot": i}), 
-				Callable(self, "_on_slot_can_drop").bind(current_inventory), 
-				Callable(self, "_on_slot_drop").bind(current_inventory, i)
+				Callable(self, "_get_slot_drag_data").bind({"inv": current_inventory, "slot": i}, btn), 
+				Callable(self, "_custom_can_drop_building").bind(current_inventory), 
+				Callable(self, "_custom_drop").bind(current_inventory, i)
 			)
 			
 			generic_grid.add_child(btn)
 			
 	_check_and_apply_resize()
 
-func _update_machine_io_multi(panel: Panel, icon_rect: TextureRect, count_lbl: Label, inv: InventoryComponent, recipe: RecipeResource, is_input: bool, input_idx: int) -> void:
+func _update_machine_io_multi(panel: Panel, icon_rect: TextureRect, count_lbl: Label, inv: Node, recipe: Resource, is_input: bool, input_idx: int) -> void:
+	panel.set_script(preload("res://scripts/ui/slot_panel.gd"))
+	
 	var target_icon = null
 	var target_color = Color.WHITE
 	var required_amount = 0
@@ -947,19 +966,35 @@ func _update_machine_io_multi(panel: Panel, icon_rect: TextureRect, count_lbl: L
 		for slot in inv.slots:
 			if slot and slot.item == target_item:
 				current_amount += slot.count
-	elif inv and inv.slots.size() > 0 and inv.slots[0] and not recipe:
-		current_amount = inv.slots[0].count
-		target_icon = inv.slots[0].item.icon
-		if "item_name" in inv.slots[0].item: item_name = inv.slots[0].item.item_name
+	elif inv and inv.slots.size() > input_idx and inv.slots[input_idx] and not recipe:
+		current_amount = inv.slots[input_idx].count
+		target_icon = inv.slots[input_idx].item.icon
+		if "item_name" in inv.slots[input_idx].item: item_name = inv.slots[input_idx].item.item_name
 	
 	if panel and inv:
 		var bound_slot = 0
 		if inv.slots.size() > input_idx: bound_slot = input_idx
 		
+		if not panel.gui_input.is_connected(_on_slot_panel_gui_input):
+			panel.gui_input.connect(_on_slot_panel_gui_input.bind(inv, bound_slot))
+			
+		panel.gui_input.connect(func(event: InputEvent):
+			if event.is_action_pressed("build_copy") and PlayerManager.is_creative_mode:
+				if inv.slots.size() > bound_slot and inv.slots[bound_slot]:
+					var drag_data = _get_slot_drag_data(Vector2.ZERO, {"inv": inv, "slot": bound_slot}, panel)
+					if drag_data:
+						panel.force_drag(drag_data, WindowUtils.create_drag_preview(drag_data.item.icon))
+			elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed and not PlayerManager.is_creative_mode:
+				if inv.slots.size() > bound_slot and inv.slots[bound_slot] and inv.slots[bound_slot].item and inv.slots[bound_slot].item.get("artifact_script"):
+					var artifact = inv.slots[bound_slot].item.get_artifact_instance()
+					if artifact and artifact.has_method("on_right_click"):
+						artifact.on_right_click(inv.slots[bound_slot].item, self)
+		)
+			
 		panel.set_drag_forwarding(
-			Callable(self, "_get_slot_drag_data").bind({"inv": inv, "slot": bound_slot}), 
-			Callable(self, "_on_slot_can_drop").bind(inv), 
-			Callable(self, "_on_slot_drop").bind(inv, bound_slot)
+			Callable(self, "_get_slot_drag_data").bind({"inv": inv, "slot": bound_slot}, panel), 
+			Callable(self, "_custom_can_drop_building").bind(inv), 
+			Callable(self, "_custom_drop").bind(inv, bound_slot)
 		)
 	elif panel:
 		panel.set_drag_forwarding(Callable(), Callable(), Callable())
@@ -982,7 +1017,17 @@ func _update_machine_io_multi(panel: Panel, icon_rect: TextureRect, count_lbl: L
 		else:
 			count_lbl.text = "" if current_amount == 0 else str(current_amount)
 	
-	if panel: panel.tooltip_text = item_name
+	if panel:
+		if current_amount > 0 or (target_icon and is_input):
+			if target_item:
+				panel.set_meta("tooltip_res", target_item)
+				panel.tooltip_text = " "
+			elif inv and inv.slots.size() > input_idx and inv.slots[input_idx]:
+				panel.set_meta("tooltip_res", inv.slots[input_idx].item)
+				panel.tooltip_text = " "
+		else:
+			panel.set_meta("tooltip_res", null)
+			panel.tooltip_text = item_name
 
 func _populate_recipe_grid() -> void:
 	for child in recipe_grid.get_children():
@@ -1032,9 +1077,9 @@ func _populate_recipe_grid() -> void:
 			btn.pressed.connect(_on_recipe_selected.bind(recipe))
 			
 			btn.set_drag_forwarding(
-				Callable(self, "_on_bg_get_drag_data"),
-				Callable(self, "_on_bg_can_drop"),
-				Callable(self, "_on_bg_drop")
+				Callable(),
+				Callable(UIHelper, "can_drop_trash"),
+				Callable(UIHelper, "drop_trash")
 			)
 			
 			recipe_grid.add_child(btn)
@@ -1070,18 +1115,9 @@ func _check_and_apply_resize() -> void:
 		var target_x = max(base_min_size.x, min_content.x + 20)
 		var target_y = max(base_min_size.y, min_content.y + 60)
 		
-		var changed = false
-		var new_size = size
-		
-		if new_size.x < target_x:
-			new_size.x = target_x
-			changed = true
-		if new_size.y < target_y:
-			new_size.y = target_y
-			changed = true
-			
-		if changed:
-			size = new_size
+		# Always ensure we fit the content tightly if it exceeds base_min_size
+		if size.x < target_x or size.y < target_y:
+			size = Vector2(max(size.x, target_x), max(size.y, target_y))
 			var vp_size = get_viewport_rect().size
 			position = (vp_size - size) / 2.0
 			emit_signal("resized")

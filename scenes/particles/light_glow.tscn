@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://clghtglw"][sub_resource type="GDScript" id="GDScript_lglow"]
+script/source = "extends Node3D
+func _ready():
+    var tween = create_tween()
+    var mat = $MeshInstance3D.get_active_material(0)
+    tween.tween_property(self, \"scale\", Vector3(1.5, 1.5, 1.5), 0.5).set_ease(Tween.EASE_OUT)
+    tween.parallel().tween_property(mat, \"albedo_color:a\", 0.0, 0.5)
+    tween.parallel().tween_property($OmniLight3D, \"light_energy\", 0.0, 0.5)
+    tween.tween_callback(queue_free)
+"[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lglow"]
+transparency = 1
+blend_mode = 1
+shading_mode = 0
+albedo_color = Color(1, 0.9, 0.5, 0.8)
+
+[sub_resource type="SphereMesh" id="SphereMesh_lglow"]
+material = SubResource("StandardMaterial3D_lglow")
+
+[node name="LightGlow" type="Node3D"]
+script = SubResource("GDScript_lglow")[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("SphereMesh_lglow")[node name="OmniLight3D" type="OmniLight3D" parent="."]
+light_color = Color(1, 0.9, 0.5, 1)
+omni_range = 3.0

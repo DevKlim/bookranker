@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://1uckad6v513s" path="res://scripts/entities/projectile.gd" id="1_script"]
 [ext_resource type="PackedScene" uid="uid://b2o144f6bwm6u" path="res://assets/buildables/swan/swan.gltf" id="2_mesh"]
+[ext_resource type="Script" uid="uid://p7nrchkroanc" path="res://scripts/components/highlight_component.gd" id="3_v4ap0"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_swan"]
 
@@ -16,3 +17,6 @@ shape = SubResource("BoxShape3D_swan")
 
 [node name="swan" parent="Model" unique_id=1810212815 instance=ExtResource("2_mesh")]
 transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0)
+
+[node name="HighlightComponent" type="Node" parent="." unique_id=771152981]
+script = ExtResource("3_v4ap0")

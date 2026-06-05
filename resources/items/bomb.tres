@@ -8,5 +8,8 @@
 script = ExtResource("3_nm6kh")
 item_name = "Bomb"
 icon = ExtResource("2_ey158")
+stack_size = 64.0
+rarity = "B"
+item_category = "Item: Material"
 damage = 20.0
 element = ExtResource("1_ym33y")

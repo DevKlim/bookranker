@@ -9,5 +9,5 @@ color = Color(0.8039216, 0.52156866, 0.24705882, 1)
 duration = 10.0
 application_cooldown = 1.0
 stat_modifiers = {
-"defense_flat": -5.0
+"defense": -5.0
 }

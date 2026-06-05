@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="BuildableResource" format=3 uid="uid://blbpvrivscnq3"]
+
+[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="1_3qsbh"]
+[ext_resource type="PackedScene" uid="uid://c05tx0yfb5qas" path="res://scenes/buildables/attack_spawner.tscn" id="2_cxt31"]
+[ext_resource type="Script" uid="uid://qpm1dylmnjld" path="res://scripts/resources/buildable_resource.gd" id="3_axkqj"]
+
+[resource]
+script = ExtResource("3_axkqj")
+buildable_name = "Attack Spawner"
+description = "Testing tool. Plays attacks or element sequences at its location."
+icon = ExtResource("1_3qsbh")
+rarity = "SS+"
+build_category = "Building: Defense"
+max_health = 9999.0
+power_consumption = 0.0
+has_input = false
+has_output = false
+scene = ExtResource("2_cxt31")

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://dqfmmve50jh68"]
+
+[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="1_30nb3"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="2_eu2qp"]
+
+[resource]
+script = ExtResource("2_eu2qp")
+item_name = "Catalyst"
+icon = ExtResource("1_30nb3")
+equipment_type = 5
+rarity = "B"
+item_category = "Mod: Building"
+modifiers = {
+"cost": 2.0,
+"effects": {
+"duration_mult": 0.05
+},
+"permanent": false,
+"type": "building"
+}

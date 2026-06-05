@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://cuv4g2260lpld"]
+
+[ext_resource type="Resource" uid="uid://nrrfcqc3xn8e" path="res://resources/items/ink.tres" id="1_ifjw3"]
+[ext_resource type="Resource" uid="uid://miojkdeg6fmu" path="res://resources/items/coal.tres" id="2_h7mmu"]
+[ext_resource type="Resource" uid="uid://byw567vieem02" path="res://resources/items/rubber.tres" id="3_ynhep"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="4_l3oo2"]
+
+[resource]
+script = ExtResource("4_l3oo2")
+category = "lvl1"
+recipe_name = "Rubber"
+craft_time = 1.0
+inputs = [{
+"count": 2,
+"resource": ExtResource("1_ifjw3")
+}, {
+"count": 1,
+"resource": ExtResource("2_h7mmu")
+}]
+outputs = [{
+"count": 2,
+"resource": ExtResource("3_ynhep")
+}]

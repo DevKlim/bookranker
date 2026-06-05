@@ -1,0 +1,30 @@
+[gd_scene format=3 uid="uid://c05tx0yfb5qas"]
+
+[ext_resource type="Script" uid="uid://b0jvj4ks3tbau" path="res://scripts/entities/buildings/attack_spawner.gd" id="1_il50g"]
+[ext_resource type="Script" uid="uid://dad3f8h2j4k5l" path="res://scripts/components/inventory_component.gd" id="3_q82hq"]
+[ext_resource type="Script" uid="uid://dg4gfri6lu5o2" path="res://scripts/components/elemental_component.gd" id="4_gnlb4"]
+[ext_resource type="PackedScene" uid="uid://dw2t4cbkqp363" path="res://assets/buildables/printer/printer.gltf" id="4_il50g"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_qeaq6"]
+
+[node name="Attack Spawner" type="StaticBody3D" unique_id=347957210]
+script = ExtResource("1_il50g")
+max_health = 9999.0
+power_consumption = 0.0
+layout_config = [Vector2i(0, 0)]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1055996941]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("BoxShape3D_qeaq6")
+
+[node name="InventoryComponent" type="Node" parent="." unique_id=1648123810]
+script = ExtResource("3_q82hq")
+max_slots = 0
+can_receive = false
+can_output = false
+
+[node name="ElementalComponent" type="Node" parent="." unique_id=1161680049]
+script = ExtResource("4_gnlb4")
+
+[node name="blockbench_export" parent="." unique_id=274393290 instance=ExtResource("4_il50g")]
+transform = Transform3D(2, 0, 0, 0, -2, 1.7484555e-07, 0, -1.7484555e-07, -2, 0, 1, 0)

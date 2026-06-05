@@ -7,16 +7,24 @@
 script = ExtResource("1_lqy7v")
 element_name = "Aqua"
 icon = ExtResource("1_p45mx")
-color = Color(0.48964185, 0.72866, 1, 1)
-application_cooldown = 0.5
+color = Color(0.11764706, 0.5647059, 1, 1)
+application_cooldown = 0.2
+cooldown_equation = "base_cooldown * max(0.1, 1.0 - (magical_defense * magical_defense_weight))"
+stat_weights = {
+"magical_defense": 1.0
+}
 reaction_rules = {
 "aero": "tailwind",
+"channel": "pulse",
 "chem": "pollute",
-"igni": "extinguish",
+"dark": "abyss",
+"dew": "rain",
+"ghost": "undine",
+"igni": "boil",
 "lux": "prism",
 "magne": "rust",
 "tera": "mortar",
-"volt": "ripple"
+"volt": "channel"
 }
 stat_modifiers = {
 "attack_speed_mult": -0.02

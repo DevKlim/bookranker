@@ -6,10 +6,10 @@
 script = ExtResource("1")
 id = "crumpledfold_shot"
 cooldown = 2.0
-base_damage = 1.0
-damage_equation = "(base_damage + (weight * weight_weight) + global_flat_damage) * (1.0 + damage_mult)"
+base_damage = 2.0
+damage_equation = "(base_damage + (space * space_weight) + global_flat_damage) * (1.0 + damage_mult)"
 stat_weights = {
-"weight": 0.5
+"space": 0.2
 }
 spawn_projectile = true
 projectile_speed = 150.0

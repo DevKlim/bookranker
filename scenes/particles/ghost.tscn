@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://mtgpfnflad7r"]
+
+[ext_resource type="Script" path="res://scripts/entities/particles/ghost_poof.gd" id="1_script"]
+
+[node name="GhostPoof" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+

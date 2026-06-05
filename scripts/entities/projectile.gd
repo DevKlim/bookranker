@@ -1,8 +1,8 @@
-class_name Projectile
 extends Area3D
+class_name Projectile
 
 @export var default_scale: Vector3 = Vector3(0.5, 1.0, 0.5)
-@export var visual_offset: Vector3 = Vector3(0, 0.0, 0) # Raise default Y
+@export var visual_offset: Vector3 = Vector3(0, 0.0, 0)
 
 var _velocity: Vector3 = Vector3.ZERO
 var _damage: float = 0.0
@@ -19,31 +19,45 @@ var _hit_targets: Dictionary = {}
 var _tick_timer: float = 0.0
 
 @onready var sprite: Sprite3D = get_node_or_null("Sprite3D")
+var trail_particles: GPUParticles3D
 
 const OUTLINE_SHADER_CODE = """
 shader_type spatial;
-render_mode unshaded, cull_disabled, blend_mix; 
+render_mode unshaded, cull_disabled, depth_draw_opaque, depth_prepass_alpha; 
+
 uniform sampler2D texture_albedo : source_color, filter_nearest;
 uniform vec4 outline_color : source_color = vec4(1.0, 1.0, 1.0, 1.0);
 uniform float width : hint_range(0.0, 10.0) = 1.0;
+
 void fragment() {
 	vec4 tex = texture(texture_albedo, UV);
 	vec4 base_col = tex * COLOR; 
 	vec2 size = vec2(textureSize(texture_albedo, 0));
 	float px_x = width / size.x;
 	float px_y = width / size.y;
+	
 	float a = texture(texture_albedo, UV + vec2(px_x, 0.0)).a;
 	a += texture(texture_albedo, UV + vec2(-px_x, 0.0)).a;
 	a += texture(texture_albedo, UV + vec2(0.0, px_y)).a;
 	a += texture(texture_albedo, UV + vec2(0.0, -px_y)).a;
-	if (base_col.a < 0.1 && a > 0.1) { ALBEDO = outline_color.rgb; ALPHA = 1.0; } 
-	else { ALBEDO = base_col.rgb; ALPHA = base_col.a; if (base_col.a < 0.05) discard; }
+	
+	if (base_col.a < 0.1 && a > 0.1) { 
+		ALBEDO = outline_color.rgb; 
+		ALPHA = 1.0; 
+	} else { 
+		ALBEDO = base_col.rgb; 
+		ALPHA = base_col.a; 
+	}
+	
+	if (ALPHA < 0.05) {
+		discard;
+	}
 }
 """
 
 func _ready() -> void:
-	collision_mask = 2 # Enemies
-	collision_layer = 4 # Projectiles
+	collision_mask = 2 
+	collision_layer = 4 
 	
 	monitoring = true
 	monitorable = true
@@ -52,7 +66,6 @@ func _ready() -> void:
 		sprite.scale = default_scale
 		sprite.position = visual_offset
 
-	# Hide fallback 2D sprite if a 3D model is present
 	if has_node("Model") and sprite:
 		sprite.visible = false
 
@@ -62,24 +75,22 @@ func _physics_process(delta: float) -> void:
 		if lifetime <= 0: queue_free()
 		return
 
-	# Grid checks for Liquid stream momentum
-	var current_speed_mult = 1.0
-	var is_on_water = false
-	var is_on_ink = false
-	
-	# Use standard SceneTree check for Autoloads instead of Engine C++ singletons
 	if get_tree().root.has_node("LaneManager"):
 		var current_tile = LaneManager.world_to_tile(global_position)
+		self.lane_id = current_tile.y
+
 		var wire = LaneManager.get_entity_at(current_tile, "wire")
 		var building = LaneManager.get_entity_at(current_tile, "building")
 		
-		# Streams are technically buildings, not wiring
 		var stream = null
 		if is_instance_valid(wire) and "display_name" in wire and wire.display_name in["Slipstream", "Tarstream"]:
 			stream = wire
 		elif is_instance_valid(building) and "display_name" in building and building.display_name in["Slipstream", "Tarstream"]:
 			stream = building
 		
+		var current_speed_mult = 1.0
+		var is_on_water = false
+		var is_on_ink = false
 		if is_instance_valid(stream):
 			var stream_name = stream.display_name
 			if stream_name == "Slipstream":
@@ -92,48 +103,43 @@ func _physics_process(delta: float) -> void:
 					current_speed_mult = 0.5
 					
 			if has_meta("sea_borne") and (is_on_water or is_on_ink):
-				# Refresh grace period as long as it's correctly on the stream
 				set_meta("grace_period", 0.5) 
-				
-				# Force the seaborne projectile (like Swans) to follow the stream's placed direction
 				if "output_direction" in stream:
 					var dir_idx = int(stream.output_direction)
 					var new_dir = Vector3.ZERO
-					if dir_idx == 0: new_dir = Vector3(0, 0, 1) # DOWN
-					elif dir_idx == 1: new_dir = Vector3(-1, 0, 0) # LEFT
-					elif dir_idx == 2: new_dir = Vector3(0, 0, -1) # UP
-					elif dir_idx == 3: new_dir = Vector3(1, 0, 0) # RIGHT
+					if dir_idx == 0: new_dir = Vector3(0, 0, 1) 
+					elif dir_idx == 1: new_dir = Vector3(-1, 0, 0) 
+					elif dir_idx == 2: new_dir = Vector3(0, 0, -1) 
+					elif dir_idx == 3: new_dir = Vector3(1, 0, 0) 
 					
 					if new_dir != Vector3.ZERO:
 						var current_dir = _velocity.normalized()
-						# Verify if we reached a grid bend requiring a turn
 						if new_dir.dot(current_dir) < 0.99:
 							var tile_center = LaneManager.tile_to_world(current_tile)
 							var to_center = tile_center - global_position
 							to_center.y = 0
-							# Check if we've crossed the very center of the stream intersection (Allow slight leniency)
 							if current_dir.dot(to_center) <= 0.05:
 								global_position.x = tile_center.x
 								global_position.z = tile_center.z
 								_velocity = new_dir.normalized() * speed
 								look_at(global_position + _velocity, Vector3.UP)
 						else:
-							# Continue cleanly aligned
 							_velocity = new_dir.normalized() * speed
 				
-	if has_meta("sea_borne") and get_meta("sea_borne"):
-		if not is_on_water and not is_on_ink:
-			# Swan/Lotus Folds instantly vanish outside of water trails (after initial launch grace period)
-			var grace = float(get_meta("grace_period", 0.0))
-			if grace > 0:
-				set_meta("grace_period", grace - delta)
-			else:
-				queue_free()
-				return
+		if has_meta("sea_borne") and get_meta("sea_borne"):
+			if not is_on_water and not is_on_ink:
+				var grace = float(get_meta("grace_period", 0.0))
+				if grace > 0:
+					set_meta("grace_period", grace - delta)
+				else:
+					queue_free()
+					return
+		
+		if get_meta("fold_type", "") == "shuriken":
+			current_speed_mult = 3.0
 
-	global_position += (_velocity * current_speed_mult) * delta
+		global_position += (_velocity * current_speed_mult) * delta
 	
-	# Honor specific projectile lifetimes (ranges) generated by weapons/crafters
 	if has_meta("lifetime"):
 		var lf = float(get_meta("lifetime"))
 		lf -= delta
@@ -147,7 +153,6 @@ func _physics_process(delta: float) -> void:
 			queue_free()
 			return
 			
-	# Ticking Damage processing
 	if has_meta("tick_damage") and get_meta("tick_damage"):
 		_tick_timer -= delta
 		if _tick_timer <= 0:
@@ -159,18 +164,15 @@ func _physics_process(delta: float) -> void:
 				for body in get_overlapping_bodies():
 					_apply_damage_to(body)
 
-	# 3D Specific Rotations for Origami Projectiles
 	var model = get_node_or_null("Model")
 	if model:
 		var type = get_meta("fold_type", "")
-		if type == "crumpled":
-			model.rotate_x(-speed * delta * 0.5)
-		elif type == "shuriken":
-			model.rotate_y(15.0 * delta)
+		if type == "crumpled": model.rotate_x(-speed * delta * 0.5)
+		elif type == "shuriken": 
+			model.rotate_y(20.0 * delta)
 
 func initialize(start_pos: Vector3, dir: Vector3, p_speed: float, dmg: float, p_lane: int, p_elem: Resource = null, tex: Texture2D = null, col: Color = Color.WHITE, _use_path: bool = false, extra_params: Dictionary = {}) -> void:
 	global_position = start_pos
-	
 	speed = p_speed * 0.02
 	if speed < 2.0: speed = 10.0
 	
@@ -185,7 +187,6 @@ func initialize(start_pos: Vector3, dir: Vector3, p_speed: float, dmg: float, p_
 		for k in extra_params.keys():
 			set_meta(k, extra_params[k])
 	
-	# Parse explicit unit/CD data
 	_element_units = extra_params.get("element_units", 1)
 	_ignore_element_cd = extra_params.get("ignore_element_cd", false)
 	
@@ -196,9 +197,10 @@ func initialize(start_pos: Vector3, dir: Vector3, p_speed: float, dmg: float, p_
 		sprite.position = visual_offset
 		if tex: 
 			sprite.texture = tex
-			sprite.pixel_size = 0.04 # Make slightly bigger
+			sprite.pixel_size = 0.04
 			sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 			sprite.axis = Vector3.AXIS_Y
+			sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISABLED 
 		
 		if _element and "color" in _element:
 			sprite.modulate = _element.color
@@ -209,6 +211,9 @@ func initialize(start_pos: Vector3, dir: Vector3, p_speed: float, dmg: float, p_
 		if typeof(s) == TYPE_FLOAT or typeof(s) == TYPE_INT:
 			sprite.scale = default_scale * float(s)
 
+		if self.has_meta("fold_type"):
+			sprite.layers = 1025
+
 		if tex:
 			var shader = Shader.new()
 			shader.code = OUTLINE_SHADER_CODE
@@ -218,14 +223,45 @@ func initialize(start_pos: Vector3, dir: Vector3, p_speed: float, dmg: float, p_
 			mat.resource_local_to_scene = true
 			sprite.material_override = mat
 
-	# Color 3D Meshes dynamically to match the element's aura!
 	_color_meshes(self, col)
+	_setup_trail(col)
 
 	if not body_entered.is_connected(_on_body_entered):
 		body_entered.connect(_on_body_entered)
 
+func _setup_trail(col: Color) -> void:
+	trail_particles = GPUParticles3D.new()
+	var mat = ParticleProcessMaterial.new()
+	mat.gravity = Vector3(0, 0, 0)
+	mat.scale_min = 0.1
+	mat.scale_max = 0.5
+	mat.color = col
+	mat.color.a = 0.5
+	trail_particles.process_material = mat
+	
+	var draw_mesh = QuadMesh.new()
+	var s_mat = StandardMaterial3D.new()
+	s_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	s_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	s_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	s_mat.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+
+	var trace_tex = load("res://assets/textures/particles/spotlight/spotlight_04_a.png")
+	if trace_tex:
+		s_mat.albedo_texture = trace_tex
+		
+	draw_mesh.material = s_mat
+	
+	trail_particles.draw_pass_1 = draw_mesh
+	trail_particles.amount = 5
+	trail_particles.position = Vector3(0, 0, 0)
+	trail_particles.lifetime = 0.1
+	trail_particles.top_level = false
+	trail_particles.local_coords = false
+	add_child(trail_particles)
+
 func _color_meshes(node: Node, col: Color) -> void:
-	if node is MeshInstance3D:
+	if node is MeshInstance3D and node.mesh:
 		var mat = node.get_active_material(0)
 		if not mat: 
 			mat = StandardMaterial3D.new()
@@ -237,8 +273,7 @@ func _color_meshes(node: Node, col: Color) -> void:
 		elif mat is ShaderMaterial:
 			mat.set_shader_parameter("albedo_color", col)
 		
-		if has_meta("fold_type"):
-			# Add to the Highlight Viewport pass mask
+		if self.has_meta("fold_type"):
 			node.layers = 1025
 			
 		node.set_surface_override_material(0, mat)
@@ -246,6 +281,7 @@ func _color_meshes(node: Node, col: Color) -> void:
 		_color_meshes(child, col)
 
 func _on_body_entered(body: Node3D) -> void:
+	if body.is_in_group("loot_buildings"): return
 	if not get_meta("tick_damage", false):
 		if _hit_targets.has(body): return
 		_hit_targets[body] = true
@@ -264,6 +300,8 @@ func _on_body_entered(body: Node3D) -> void:
 			queue_free()
 
 func _apply_damage_to(body: Node3D) -> bool:
+	if body.is_in_group("loot_buildings"): return false
+	
 	var valid_target = false
 	if body is Enemy: valid_target = true
 	elif body.has_method("take_damage"): valid_target = true
@@ -278,14 +316,13 @@ func _apply_damage_to(body: Node3D) -> bool:
 	if self.lane_id == -1 or e_lane == self.lane_id or e_lane == -1:
 		var handled = false
 		if _attack_resource and is_instance_valid(_source_attacker) and _source_attacker.has_node("AttackerComponent"):
-			# Delegate damage/AoE logic to the attacker component
 			var attacker = _source_attacker.get_node("AttackerComponent")
-			attacker.call("_apply_hit", body, global_position, _damage, _attack_resource, _source_attacker)
+			if attacker.processor:
+				attacker.processor.apply_hit(_source_attacker, body, global_position, _damage, _attack_resource, false)
 			handled = true
 			
 		if not handled:
 			if _element:
-				# Pass new unit and cooldown parameters to ElementManager
 				ElementManager.apply_element(body, _element, _source_attacker, _damage, _element_units, _ignore_element_cd)
 			
 			if body.has_method("take_damage"):
@@ -293,10 +330,8 @@ func _apply_damage_to(body: Node3D) -> bool:
 			elif body.has_node("HealthComponent"):
 				body.get_node("HealthComponent").take_damage(_damage, _element, _source_attacker)
 				
-			# Hook for ElementManager Reactions (e.g. Ripple / Conduct)
 			if get_tree().root.has_node("ElementManager"):
 				ElementManager.on_damage_dealt(body, _damage, _source_attacker)
 			
 		return true
 	return false
-

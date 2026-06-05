@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://1uckad6v513s" path="res://scripts/entities/projectile.gd" id="1_script"]
 [ext_resource type="PackedScene" uid="uid://emb2ak5dlryv" path="res://assets/buildables/crumpled/crumpled.gltf" id="2_mesh"]
+[ext_resource type="Script" uid="uid://p7nrchkroanc" path="res://scripts/components/highlight_component.gd" id="3_kl6f1"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_crumpled"]
 size = Vector3(0.5, 0.5, 0.5)
@@ -16,3 +17,6 @@ shape = SubResource("BoxShape3D_crumpled")
 
 [node name="crumpled" parent="Model" unique_id=181552275 instance=ExtResource("2_mesh")]
 transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, -0.3, 0)
+
+[node name="HighlightComponent" type="Node" parent="." unique_id=398954689]
+script = ExtResource("3_kl6f1")

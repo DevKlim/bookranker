@@ -23,7 +23,8 @@ func _physics_process(delta: float) -> void:
 	if Engine.is_editor_hint(): return
 	if not is_active: return
 	
-	_print_timer += delta
+	var process_spd = get_stat("process_speed", 1.0)
+	_print_timer += delta * process_spd
 	if _print_timer >= PRINT_TIME:
 		_print_timer = 0.0
 		if inventory_component and paper_res:

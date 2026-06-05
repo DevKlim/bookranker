@@ -23,7 +23,8 @@ func _ready() -> void:
 		button.custom_minimum_size = Vector2(64, 64)
 		button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		
+		button.set_script(preload("res://scripts/ui/slot_button.gd"))
+
 		# Center Container prevents Button's inner margins from fractionally shrinking the 64x64 TextureRect
 		var center = CenterContainer.new()
 		center.name = "IconCenter"
@@ -50,10 +51,27 @@ func _ready() -> void:
 		lbl.anchors_preset = Control.PRESET_BOTTOM_RIGHT
 		lbl.position = Vector2(-4, -2)
 		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE 
+		var font = load("res://assets/fonts/v2-fs-tahoma-8px.otf")
+		if font: lbl.add_theme_font_override("font", font)
+		lbl.add_theme_font_size_override("font_size", 16)
 		button.add_child(lbl)
 		
 		button.pressed.connect(_on_slot_pressed.bind(i))
-		button.set_drag_forwarding(Callable(self, "_get_slot_drag_data").bind(i), Callable(self, "_can_drop"), Callable(self, "_drop").bind(i))
+		button.set_drag_forwarding(Callable(self, "_get_slot_drag_data").bind(i, button), Callable(self, "_custom_can_drop"), Callable(self, "_drop").bind(i))
+		
+		button.gui_input.connect(func(event: InputEvent):
+			if event.is_action_pressed("build_copy") and PlayerManager.is_creative_mode:
+				if i < PlayerManager.game_inventory.slots.size() and PlayerManager.game_inventory.slots[i]:
+					var drag_data = _get_slot_drag_data(Vector2.ZERO, i, button)
+					if drag_data:
+						button.force_drag(drag_data, WindowUtils.create_drag_preview(drag_data.item.icon))
+			
+			# Context Menu for right-clicking items (build_cancel)
+			if event.is_action_pressed("build_cancel"):
+				if i < PlayerManager.game_inventory.slots.size() and PlayerManager.game_inventory.slots[i]:
+					_show_slot_context_menu(i, PlayerManager.game_inventory.slots[i])
+		)
+		
 		container.add_child(button)
 		_buttons.append(button)
 
@@ -98,11 +116,50 @@ func _ready() -> void:
 	
 	PlayerManager.game_inventory.inventory_changed.connect(_update_visuals)
 	BuildManager.selected_buildable_changed.connect(_update_visuals)
-	# Listen to build mode changes to clear highlight when right-clicking/canceling
 	BuildManager.build_mode_changed.connect(_on_build_mode_changed)
 	PlayerManager.equipped_item_changed.connect(_on_equipped_item_changed)
 	BuildManager.remove_mode_changed.connect(_update_visuals)
 	_update_visuals()
+
+func _show_slot_context_menu(index: int, slot: Dictionary) -> void:
+	var options = []
+	
+	options.append({"label": "Drop Item", "callback": func():
+		PlayerManager.game_inventory.slots[index] = null
+		PlayerManager.game_inventory.inventory_changed.emit()
+	})
+	
+	if slot.item is BuildableResource and slot.item.buildable_name == "Attack Spawner":
+		options.append({"label": "Quick Configure Spawner", "callback": func():
+			if ResourceLoader.exists("res://scripts/ui/quick_config_menu.gd"):
+				var qc = load("res://scripts/ui/quick_config_menu.gd")
+				qc.open(slot, self)
+		})
+		
+		var pop_enabled = slot.get("meta", {}).get("play_on_place", false)
+		options.append({"label": "Play-On-Place: " + ("ON" if pop_enabled else "OFF"), "callback": func():
+			if not slot.has("meta"): slot["meta"] = {}
+			slot["meta"]["play_on_place"] = not pop_enabled
+			_update_visuals()
+		})
+		
+	# Explicit target check for Picasso config menu
+	if slot.item is ItemResource and slot.item.item_name == "Picasso":
+		options.append({"label": "Set Target Number", "callback": func():
+			var script_inst = null
+			if slot.item.has_method("get_artifact_instance"):
+				script_inst = slot.item.get_artifact_instance()
+			elif slot.item.get("artifact_script") != null:
+				script_inst = slot.item.get("artifact_script").new()
+				
+			if script_inst and script_inst.has_method("on_right_click"):
+				script_inst.on_right_click(slot.item, self)
+		})
+			
+	var ui = get_tree().current_scene.get_node_or_null("GameUI")
+	if ui:
+		var mouse_pos = get_viewport().get_mouse_position()
+		ui.show_context_menu(mouse_pos, options)
 
 func _on_remover_pressed() -> void:
 	if selected_slot_index == -2:
@@ -120,12 +177,14 @@ func _on_remover_pressed() -> void:
 	_update_visuals()
 
 func _on_slot_pressed(index: int) -> void:
-	# Bounds check
+	if Input.is_key_pressed(KEY_SHIFT):
+		UIHelper.handle_shift_click(PlayerManager.game_inventory, index)
+		return
+
 	if index >= PlayerManager.game_inventory.slots.size(): return
 
 	var slot = PlayerManager.game_inventory.slots[index]
 	
-	# Deselect if clicking the same slot
 	if selected_slot_index == index:
 		selected_slot_index = -1
 		if BuildManager.is_building: BuildManager.exit_build_mode()
@@ -133,7 +192,6 @@ func _on_slot_pressed(index: int) -> void:
 		_update_visuals()
 		return
 	
-	# Select new slot
 	selected_slot_index = index
 	
 	if slot == null:
@@ -145,27 +203,27 @@ func _on_slot_pressed(index: int) -> void:
 	var res = slot.item
 	if res is BuildableResource:
 		if PlayerManager.equipped_item: PlayerManager.set_equipped_item(null)
-		# If user clicks a buildable, enter build mode
+		
+		# Save slot metadata universally to PlayerManager so instantiated tools/buildings can read it!
+		PlayerManager.set_meta("active_build_meta", slot.get("meta", {}))
+		
 		if BuildManager.is_building and BuildManager.selected_buildable == res:
 			pass
 		else:
 			BuildManager.enter_build_mode(res)
 	elif res is ItemResource:
-		# Just highlight items (e.g. weapons/tools) but exit build mode
 		if BuildManager.is_building: BuildManager.exit_build_mode()
 		PlayerManager.set_equipped_item(res)
 	
 	_update_visuals()
 
 func _on_build_mode_changed(is_building: bool) -> void:
-	# If build mode is cancelled externally (e.g. Right Click), clear slot highlight
 	if not is_building:
 		if selected_slot_index != -1:
 			if selected_slot_index == -2:
 				selected_slot_index = -1
 			elif selected_slot_index < PlayerManager.game_inventory.slots.size():
 				var slot = PlayerManager.game_inventory.slots[selected_slot_index]
-				# If the selected item was a Buildable, we deselect it.
 				if slot and slot.item is BuildableResource:
 					selected_slot_index = -1
 			else:
@@ -193,32 +251,32 @@ func _update_visuals(_arg = null) -> void:
 		var tr = button.get_node("IconCenter/ItemIcon")
 		var lbl = button.get_node("CountLabel")
 		
-		# Handle case where inventory is smaller than hotbar
 		var slot = null
 		if i < slots.size():
 			slot = slots[i]
 		else:
-			# Slot is disabled/locked/non-existent
 			tr.texture = null
 			button.text = "X"
 			lbl.text = ""
+			button.set_meta("tooltip_res", null)
 			button.tooltip_text = "Locked Slot"
 			button.modulate = Color(0.5, 0.5, 0.5, 0.5)
 			continue
 		
 		if slot:
 			tr.texture = slot.item.icon
-			button.text = "" # Hide number if item exists
-			lbl.text = str(slot.count) # Show count
-			if slot.item is BuildableResource: button.tooltip_text = "%s (%d)" %[slot.item.buildable_name, slot.count]
-			else: button.tooltip_text = "%s (%d)" %[slot.item.item_name, slot.count]
+			button.text = ""
+			lbl.text = str(slot.count)
+			
+			button.set_meta("tooltip_res", slot.item)
+			button.tooltip_text = " "
 		else:
 			tr.texture = null
-			button.text = str((i + 1) % 10) # Show slot number if empty
+			button.text = str((i + 1) % 10)
 			lbl.text = ""
+			button.set_meta("tooltip_res", null)
 			button.tooltip_text = "Slot %d" % ((i + 1) % 10)
 		
-		# Highlight selected slot
 		if i == selected_slot_index:
 			button.modulate = Color(0.5, 1.0, 0.5)
 		else:
@@ -237,11 +295,12 @@ func _update_visuals(_arg = null) -> void:
 			remover_button.modulate = Color.WHITE
 			remover_lbl.text = ""
 
-# --- Drag and Drop Logic ---
+func _custom_can_drop(pos, data) -> bool:
+	if typeof(data) == TYPE_DICTIONARY and data.get("type") == "creative_copy": return true
+	return UIHelper.can_drop(pos, data)
 
-func _get_slot_drag_data(_pos, index: int) -> Variant:
+func _get_slot_drag_data(_pos, index: int, btn: Control) -> Variant:
 	if index >= PlayerManager.game_inventory.slots.size(): return null
-
 	var slot = PlayerManager.game_inventory.slots[index]
 	if not slot: return null
 	
@@ -251,88 +310,27 @@ func _get_slot_drag_data(_pos, index: int) -> Variant:
 		if PlayerManager.equipped_item: PlayerManager.set_equipped_item(null)
 		_update_visuals()
 
-	var preview = TextureRect.new()
-	preview.texture = slot.item.icon
-	preview.size = Vector2(64, 64) 
-	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	preview.texture_filter = Control.TEXTURE_FILTER_NEAREST
-	preview.z_index = 100 # Ensure on top
-	set_drag_preview(preview)
-	
-	return { 
-		"type": "inventory_drag", 
-		"inventory": PlayerManager.game_inventory, 
-		"slot_index": index, 
-		"item": slot.item, 
-		"count": slot.count 
-	}
+	if PlayerManager.is_creative_mode and Input.is_action_pressed("build_copy"):
+		btn.set_drag_preview(WindowUtils.create_drag_preview(slot.item.icon))
+		return { "type": "creative_copy", "item": slot.item, "count": slot.count }
 
-func _can_drop(_pos, data) -> bool:
-	if typeof(data) != TYPE_DICTIONARY: return false
-	return data.type in["creative_spawn", "inventory_drag"]
+	return UIHelper.drag_inv(_pos, PlayerManager.game_inventory, index, btn)
 
 func _drop(_pos, data, index: int) -> void:
 	var inv = PlayerManager.game_inventory
-	# Prevent dropping into locked/non-existent slots
 	if index >= inv.slots.size(): return
-	
-	if data.type == "creative_spawn":
-		var res = data.resource
-		var stack = 64
-		if res is ItemResource: stack = res.stack_size
-		inv.slots[index] = { "item": res, "count": stack }
-		inv.inventory_changed.emit()
-		
-	elif data.type == "inventory_drag":
-		var source_inv = data.inventory
-		var s_idx = data.slot_index
-		
-		# Prevent moving empty
-		if s_idx >= source_inv.slots.size() or not source_inv.slots[s_idx]: return
-		
-		var s_slot = source_inv.slots[s_idx]
-		var item = s_slot.item
-		var count = s_slot.count
-		var t_slot = inv.slots[index]
-		
-		if source_inv == inv:
-			# Internal Swap
-			if t_slot == null:
-				inv.slots[index] = s_slot
-				inv.slots[s_idx] = null
-			elif inv._items_match(t_slot.item, item):
-				var cap = inv._get_stack_limit(t_slot.item)
-				var space = cap - t_slot.count
-				var move = min(space, count)
-				t_slot.count += move
-				s_slot.count -= move
-				if s_slot.count <= 0: inv.slots[s_idx] = null
-			else:
-				inv.slots[index] = s_slot
-				inv.slots[s_idx] = t_slot
+	if typeof(data) == TYPE_DICTIONARY and data.get("type") == "creative_copy":
+		var existing = inv.slots[index]
+		if not existing:
+			inv.slots[index] = {"item": data.item, "count": data.count}
+			inv.inventory_changed.emit()
+		elif existing.item == data.item:
+			var space = existing.item.stack_size - existing.count
+			var add = min(space, data.count)
+			existing.count += add
 			inv.inventory_changed.emit()
 		else:
-			# External Transfer (e.g. Machine -> Hotbar)
-			if t_slot == null:
-				inv.slots[index] = { "item": item, "count": count }
-				source_inv.slots[s_idx] = null
-			elif inv._items_match(t_slot.item, item):
-				var cap = inv._get_stack_limit(t_slot.item)
-				var space = cap - t_slot.count
-				var move = min(space, count)
-				t_slot.count += move
-				source_inv.slots[s_idx].count -= move
-				if source_inv.slots[s_idx].count <= 0:
-					source_inv.slots[s_idx] = null
-			else:
-				# Swap if allowed
-				if source_inv.is_item_allowed(t_slot.item):
-					var temp = { "item": t_slot.item, "count": t_slot.count }
-					inv.slots[index] = { "item": item, "count": count }
-					source_inv.slots[s_idx] = temp
-				else:
-					return
-			
+			inv.slots[index] = {"item": data.item, "count": data.count}
 			inv.inventory_changed.emit()
-			source_inv.inventory_changed.emit()
+		return
+	UIHelper.drop_inv(_pos, data, inv, index)

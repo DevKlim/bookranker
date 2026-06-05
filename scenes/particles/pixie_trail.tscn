@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://cppixietrail"]
+
+[ext_resource type="Script" path="res://scripts/entities/particles/pixie_trail.gd" id="1_pt"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pt"]
+shading_mode = 0
+albedo_color = Color(1, 0.41, 0.71, 0.8)
+transparency = 1
+
+[sub_resource type="SphereMesh" id="SphereMesh_pt"]
+material = SubResource("StandardMaterial3D_pt")
+radius = 0.2
+height = 0.4
+
+[node name="PixieTrail" type="Node3D"]
+script = ExtResource("1_pt")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("SphereMesh_pt")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="."]
+light_color = Color(1, 0.41, 0.71, 1)
+omni_range = 2.0

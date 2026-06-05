@@ -9,11 +9,21 @@ element_name = "Igni"
 icon = ExtResource("1_e3ulj")
 color = Color(1, 0.27058825, 0, 1)
 application_cooldown = 0.2
+damage_equation = "base_damage + (units * lux_stat * lux_stat_weight)"
+cooldown_equation = "base_cooldown * max(0.1, 1.0 - (magical_defense * magical_defense_weight))"
+stat_weights = {
+"lux_stat": 0.1,
+"magical_defense": 1.0
+}
 reaction_rules = {
 "aero": "tailwind",
-"aqua": "extinguish",
+"aqua": "boil",
 "chem": "pollute",
+"ghost": "kitsunebi",
+"light": "aether",
+"lux": "plasma",
 "magne": "fuse",
+"plasma": "ionize",
 "tera": "scorch",
 "volt": "light"
 }

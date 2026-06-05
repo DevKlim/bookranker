@@ -6,36 +6,57 @@ signal stats_updated
 
 enum Direction { DOWN, LEFT, UP, RIGHT }
 
-# Components
 var power_consumer: PowerConsumerComponent
 var health_component: HealthComponent
 var inventory_component: InventoryComponent
-var inventory_component_alt: InventoryComponent # Handle "InputInventory" legacy
+var inventory_component_alt: InventoryComponent 
 var elemental_component: ElementalComponent
 
 var mod_inventory: InventoryComponent
 var mod_handler: ModHandlerComponent
+var stat_component: StatComponent
 
 var grid_component: Node
+@export var grid_layer: String = "building"
 @export var powered_color: Color = Color(1, 1, 1, 1)
 @export var unpowered_color: Color = Color(0.2, 0.2, 0.2, 1)
+@export var modslot_count: int = 3
 
-# Identity
 @export var display_name: String = ""
 
 @export_group("Stats")
 @export var max_health: float = 100.0
+@export var security: float = 0.0
 @export var max_energy: float = 50.0
 @export var power_consumption: float = 5.0
-@export var efficiency: float = 1.0 
-@export var lux_stat: float = 0.0 
+@export var speed: float = 5.0
+@export var compute: float = 1.0 
+@export var networking: float = 0.0 
 @export var luck_stat: float = 0.0
+@export var attack_damage: float = 0.0
+@export var process_speed: float = 1.0
+@export var defense: float = 0.0
+@export var firewall: float = 0.0
+@export var space: float = 10.0
+@export var entity_scale: float = 1.0 # Renamed to avoid native Node3D "scale" collision
+@export var ping: float = 1.0
+@export var malware: float = 0.0
 
 @export_group("Formulas")
-@export var health_equation: String = ""
+@export var max_health_equation: String = ""
+@export var security_equation: String = ""
+@export var process_speed_equation: String = ""
+@export var attack_damage_equation: String = ""
 @export var defense_equation: String = ""
+@export var firewall_equation: String = ""
+@export var networking_equation: String = ""
+@export var space_equation: String = ""
+@export var luck_stat_equation: String = ""
+@export var compute_equation: String = ""
+@export var scale_equation: String = ""
+@export var ping_equation: String = ""
+@export var malware_equation: String = ""
 @export var power_usage_equation: String = ""
-@export var processing_speed_equation: String = ""
 @export var stat_weights: Dictionary = {}
 
 @export_group("I/O Configuration")
@@ -55,7 +76,6 @@ var output_mask: int = 0
 @export var has_input: bool = true
 @export var has_output: bool = true
 
-# Legacy Single Direction Support
 var output_direction: Direction = Direction.DOWN
 var input_direction: Direction = Direction.UP
 
@@ -67,7 +87,6 @@ var is_active: bool = false
 var is_staggered: bool = false
 var stats: Dictionary = {}
 
-# Damage Visuals
 var _tint_tween: Tween
 var _tint_materials: Array[StandardMaterial3D] =[]
 var _tint_sprites: Array[Node] =[]
@@ -79,8 +98,19 @@ func _get_main_sprite() -> AnimatedSprite3D:
 func _ready() -> void:
 	if Engine.is_editor_hint(): return
 	if has_meta("is_preview"): return
-	
 	add_to_group("buildings")
+	
+	if is_in_group("loot_buildings"):
+		collision_layer = 8
+		collision_mask = 0
+	
+	if not has_node("StatComponent"):
+		stat_component = load("res://scripts/components/stat_component.gd").new()
+		stat_component.name = "StatComponent"
+		add_child(stat_component)
+		stat_component.stats_changed.connect(func(): emit_signal("stats_updated"))
+	else:
+		stat_component = get_node("StatComponent")
 	
 	if Engine.has_singleton("GameManager") and GameManager.current_state == GameManager.GameState.IDLE:
 		var n = name.to_lower()
@@ -96,7 +126,6 @@ func _ready() -> void:
 		else: display_name = n.rstrip("0123456789")
 	
 	_update_masks_from_current_rotation()
-	
 	if input_mask > 0: has_input = true
 	if output_mask > 0: has_output = true
 	
@@ -109,52 +138,73 @@ func _ready() -> void:
 	
 	_cache_visual_materials(self)
 	
-	_on_power_status_changed(false)
+	if display_name.to_lower() == "backpack" or is_in_group("loot_buildings"):
+		var random_colors =[
+			Color(0.9, 0.2, 0.2), # Red
+			Color(0.2, 0.6, 0.9), # Blue
+			Color(0.2, 0.8, 0.3), # Green
+			Color(0.9, 0.8, 0.1), # Yellow
+			Color(0.7, 0.2, 0.8), # Purple
+			Color(0.9, 0.5, 0.1)  # Orange
+		]
+		var chosen_color = random_colors.pick_random()
+		for m in _tint_materials:
+			if is_instance_valid(m):
+				m.albedo_color = chosen_color
+
+	_recalculate_stats()
+	
+	if power_consumption <= 0.0:
+		_on_power_status_changed(true)
+	else:
+		_on_power_status_changed(false)
 
 func _physics_process(delta: float) -> void:
 	if not is_active: return
-	
 	if has_output and inventory_component:
 		_output_timer -= delta
 		if _output_timer <= 0:
-			_output_timer = 0.5
-			try_output_from_inventory(inventory_component)
+			var p_speed = get_stat("process_speed", process_speed)
+			_output_timer = 0.5 / max(0.1, p_speed)
+			
+			# Luck check for double processing
+			var luck = get_stat("luck_stat", luck_stat)
+			var double_chance = luck * 0.01
+			var passes = 1
+			if double_chance > 0 and randf() < double_chance:
+				passes = 2
+				
+			for i in range(passes):
+				try_output_from_inventory(inventory_component)
 
 func _cache_visual_materials(node: Node) -> void:
-	if node is Sprite3D or node is AnimatedSprite3D:
-		_tint_sprites.append(node)
+	if node is Sprite3D or node is AnimatedSprite3D: _tint_sprites.append(node)
 	elif node is MeshInstance3D:
 		if node.mesh:
-			var surf_count = node.mesh.get_surface_count()
-			for i in range(surf_count):
+			for i in range(node.mesh.get_surface_count()):
 				var mat = node.get_active_material(i)
 				if not mat: mat = StandardMaterial3D.new()
 				if mat is StandardMaterial3D:
 					var unique_mat = mat.duplicate()
 					node.set_surface_override_material(i, unique_mat)
 					_tint_materials.append(unique_mat)
-	for child in node.get_children():
-		_cache_visual_materials(child)
+	for child in node.get_children(): _cache_visual_materials(child)
 
 func _setup_visuals() -> void:
 	var sprite = _get_main_sprite()
-	if sprite: 
-		sprite.position += visual_offset
+	if sprite: sprite.position += visual_offset
 	else:
 		var visual = get_node_or_null("BlockVisual")
-		if visual: 
-			visual.position += visual_offset
+		if visual: visual.position += visual_offset
 
 func _setup_grid_component() -> void:
 	if not has_node("GridComponent"):
 		grid_component = GridComponent.new()
 		grid_component.name = "GridComponent"
-		grid_component.layer = "building"
-		if "snap_to_grid" in grid_component:
-			grid_component.snap_to_grid = true
+		grid_component.layer = grid_layer
+		if "snap_to_grid" in grid_component: grid_component.snap_to_grid = true
 		add_child(grid_component)
-	else:
-		grid_component = get_node("GridComponent")
+	else: grid_component = get_node("GridComponent")
 
 func _setup_elemental_component() -> void:
 	elemental_component = get_node_or_null("ElementalComponent")
@@ -162,18 +212,21 @@ func _setup_elemental_component() -> void:
 		elemental_component = ElementalComponent.new()
 		elemental_component.name = "ElementalComponent"
 		add_child(elemental_component)
-		
-	if not elemental_component.is_connected("status_applied", _on_element_changed):
-		elemental_component.status_applied.connect(_on_element_changed)
-	if not elemental_component.is_connected("status_removed", _on_element_changed):
-		elemental_component.status_removed.connect(_on_element_changed)
-	if not elemental_component.is_connected("status_changed", _on_element_changed):
-		elemental_component.status_changed.connect(_on_element_changed)
+	if not elemental_component.is_connected("status_applied", _on_element_changed): elemental_component.status_applied.connect(_on_element_changed)
+	if not elemental_component.is_connected("status_removed", _on_element_changed): elemental_component.status_removed.connect(_on_element_changed)
+	if not elemental_component.is_connected("status_changed", _on_element_changed): elemental_component.status_changed.connect(_on_element_changed)
 
-func _on_element_changed(_id = "", _units = 0) -> void:
-	emit_signal("stats_updated")
+func _on_element_changed(_id = "", _units = 0) -> void: emit_signal("stats_updated")
 
 func _setup_power_component() -> void:
+	if power_consumption <= 0.0:
+		is_active = true
+		set_process(true)
+		set_physics_process(true)
+		var shooter = get_node_or_null("ShooterComponent")
+		if shooter: shooter.set_process(true)
+		return
+		
 	power_consumer = get_node_or_null("PowerConsumerComponent")
 	if not power_consumer:
 		power_consumer = PowerConsumerComponent.new()
@@ -185,21 +238,9 @@ func _setup_power_component() -> void:
 
 func _update_power_consumption() -> void:
 	if not power_consumer: return
-	var eff = get_stat("efficiency", efficiency)
-	if eff <= 0.1: eff = 0.1
-	var final_power = power_consumption / eff
-	
-	if power_usage_equation != "":
-		if ClassDB.class_exists("FormulaHelper") or ResourceLoader.exists("res://scripts/utils/formula_helper.gd"):
-			var fh = load("res://scripts/utils/formula_helper.gd")
-			if fh:
-				var vars = {"power_consumption": power_consumption, "efficiency": eff, "final_power": final_power}
-				for k in stat_weights.keys():
-					vars[k+"_weight"] = stat_weights[k]
-					vars[k] = get_stat(k, 0.0)
-				final_power = fh.evaluate(self, power_usage_equation, vars, final_power)
-				
-	power_consumer.power_consumption = final_power
+	var comp = get_stat("compute", compute)
+	if comp <= 0.1: comp = 0.1
+	power_consumer.power_consumption = get_stat("power_consumption", power_consumption) / comp
 
 func _setup_health_component() -> void:
 	health_component = get_node_or_null("HealthComponent")
@@ -220,49 +261,40 @@ func _setup_health_component() -> void:
 	health_component.health_changed.connect(_on_health_changed)
 
 func _on_health_changed(new_val, old_val) -> void:
-	if new_val < old_val:
-		_flash_damage()
+	if new_val < old_val: _flash_damage()
 	emit_signal("stats_updated")
 
 func _flash_damage() -> void:
 	if _tint_tween: _tint_tween.kill()
 	_tint_tween = create_tween()
-	
 	var base_col = powered_color if is_active else unpowered_color
 	var damage_col = Color(1.0, 0.4, 0.4, 1.0)
-	
 	_tint_tween.tween_method(_apply_tint_ratio.bind(base_col, damage_col), 1.0, 0.0, 0.3)
 
 func _apply_tint_ratio(ratio: float, base: Color, dmg: Color) -> void:
 	var final = base.lerp(dmg, ratio)
-	for s in _tint_sprites:
-		if is_instance_valid(s): s.modulate = final
-	for m in _tint_materials:
-		if is_instance_valid(m): m.albedo_color = final
+	for s in _tint_sprites: if is_instance_valid(s): s.modulate = final
+	for m in _tint_materials: if is_instance_valid(m): m.albedo_color = final
 
 func _setup_inventory_component() -> void:
 	inventory_component = get_node_or_null("InventoryComponent")
-	if not inventory_component:
-		inventory_component = get_node_or_null("InputInventory")
+	if not inventory_component: inventory_component = get_node_or_null("InputInventory")
 
 	mod_inventory = InventoryComponent.new()
-	mod_inventory.name = "ModInventory"
-	mod_inventory.max_slots = 3
-	mod_inventory.set_capacity(3)
+	if modslot_count != 0:
+		mod_inventory.name = "ModInventory"
+	mod_inventory.max_slots = modslot_count
+	mod_inventory.set_capacity(modslot_count)
 	
-	# Restrict slots to Mod items
 	var ItemResClass = load("res://scripts/resources/item_resource.gd")
 	if ItemResClass and "MOD" in ItemResClass.EquipmentType.keys():
-		for i in range(3):
-			mod_inventory.set_slot_restriction(i, ItemResClass.EquipmentType.MOD)
+		for i in range(modslot_count): mod_inventory.set_slot_restriction(i, ItemResClass.EquipmentType.MOD)
 	
 	mod_inventory.custom_filter = func(item):
 		var t = item.get("mod_type")
 		if not t or t == "":
-			if "modifiers" in item and item.modifiers.has("type"):
-				t = item.modifiers.get("type")
-			elif "type" in item:
-				t = item.get("type")
+			if "modifiers" in item and item.modifiers.has("type"): t = item.modifiers.get("type")
+			elif "type" in item: t = item.get("type")
 		return t == "building"
 		
 	add_child(mod_inventory)
@@ -275,72 +307,42 @@ func _setup_inventory_component() -> void:
 
 func _recalculate_stats() -> void:
 	if health_component:
-		var base_max_hp = max_health * GameManager.get_stat_multiplier("building_health")
-		var hp_mult = mod_handler.get_stat_modifier("max_health_mult")
-		var final_hp = base_max_hp * (1.0 + hp_mult)
-		
-		if health_equation != "":
-			if ClassDB.class_exists("FormulaHelper") or ResourceLoader.exists("res://scripts/utils/formula_helper.gd"):
-				var fh = load("res://scripts/utils/formula_helper.gd")
-				if fh:
-					var vars = {"base_health": max_health, "final_health": final_hp, "hp_mult": hp_mult}
-					for k in stat_weights.keys(): vars[k+"_weight"] = stat_weights[k]; vars[k] = get_stat(k, 0.0)
-					final_hp = fh.evaluate(self, health_equation, vars, final_hp)
-					
-		health_component.max_health = final_hp
-		if health_component.current_health > health_component.max_health:
-			health_component.current_health = health_component.max_health
-			
-		var def_val = get_stat("defense", 0.0)
-		if defense_equation != "":
-			if ClassDB.class_exists("FormulaHelper") or ResourceLoader.exists("res://scripts/utils/formula_helper.gd"):
-				var fh = load("res://scripts/utils/formula_helper.gd")
-				if fh:
-					var vars = {"base_defense": def_val}
-					for k in stat_weights.keys(): vars[k+"_weight"] = stat_weights[k]; vars[k] = get_stat(k, 0.0)
-					def_val = fh.evaluate(self, defense_equation, vars, def_val)
-		health_component.defense = def_val
-
-		var base_max_energy = max_energy
-		var energy_flat = mod_handler.get_stat_modifier("max_energy_flat")
-		health_component.max_energy = base_max_energy + energy_flat
-		if health_component.current_energy > health_component.max_energy:
-			health_component.current_energy = health_component.max_energy
-			
-	if has_node("CrafterComponent"):
-		var crafter = get_node("CrafterComponent")
-		var pspeed = get_stat("processing_speed", 1.0)
-		if processing_speed_equation != "":
-			if ClassDB.class_exists("FormulaHelper") or ResourceLoader.exists("res://scripts/utils/formula_helper.gd"):
-				var fh = load("res://scripts/utils/formula_helper.gd")
-				if fh:
-					var vars = {"base_speed": pspeed}
-					for k in stat_weights.keys(): vars[k+"_weight"] = stat_weights[k]; vars[k] = get_stat(k, 0.0)
-					pspeed = fh.evaluate(self, processing_speed_equation, vars, pspeed)
-		crafter.processing_speed_mult = pspeed
-		
+		health_component.max_health = get_stat("max_health", max_health)
+		health_component.max_security = get_stat("security", security)
+		health_component.defense = get_stat("defense", defense)
+		health_component.firewall = get_stat("firewall", firewall)
+		health_component.malware = get_stat("malware", malware)
+		health_component.max_energy = get_stat("max_energy", max_energy)
 	_update_power_consumption()
+	
+	var size_mult = get_stat("scale", entity_scale)
+	var sprite = _get_main_sprite()
+	if sprite:
+		sprite.scale = Vector3(size_mult, size_mult, size_mult)
+	else:
+		var visual = get_node_or_null("BlockVisual")
+		if visual:
+			visual.scale = Vector3(size_mult, size_mult, size_mult)
+			
 	emit_signal("stats_updated")
 
 func _on_power_status_changed(has_power: bool) -> void:
+	if power_consumption <= 0.0:
+		has_power = true
+		
 	is_active = has_power and not is_staggered
-	
 	if _tint_tween and _tint_tween.is_running(): return
 
 	var target_col = powered_color if has_power else unpowered_color
 	var animated_sprite = _get_main_sprite()
-	if is_instance_valid(animated_sprite):
-		animated_sprite.modulate = target_col
-	
-	for m in _tint_materials:
-		if is_instance_valid(m): m.albedo_color = target_col
+	if is_instance_valid(animated_sprite): animated_sprite.modulate = target_col
+	for m in _tint_materials: if is_instance_valid(m): m.albedo_color = target_col
 	
 	set_process(is_active)
 	set_physics_process(is_active)
 	
 	var shooter = get_node_or_null("ShooterComponent")
 	if shooter: shooter.set_process(is_active)
-	
 	emit_signal("stats_updated")
 
 func _on_staggered(_duration: float) -> void:
@@ -419,7 +421,7 @@ func get_occupied_cells(rotation_index: int = -1) -> Array[Vector2i]:
 func _on_died(_node): queue_free()
 
 func receive_item(item: Resource, from_node: Node3D = null, _extra_data: Dictionary = {}) -> bool: 
-	if not has_input: return false
+	if not has_input or is_in_group("loot_buildings"): return false
 	
 	if from_node:
 		var my_tile = LaneManager.world_to_tile(global_position)
@@ -457,7 +459,7 @@ func get_neighbor(dir: Direction) -> Node3D:
 	return null
 
 func try_output_from_inventory(inv: InventoryComponent) -> bool:
-	if not has_output or not inv or not inv.has_item(): return false
+	if not has_output or not inv or not inv.has_item() or is_in_group("loot_buildings"): return false
 	if not inv.can_output: return false
 	
 	var it = inv.get_first_item()
@@ -478,11 +480,12 @@ func requires_recipe_selection() -> bool: return false
 
 func get_stat(stat_name: String, default_value: float = 0.0) -> float:
 	var base_val = default_value
+	var internal_name = "entity_scale" if stat_name == "scale" else stat_name
 	
 	# Extract base stat directly from building logic if available
-	if stat_name in self:
-		var val = get(stat_name)
-		if typeof(val) in[TYPE_INT, TYPE_FLOAT]:
+	if internal_name in self:
+		var val = get(internal_name)
+		if typeof(val) in [TYPE_INT, TYPE_FLOAT]:
 			base_val = float(val)
 	elif stats.has(stat_name):
 		base_val = float(stats[stat_name])
@@ -505,8 +508,10 @@ func get_stat(stat_name: String, default_value: float = 0.0) -> float:
 
 	return max(0.0, final_val)
 
-## Updated to accept 3 arguments to match Enemy and HealthComponent signature
 func take_damage(amount: float, element: Resource = null, source: Node = null) -> void:
+	if element:
+		ElementManager.apply_element(self, element, source, amount)
+		
 	if health_component: 
 		health_component.take_damage(amount, element, source)
 

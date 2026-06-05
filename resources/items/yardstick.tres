@@ -1,12 +1,15 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://gx1tg2l0t01y"]
 
-[ext_resource type="Texture2D" uid="uid://c7kvbgqxv3y0u" path="res://assets/icons/yardstick.png" id="1_ohgwc"]
+[ext_resource type="Resource" uid="uid://c8j7svdsvir42" path="res://resources/attacks/yardstick_swing.tres" id="1_kbf5m"]
+[ext_resource type="Texture2D" uid="uid://c7kvbgqxv3y0u" path="res://assets/items/yardstick.png" id="1_ohgwc"]
 [ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="2_kbf5m"]
 
 [resource]
 script = ExtResource("2_kbf5m")
 item_name = "Yardstick"
 icon = ExtResource("1_ohgwc")
-stack_size = 1
+stack_size = 1.0
 equipment_type = 2
+item_category = "Item: Weapon"
+attack_config = ExtResource("1_kbf5m")
 damage = 3.0

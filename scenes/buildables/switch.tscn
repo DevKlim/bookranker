@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://bvmbutjekm56b"]
+
+[ext_resource type="Script" uid="uid://b6e3gnvy5ttog" path="res://scripts/entities/buildings/switch_building.gd" id="1_3b8kb"]
+[ext_resource type="Script" uid="uid://dad3f8h2j4k5l" path="res://scripts/components/inventory_component.gd" id="3_44wsm"]
+[ext_resource type="PackedScene" uid="uid://dppvs52k7q032" path="res://assets/buildables/switch/switch.gltf" id="4_3b8kb"]
+[ext_resource type="Script" uid="uid://dg4gfri6lu5o2" path="res://scripts/components/elemental_component.gd" id="4_g2k2s"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1f7ny"]
+size = Vector3(0.5, 0.5, 1)
+
+[node name="Switch" type="StaticBody3D" unique_id=1629662761]
+script = ExtResource("1_3b8kb")
+max_health = 10.0
+power_consumption = 0.0
+layout_config = [Vector2i(0, 0)]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=983321281]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
+shape = SubResource("BoxShape3D_1f7ny")
+
+[node name="InventoryComponent" type="Node" parent="." unique_id=948313751]
+script = ExtResource("3_44wsm")
+max_slots = 0
+can_receive = false
+can_output = false
+
+[node name="ElementalComponent" type="Node" parent="." unique_id=75403817]
+script = ExtResource("4_g2k2s")
+
+[node name="blockbench_export" parent="." unique_id=212303442 instance=ExtResource("4_3b8kb")]
+transform = Transform3D(-8.742278e-08, 0, 2, 0, 2, 0, -2, 0, -8.742278e-08, 0, 0, 0)

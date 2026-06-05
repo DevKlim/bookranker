@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://d4guj5xj8vibs"]
+
+[ext_resource type="Resource" uid="uid://cm1qgvghw61h2" path="res://resources/attacks/cross_flare.tres" id="1_tm4o3"]
+[ext_resource type="Texture2D" uid="uid://byp23kokc8mnn" path="res://assets/enemies/rb1.png" id="2_awkli"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="3_6wmvv"]
+
+[resource]
+script = ExtResource("3_6wmvv")
+item_name = "Slash"
+icon = ExtResource("2_awkli")
+stack_size = 1
+equipment_type = 2
+attack_config = ExtResource("1_tm4o3")
+damage = 0.8

@@ -21,6 +21,8 @@ var current_level_config: Dictionary = {}
 var current_scene_id: String = ""
 var random_events_config: Array =[]
 
+var pending_level: int = 1 # Holds the selected level from the Main Menu
+
 var game_data: Dictionary = {
 	"level": 1,
 	"wave": 1,
@@ -45,13 +47,17 @@ var _field_spawn_timers: Dictionary = {}
 var _active_field_spawns: Dictionary = {} 
 
 var event_manager: Node
+var vfx_manager: Node
 
 func _ready() -> void:
 	event_manager = load("res://scripts/singletons/event_manager.gd").new()
 	event_manager.name = "EventManager"
 	add_child(event_manager)
 	
-	load_level(1)
+	vfx_manager = load("res://scripts/singletons/vfx_manager.gd").new()
+	vfx_manager.name = "VFXManager"
+	add_child(vfx_manager)
+	
 	WaveManager.wave_cleared.connect(_on_wave_cleared)
 	# Deferred to ensure PlayerManager finishes initializing its inventory first
 	call_deferred("_connect_inventory")
@@ -358,3 +364,4 @@ func _try_spawn_field_enemy(res: EnemyResource, config: Dictionary) -> void:
 				_active_field_spawns[id] -= 1
 				if _active_field_spawns[id] < 0: _active_field_spawns[id] = 0
 		)
+

@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://joo5wdugen7w"]
+
+[ext_resource type="Resource" uid="uid://cqfbvwuayxlk" path="res://resources/items/drill_bit.tres" id="1_fvyf2"]
+[ext_resource type="Resource" uid="uid://bufkycpx6nel1" path="res://resources/items/marble.tres" id="2_wsijg"]
+[ext_resource type="Resource" uid="uid://5brkmlevo7jf" path="res://resources/items/hand_drill.tres" id="3_h7tel"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="4_f13n0"]
+
+[resource]
+script = ExtResource("4_f13n0")
+category = "lvl1"
+recipe_name = "Hand Drill"
+craft_time = 1.0
+inputs = [{
+"count": 1,
+"resource": ExtResource("1_fvyf2")
+}, {
+"count": 4,
+"resource": ExtResource("2_wsijg")
+}]
+outputs = [{
+"count": 1,
+"resource": ExtResource("3_h7tel")
+}]

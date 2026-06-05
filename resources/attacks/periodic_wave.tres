@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="AttackResource" format=3 uid="uid://c5878q58hbg8i"]
+
+[ext_resource type="Script" uid="uid://dj7657xb6odwr" path="res://scripts/resources/attack_resource.gd" id="1_rpt3j"]
+
+[resource]
+script = ExtResource("1_rpt3j")
+id = "periodic_wave"
+cooldown = 2.0
+base_damage = 2.0
+damage_equation = "(base_damage + (lux_stat * lux_stat_weight) + global_flat_damage) * (1.0 + damage_mult)"
+stat_weights = {
+"lux_stat": 1.5
+}
+max_range = 4
+range_width = 4
+is_aoe = true

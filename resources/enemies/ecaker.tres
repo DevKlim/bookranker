@@ -1,15 +1,17 @@
 [gd_resource type="Resource" script_class="EnemyResource" format=3 uid="uid://c1776o4mkxh00"]
 
-[ext_resource type="Script" uid="uid://bykln6bau3775" path="res://scripts/resources/enemy_resource.gd" id="1_4cti8"]
 [ext_resource type="PackedScene" uid="uid://dm17u8kukuchw" path="res://scenes/enemies/ecaker.tscn" id="1_807lq"]
+[ext_resource type="Script" uid="uid://bykln6bau3775" path="res://scripts/resources/enemy_resource.gd" id="2_bdb8k"]
 
 [resource]
-script = ExtResource("1_4cti8")
+script = ExtResource("2_bdb8k")
 enemy_name = "Ecaker"
 scene = ExtResource("1_807lq")
 tags = Array[String](["wipes_liquids"])
-health = 30.0
-speed = 20.0
-defense = 2.0
+max_health = 20.0
+security = 10.0
+speed = 6.0
+process_speed = 0.5
 attack_damage = 5.0
-attack_speed = 0.5
+defense = 2.0
+space = 40.0

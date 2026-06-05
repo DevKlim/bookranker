@@ -1,42 +1,48 @@
-[{        "id": "roomdog",
+[
+    {
+        "id": "roomdog",
         "name": "Roomdog",
         "scene_path": "res://scenes/enemies/roomdog.tscn",
         "logic": { 
-            "health": 10, "speed": 40, "defense": 0, "magical_defense": 0.2, "elemental_cd": 0.0, "weight": 10,
+            "scale": 1.0, "max_health": 10, "speed": 40, "defense": 0, "firewall": 0.2, "elemental_cd": 0.0, "space": 10,
+            "innate_reapply_interval": 1.0, "innate_instant_react": true,
             "formulas": {
-                "speed_equation": "max(5.0, base_speed * max(0.1, 1.0 + speed_mult) - (weight * weight_weight))"
+                "speed_equation": "max(5.0, base_speed * max(0.1, 1.0 + speed_mult) - (space * space_weight))"
             },
-            "stat_weights": { "speed_mult": 1.0, "weight": 0.5 }
+            "stat_weights": { "speed_mult": 1.0, "space": 0.5 }
         },
-        "params": { "attack_damage": 2, "attack_speed": 1.0 },
-        "drops":[ { "pool": "basic_loot", "chance": 0.5 } ]
+        "params": { "attack_damage": 2, "process_speed": 1.0 },
+        "drops":[ { "pool": "bots", "chance": 0.5 } ]
     },
     {
         "id": "proller",
         "name": "Proller",
         "scene_path": "res://scenes/enemies/proller.tscn",
         "logic": { 
-            "health": 15, "speed": 25, "defense": 0, "magical_defense": 0.0, "weight": 15,
+            "scale": 1.0, "max_health": 15, "speed": 25, "defense": 0, "firewall": 0.0, "space": 15,
+            "innate_reapply_interval": 1.0, "innate_instant_react": true,
             "formulas": {
-                "speed_equation": "max(5.0, base_speed * max(0.1, 1.0 + speed_mult) - (weight * weight_weight))"
+                "speed_equation": "max(5.0, base_speed * max(0.1, 1.0 + speed_mult) - (space * space_weight))"
             },
-            "stat_weights": { "speed_mult": 1.0, "weight": 0.5 }
+            "stat_weights": { "speed_mult": 1.0, "space": 0.5 }
         },
-        "params": { "attack_damage": 3, "attack_speed": 0.8 },
-        "drops":[ { "pool": "basic_loot", "chance": 0.8 } ]
+        "params": { "attack_damage": 3, "process_speed": 0.8 },
+        "drops":[ { "pool": "bots", "chance": 0.8 } ]
     },
     {
         "id": "inkhog",
         "name": "Inkhog",
         "scene_path": "res://scenes/enemies/inkhog.tscn",
         "logic": { 
-            "health": 3, "speed": 60, "defense": 0, "weight": 5,
+            "scale": 1.0, "max_health": 3, "speed": 60, "defense": 0, "space": 5,
+            "innate_reapply_interval": 1.0, "innate_instant_react": true,
             "formulas": {
-                "speed_equation": "max(5.0, base_speed * max(0.1, 1.0 + speed_mult) - (weight * weight_weight))"
+                "speed_equation": "max(5.0, base_speed * max(0.1, 1.0 + speed_mult) - (space * space_weight))"
             },
-            "stat_weights": { "speed_mult": 1.0, "weight": 0.5 }
+            "stat_weights": { "speed_mult": 1.0, "space": 0.5 }
         },
-        "params": { "attack_damage": 1, "attack_speed": 1.5, "attack_range": 1 }
+        "params": { "attack_damage": 1, "process_speed": 1.5, "attack_range": 1 },
+        "drops":[ { "pool": "inkers", "chance": 0.8 } ]
     },
     {
         "id": "ecaker",
@@ -44,13 +50,14 @@
         "scene_path": "res://scenes/enemies/ecaker.tscn",
         "tags": ["wipes_liquids"],
         "logic": { 
-            "health": 30, "speed": 20, "defense": 2, "weight": 40,
+            "scale": 1.0, "max_health": 30, "security": 10.0, "speed": 20, "defense": 2, "space": 40,
+            "security_regen_delay": 4.0, "security_regen_time": 6.0,
             "formulas": {
-                "speed_equation": "max(5.0, base_speed * max(0.1, 1.0 + speed_mult) - (weight * weight_weight))"
+                "speed_equation": "max(5.0, base_speed * max(0.1, 1.0 + speed_mult) - (space * space_weight))"
             },
-            "stat_weights": { "speed_mult": 1.0, "weight": 0.5 }
+            "stat_weights": { "speed_mult": 1.0, "space": 0.5 }
         },
-        "params": { "attack_damage": 5, "attack_speed": 0.5, "attack_range": 1 }
+        "params": { "attack_damage": 5, "process_speed": 0.5, "attack_range": 1 }
     },
     {
         "id": "enormous_ecaker",
@@ -58,25 +65,37 @@
         "scene_path": "res://scenes/enemies/enormous_ecaker.tscn",
         "tags":["wipes_liquids"],
         "logic": { 
-            "health": 100, "speed": 15, "defense": 5, "weight": 120,
+            "scale": 1.0, "max_health": 100, "security": 40.0, "speed": 15, "defense": 5, "space": 120,
+            "security_regen_delay": 6.0, "security_regen_time": 4.0,
             "formulas": {
-                "speed_equation": "max(5.0, base_speed * max(0.1, 1.0 + speed_mult) - (weight * weight_weight))"
+                "speed_equation": "max(5.0, base_speed * max(0.1, 1.0 + speed_mult) - (space * space_weight))"
             },
-            "stat_weights": { "speed_mult": 1.0, "weight": 0.5 }
+            "stat_weights": { "speed_mult": 1.0, "space": 0.5 }
         },
-        "params": { "attack_damage": 500, "attack_speed": 0.5, "attack_range": 2 }
+        "params": { "attack_damage": 500, "process_speed": 0.5, "attack_range": 2 }
     },
     {
         "id": "inkage",
         "name": "Inkage",
         "scene_path": "res://scenes/enemies/inkage.tscn",
         "logic": { 
-            "health": 80, "speed": 12, "defense": 2, "magical_defense": 0.5, "weight": 50,
+            "scale": 1.0, "max_health": 80, "security": 10.0, "speed": 12, "defense": 2, "firewall": 0.5, "space": 50,
+            "innate_reapply_interval": 1.0, "innate_instant_react": true,
+            "security_regen_delay": 5.0, "security_regen_time": 3.0,
             "formulas": {
-                "speed_equation": "max(5.0, base_speed * max(0.1, 1.0 + speed_mult) - (weight * weight_weight))"
+                "speed_equation": "max(5.0, base_speed * max(0.1, 1.0 + speed_mult) - (space * space_weight))"
             },
-            "stat_weights": { "speed_mult": 1.0, "weight": 0.5 }
+            "stat_weights": { "speed_mult": 1.0, "space": 0.5 }
         },
-        "params": { "attack_damage": 8, "attack_speed": 0.6, "attack_range": 5 }
+        "params": { "attack_damage": 8, "process_speed": 0.6, "attack_range": 5 }
+    },
+    {
+        "id": "dummy",
+        "name": "Target Dummy",
+        "tags": ["dps_meter"],
+        "logic": { 
+            "scale": 1.0, "max_health": 9999999, "speed": 0, "defense": 0, "space": 9999
+        },
+        "params": { "attack_damage": 0, "process_speed": 0, "attack_range": 0 }
     }
 ]

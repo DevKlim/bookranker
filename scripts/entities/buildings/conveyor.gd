@@ -5,16 +5,16 @@ extends BaseBuilding
 const LANE_COUNT = 2
 const CAPACITY_PER_LANE = 4
 const ITEM_SPACING = 1.0 / float(CAPACITY_PER_LANE)
-const TRANSPORT_SPEED = 1.0 
+
+@export var scroll_direction: Vector2 = Vector2(0.0, 1.0)
+@export var scroll_scale: Vector2 = Vector2(1.0, 1.0)
+@export var scroll_rotation: float = 0.0
+@export var scroll_pivot: Vector2 = Vector2(0.5, 0.5)
 
 @export var item_scale: Vector3 = Vector3(0.5, 1, 0.5)
 @export var item_visual_offset: Vector3 = Vector3(0.0, 0.625, 0.0) 
 
-# Lanes: Array of Arrays. Index 0 = Left, Index 1 = Right
-# Entry: { "item": Resource, "progress": float, "visual": Node3D }
 var lanes: Array = [[],[]]
-
-# Dynamic Input Direction derived from neighbors
 var active_input_direction: Direction = Direction.UP 
 
 const OUTLINE_SHADER_CODE = """
@@ -34,18 +34,13 @@ void fragment() {
 	a += texture(texture_albedo, UV + vec2(0.0, px_y)).a;
 	a += texture(texture_albedo, UV + vec2(0.0, -px_y)).a;
 	
-	if (col.a < 0.1 && a > 0.1) {
-		ALBEDO = outline_color.rgb;
-		ALPHA = 1.0;
-	} else {
-		ALBEDO = col.rgb;
-		ALPHA = col.a;
-		if (col.a < 0.1) discard;
-	}
+	if (col.a < 0.1 && a > 0.1) { ALBEDO = outline_color.rgb; ALPHA = 1.0; }
+	else { ALBEDO = col.rgb; ALPHA = col.a; if (col.a < 0.1) discard; }
 }
 """
 
 func _ready() -> void:
+	if speed == 5.0: speed = 1.0 # Default speed for conveyor fallback
 	if not Engine.is_editor_hint():
 		super._ready()
 		if has_meta("is_preview"): return
@@ -57,7 +52,11 @@ func _ready() -> void:
 		
 		active_input_direction = input_direction
 		
-		# Wait for grid registration to complete
+		# Hook into dynamic stat changes to immediately update visual speed
+		var stat_comp = get_node_or_null("StatComponent")
+		if stat_comp and not stat_comp.stats_changed.is_connected(_update_visuals_active):
+			stat_comp.stats_changed.connect(_update_visuals_active)
+		
 		await get_tree().process_frame
 		_update_adjacency()
 		_notify_neighbors()
@@ -73,8 +72,7 @@ func update_preview_visuals() -> void:
 func _notify_neighbors() -> void:
 	for dir in [Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT]:
 		var n = get_neighbor(dir)
-		if n and n is Conveyor:
-			n._update_adjacency()
+		if n and n is Conveyor: n._update_adjacency()
 
 func _update_adjacency(force_tile: Vector2i = Vector2i(-1, -1)) -> void:
 	var candidates =[]
@@ -96,7 +94,6 @@ func _update_adjacency(force_tile: Vector2i = Vector2i(-1, -1)) -> void:
 			
 		if n and n.has_method("get_neighbor"):
 			if "output_direction" in n:
-				# Reverse check: where does the neighbor point?
 				var n_dir = n.output_direction
 				var n_target_offset = Vector2i.ZERO
 				match n_dir:
@@ -107,17 +104,12 @@ func _update_adjacency(force_tile: Vector2i = Vector2i(-1, -1)) -> void:
 				
 				var n_tile = LaneManager.world_to_tile(n.global_position)
 				var n_target_tile = n_tile + n_target_offset
-				
-				if n_target_tile == my_tile:
-					candidates.append(d)
+				if n_target_tile == my_tile: candidates.append(d)
 
-	if candidates.is_empty():
-		active_input_direction = input_direction
+	if candidates.is_empty(): active_input_direction = input_direction
 	else:
-		if input_direction in candidates:
-			active_input_direction = input_direction
-		else:
-			active_input_direction = candidates[0]
+		if input_direction in candidates: active_input_direction = input_direction
+		else: active_input_direction = candidates[0]
 			
 	_setup_scrolling_shader()
 
@@ -146,17 +138,10 @@ func _setup_scrolling_shader() -> void:
 	var is_turn = false
 	var turn_rotation = 0.0
 	var texture_to_use = straight_tex
-	
-	# Default flip is none (1, 1)
 	var uv_flip = Vector2(1.0, 1.0)
-	
-	# Fix 1: Apply -90 degree base offset to correct "Left" vs "Up" visual
-	var base_rotation = deg_to_rad(0)
+	var base_rotation = deg_to_rad(scroll_rotation)
 
 	if active_input_direction != output_direction:
-		# Check if it's strictly opposite (Straight) or angled (Turn)
-		# Godot Dirs: 0=Down, 1=Left, 2=Up, 3=Right
-		# Straight combinations (Out/In): 0/2, 2/0, 1/3, 3/1
 		var is_straight = false
 		if (output_direction == Direction.DOWN and active_input_direction == Direction.UP) or \
 		   (output_direction == Direction.UP and active_input_direction == Direction.DOWN) or \
@@ -172,49 +157,27 @@ func _setup_scrolling_shader() -> void:
 			
 			if diag_tex:
 				texture_to_use = diag_tex
-				if diff > 0.1: # Left Turn
+				if diff > 0.1: 
 					uv_flip = Vector2(1.0, 1.0)
 					turn_rotation = deg_to_rad(0)
-				else: # Right Turn
+				else: 
 					uv_flip = Vector2(-1.0, 1.0)
 					turn_rotation = deg_to_rad(0)
 	
 	var surface_count = mesh_inst.mesh.get_surface_count()
-	
-	# Logic to Open Sides based on Local Space
-	# Surface Indices from DataImporter: 2=Front, 3=Back, 4=Left, 5=Right
-	# BaseBuilding rotates the node so Output is always Local Front (Surface 2)
-	
-	var local_output_face = 2 # Front (-Z)
+	var local_output_face = 2
 	var local_input_face = -1
 	
-	# Determine Local Input Face relative to Output
-	# We compare logical directions to find the relative offset
-	# Dirs: 3=Down, 0=Left, 1=Up, 2=Right
-	
-	# Calculate relative 'slots' clockwise. 
-	# 0 (Left) -> 1 (Up) -> 2 (Right) -> 3 (Down)
 	var out_a = _get_dir_angle(output_direction)
 	var in_a = _get_dir_angle(active_input_direction)
-	var angle_diff = angle_difference(out_a, in_a) # Range -PI to PI
+	var angle_diff = angle_difference(out_a, in_a) 
 	
-	# Map angle difference to Local Face
-	# 0 (Same) -> Impossible for valid flow
-	# PI (Opposite) -> Back (Surface 3)
-	# +PI/2 (Left relative to Out)
-	# -PI/2 (Right relative to Out)
-	
-	if abs(angle_diff) > 3.0: # Approx PI
-		local_input_face = 3 # Back
-	elif angle_diff > 0.1: # Positive diff ~ Left
-		local_input_face = 4 # Left
-	elif angle_diff < -0.1: # Negative diff ~ Right
-		local_input_face = 5 # Right
+	if abs(angle_diff) > 3.0: local_input_face = 3
+	elif angle_diff > 0.1: local_input_face = 4
+	elif angle_diff < -0.1: local_input_face = 5
 
-	# Iterate relevant surfaces
-	for i in[0, 2, 3, 4, 5]: 
+	for i in [0, 2, 3, 4, 5]: 
 		if i >= surface_count: continue
-		
 		var active_mat = mesh_inst.get_surface_override_material(i)
 		if not active_mat: active_mat = mesh_inst.mesh.surface_get_material(i)
 		if not active_mat: continue
@@ -225,26 +188,20 @@ func _setup_scrolling_shader() -> void:
 		var specific_rot = 0.0
 		var specific_speed = 1.0
 
-		if i == 0: # Top Face
+		if i == 0: 
 			face_texture = texture_to_use
 			use_shader = true
 			specific_flip = uv_flip
-			# Combine base rotation (fix orientation) + turn rotation
 			specific_rot = base_rotation + turn_rotation
 			specific_speed = 1.0
 		else:
-			# Side Faces Logic
 			var is_open = (i == local_output_face or i == local_input_face)
-			
 			if is_open:
 				face_texture = straight_tex
 				use_shader = true
-				if i == local_output_face:
-					specific_speed = 1.0 
-				else:
-					specific_speed = -1.0
+				if i == local_output_face: specific_speed = 1.0 
+				else: specific_speed = -1.0
 			else:
-				# Closed Wall
 				use_shader = false
 				match i:
 					2: face_texture = front_tex
@@ -254,23 +211,28 @@ func _setup_scrolling_shader() -> void:
 		var final_mat = null
 		
 		if use_shader:
-			if active_mat is ShaderMaterial:
-				final_mat = active_mat
+			if active_mat is ShaderMaterial: final_mat = active_mat
 			else:
 				final_mat = ShaderMaterial.new()
-				final_mat.shader = _get_conveyor_shader()
+				final_mat.shader = ScrollingTextureComponent.get_scrolling_shader()
 				if active_mat.has_meta("is_ghost") and active_mat is StandardMaterial3D:
 					final_mat.set_meta("is_ghost", true)
 					final_mat.set_shader_parameter("tint_color", active_mat.albedo_color)
 			
+			final_mat.set_meta("base_sign", specific_speed) # Cache sign so stopping doesn't reset direction
 			final_mat.set_shader_parameter("base_texture", face_texture)
 			final_mat.set_shader_parameter("scroll_texture", scroll_tex)
 			final_mat.set_shader_parameter("speed", specific_speed)
-			final_mat.set_shader_parameter("uv_scale_y", 1.0)
+			final_mat.set_shader_parameter("scroll_direction", scroll_direction)
+			final_mat.set_shader_parameter("uv_scale", scroll_scale)
 			final_mat.set_shader_parameter("uv_rotation", specific_rot)
+			final_mat.set_shader_parameter("uv_pivot", scroll_pivot)
 			final_mat.set_shader_parameter("uv_flip", specific_flip)
+			final_mat.set_shader_parameter("wrap_half_y", true)
+			final_mat.set_shader_parameter("use_color_mask", true)
+			final_mat.set_shader_parameter("mask_color", Vector3(0.0, 0.0, 0.0))
+			final_mat.set_shader_parameter("use_alpha_mask", false)
 		else:
-			# Revert to standard material
 			if active_mat is ShaderMaterial:
 				final_mat = StandardMaterial3D.new()
 				final_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
@@ -282,55 +244,9 @@ func _setup_scrolling_shader() -> void:
 					if tint: final_mat.albedo_color = tint
 			else:
 				final_mat = active_mat
-				
 			final_mat.albedo_texture = face_texture
 
 		mesh_inst.set_surface_override_material(i, final_mat)
-
-func _get_conveyor_shader() -> Shader:
-	var s = Shader.new()
-	s.code = """
-	shader_type spatial;
-	render_mode blend_mix, depth_draw_opaque, cull_back, diffuse_burley, specular_schlick_ggx;
-	
-	uniform sampler2D base_texture : source_color, filter_nearest, repeat_disable;
-	uniform sampler2D scroll_texture : source_color, filter_nearest, repeat_enable;
-	uniform float speed = 1.0;
-	uniform float uv_scale_y = 1.0;
-	uniform float uv_rotation = 0.0;
-	uniform vec4 tint_color : source_color = vec4(1.0, 1.0, 1.0, 1.0);
-	uniform vec2 uv_flip = vec2(1.0, 1.0);
-	
-	vec2 rotateUV(vec2 uv, float rotation) {
-		float mid = 0.5;
-		return vec2(
-			cos(rotation) * (uv.x - mid) + sin(rotation) * (uv.y - mid) + mid,
-			cos(rotation) * (uv.y - mid) - sin(rotation) * (uv.x - mid) + mid
-		);
-	}
-	
-	void fragment() {
-		// Apply flip first, then rotation
-		vec2 flipped_uv = (UV - 0.5) * uv_flip + 0.5;
-		vec2 base_uv = rotateUV(flipped_uv, uv_rotation);
-		vec4 base = texture(base_texture, base_uv);
-		
-		// Scroll logic (apply flip to geometry so mask aligns)
-		vec2 scroll_uv_raw = vec2(flipped_uv.x, mod((flipped_uv.y * uv_scale_y * 0.5) + (TIME * speed), 0.5));
-		vec2 scroll_uv = rotateUV(scroll_uv_raw, uv_rotation);
-		vec4 scroll = texture(scroll_texture, scroll_uv);
-		
-		vec3 final_col = base.rgb;
-		// Simple Mask Check
-		if (base.r < 0.05 && base.g < 0.05 && base.b < 0.05 && base.a > 0.9) { 
-			final_col = scroll.rgb; 
-		}
-		
-		ALBEDO = final_col * tint_color.rgb;
-		ALPHA = base.a * tint_color.a;
-	}
-	"""
-	return s
 
 func _on_power_status_changed(_has_power: bool) -> void:
 	is_active = true
@@ -339,24 +255,21 @@ func _on_power_status_changed(_has_power: bool) -> void:
 func _update_visuals_active() -> void:
 	var mesh_inst = get_node_or_null("BlockVisual")
 	if is_instance_valid(mesh_inst) and mesh_inst is MeshInstance3D:
-		var spd = 1.0 if is_active else 0.0
+		var active_speed = get_stat("speed", speed)
+		var spd = active_speed if is_active else 0.0
+		
 		for i in range(mesh_inst.get_surface_override_material_count()):
 			var mat = mesh_inst.get_surface_override_material(i)
 			if mat and mat is ShaderMaterial:
-				# Use parameter stored speed sign if possible, but shader param is just 'speed'.
-				# We need to preserve direction.
-				# A cheat: read current speed, normalize it, apply boolean state
-				var current = mat.get_shader_parameter("speed")
-				var sign_val = 1.0
-				if current < 0: sign_val = -1.0
+				var sign_val = mat.get_meta("base_sign", 1.0)
 				mat.set_shader_parameter("speed", spd * sign_val)
 
 func _process(delta: float) -> void:
 	if Engine.is_editor_hint() or not is_active: return
 	
 	var visual_center = visual_offset + item_visual_offset
+	var run_speed = get_stat("speed", speed)
 	
-	# Process both lanes independently
 	for lane_idx in range(LANE_COUNT):
 		var lane_items = lanes[lane_idx]
 		var lane_offset_x = -0.2 if lane_idx == 0 else 0.2
@@ -367,11 +280,10 @@ func _process(delta: float) -> void:
 		for i in range(lane_items.size()):
 			var entry = lane_items[i]
 			var limit = 1.0
-			if i > 0:
-				limit = lane_items[i-1].progress - ITEM_SPACING
+			if i > 0: limit = lane_items[i-1].progress - ITEM_SPACING
 			
 			if entry.progress < limit:
-				entry.progress += TRANSPORT_SPEED * delta
+				entry.progress += run_speed * delta
 				if entry.progress > limit: entry.progress = limit
 			
 			if is_instance_valid(entry.visual):
@@ -379,8 +291,7 @@ func _process(delta: float) -> void:
 		
 		if not lane_items.is_empty():
 			var head = lane_items[0]
-			if head.progress >= 1.0:
-				_try_pass_item(head, lane_idx)
+			if head.progress >= 1.0: _try_pass_item(head, lane_idx)
 
 func _try_pass_item(entry, lane_idx: int):
 	var neighbor = get_neighbor(output_direction)
@@ -411,8 +322,7 @@ func receive_item(item: Resource, from_node: Node3D = null, extra_data: Dictiona
 		target_lane = 0 if local_pos.x <= 0.0 else 1
 		initial_progress = clamp(0.5 - local_pos.z, 0.0, 1.0)
 	
-	if not _can_fit_item(target_lane, initial_progress):
-		return false
+	if not _can_fit_item(target_lane, initial_progress): return false
 
 	var target_array = lanes[target_lane]
 	var insert_idx = target_array.size()
@@ -424,10 +334,8 @@ func receive_item(item: Resource, from_node: Node3D = null, extra_data: Dictiona
 	var container = Node3D.new()
 	var sprite = Sprite3D.new()
 	sprite.texture = item.icon
-	if "color" in item:
-		sprite.modulate = item.color
-	else:
-		sprite.modulate = Color.WHITE
+	if "color" in item: sprite.modulate = item.color
+	else: sprite.modulate = Color.WHITE
 	sprite.scale = item_scale
 	sprite.axis = Vector3.AXIS_Y
 	sprite.pixel_size = 0.03
@@ -450,12 +358,7 @@ func receive_item(item: Resource, from_node: Node3D = null, extra_data: Dictiona
 	var lane_end_local = Vector3(lane_offset_x, 0, -0.5) + visual_center
 	container.position = lane_start_local.lerp(lane_end_local, initial_progress)
 	
-	target_array.insert(insert_idx, { 
-		"item": item, 
-		"progress": initial_progress, 
-		"visual": container 
-	})
-	
+	target_array.insert(insert_idx, { "item": item, "progress": initial_progress, "visual": container })
 	return true
 
 func _can_fit_item(lane_idx: int, p_progress: float) -> bool:
@@ -469,11 +372,8 @@ func _can_fit_item(lane_idx: int, p_progress: float) -> bool:
 			idx = i
 			break
 			
-	if idx > 0:
-		if (arr[idx - 1].progress - p_progress) < ITEM_SPACING: return false
-	if idx < arr.size():
-		if (p_progress - arr[idx].progress) < ITEM_SPACING: return false
-		
+	if idx > 0: if (arr[idx - 1].progress - p_progress) < ITEM_SPACING: return false
+	if idx < arr.size(): if (p_progress - arr[idx].progress) < ITEM_SPACING: return false
 	return true
 
 func _exit_tree() -> void:

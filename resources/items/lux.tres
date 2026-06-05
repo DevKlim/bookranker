@@ -8,7 +8,8 @@
 script = ExtResource("1_script")
 item_name = "Lux Crystal"
 icon = ExtResource("1_mpuw1")
-stack_size = 20.0
+stack_size = 64.0
+item_category = "Item: Resource"
 damage = 5.0
 element = ExtResource("1_rciyt")
 element_units = 2

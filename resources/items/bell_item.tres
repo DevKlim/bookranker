@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://ci71dmx06dq7b"]
+
+[ext_resource type="Resource" uid="uid://dnuqqkqqxnlhm" path="res://resources/attacks/bell.tres" id="1_3q1kr"]
+[ext_resource type="Texture2D" uid="uid://bupuojfyy5n2j" path="res://assets/items/bell/bell.png" id="2_6u5ri"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="3_gytln"]
+
+[resource]
+script = ExtResource("3_gytln")
+item_name = "Bell"
+icon = ExtResource("2_6u5ri")
+stack_size = 1
+equipment_type = 2
+attack_config = ExtResource("1_3q1kr")

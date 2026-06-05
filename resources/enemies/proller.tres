@@ -1,5 +1,6 @@
 [gd_resource type="Resource" script_class="EnemyResource" format=3 uid="uid://5gv2v1f6lfxw"]
 
+[ext_resource type="Resource" uid="uid://vri77kv5coty" path="res://resources/elements/volt.tres" id="1_3yixk"]
 [ext_resource type="PackedScene" uid="uid://culro48yx1g8y" path="res://scenes/enemies/proller.tscn" id="1_adxy4"]
 [ext_resource type="Script" uid="uid://bykln6bau3775" path="res://scripts/resources/enemy_resource.gd" id="2_3yixk"]
 
@@ -7,7 +8,14 @@
 script = ExtResource("2_3yixk")
 enemy_name = "Proller"
 scene = ExtResource("1_adxy4")
-health = 15.0
-speed = 25.0
+max_health = 25.0
+security = 5.0
+speed = 6.0
+process_speed = 0.8
 attack_damage = 3.0
-attack_speed = 0.8
+space = 15.0
+innate_element = ExtResource("1_3yixk")
+drops = [{
+"chance": 0.8,
+"pool": "bots"
+}]

@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ParticleResource" format=3 uid="uid://d2k77ebh7xrkt"]
+
+[ext_resource type="PackedScene" uid="uid://crbpm1f04ihco" path="res://scenes/particles/tailwind.tscn" id="1_w042l"]
+[ext_resource type="Script" uid="uid://cx7aidq5y2yns" path="res://scripts/resources/particle_resource.gd" id="2_q7cyp"]
+
+[resource]
+script = ExtResource("2_q7cyp")
+id = "tailwind"
+scene = ExtResource("1_w042l")

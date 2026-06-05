@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="BuildableResource" format=3 uid="uid://bhb7pfq77ewud"]
+
+[ext_resource type="PackedScene" uid="uid://cjts61iha8kma" path="res://scenes/buildables/marble_hoop.tscn" id="1_1d2rh"]
+[ext_resource type="Script" uid="uid://qpm1dylmnjld" path="res://scripts/resources/buildable_resource.gd" id="1_cbufs"]
+[ext_resource type="Texture2D" uid="uid://o46i5wdfdsrp" path="res://assets/icons/marble_hoop.png" id="1_q23ym"]
+
+[resource]
+script = ExtResource("1_cbufs")
+buildable_name = "Marble Hoop"
+description = "Buffs passing aqua projectiles."
+icon = ExtResource("1_q23ym")
+layer = 3
+rarity = "B"
+build_category = "Building: Support"
+max_health = 20.0
+power_consumption = 0.0
+has_input = false
+has_output = false
+default_input_mask = 1
+default_output_mask = 4
+scene = ExtResource("1_1d2rh")

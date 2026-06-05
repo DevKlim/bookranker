@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="RecipeResource" format=3 uid="uid://dhdi84ei23cye"]
+
+[ext_resource type="Resource" uid="uid://nrrfcqc3xn8e" path="res://resources/items/ink.tres" id="1_5hwwp"]
+[ext_resource type="Resource" uid="uid://dom6dpbqvf46m" path="res://resources/items/aquachalk.tres" id="2_wj4lf"]
+[ext_resource type="Resource" uid="uid://byw567vieem02" path="res://resources/items/rubber.tres" id="3_57avf"]
+[ext_resource type="Resource" uid="uid://vwdi2pyu3gsf" path="res://resources/buildables/mystapus.tres" id="4_bhb2w"]
+[ext_resource type="Script" uid="uid://cc2dv7mq0tqbu" path="res://scripts/resources/recipe_resource.gd" id="5_faqhs"]
+
+[resource]
+script = ExtResource("5_faqhs")
+category = "chalkboard"
+recipe_name = "Mystapus"
+tier = 3
+craft_time = 5.0
+inputs = [{
+"count": 16,
+"resource": ExtResource("1_5hwwp")
+}, {
+"count": 8,
+"resource": ExtResource("2_wj4lf")
+}, {
+"count": 8,
+"resource": ExtResource("3_57avf")
+}]
+outputs = [{
+"count": 1,
+"resource": ExtResource("4_bhb2w")
+}]

@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://bh8jxll2nqnnb"]
+
+[ext_resource type="Texture2D" uid="uid://4if1m1klvsgm" path="res://icon.svg" id="1_1lpc3"]
+[ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="2_r6wq8"]
+
+[resource]
+script = ExtResource("2_r6wq8")
+item_name = "Volatile Core"
+icon = ExtResource("1_1lpc3")
+equipment_type = 5
+rarity = "A"
+item_category = "Mod: Building"
+modifiers = {
+"cost": 3.0,
+"effects": {
+"attack_damage_mult": 0.5,
+"explode_on_death": 1.0
+},
+"permanent": false,
+"type": "building"
+}

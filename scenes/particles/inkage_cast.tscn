@@ -1,0 +1,85 @@
+[gd_scene format=3 uid="uid://inkagecast0123"]
+
+[ext_resource type="Script" uid="uid://dtilvlurfts3d" path="res://scripts/entities/particles/particle_effect.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://p47if404kej0" path="res://assets/textures/particles/smokes/smoke_07_a.png" id="2_smoke"]
+[ext_resource type="Texture2D" uid="uid://bn8fgkn153dym" path="res://assets/textures/particles/circle/circle_03_a.png" id="3_ring"]
+
+[sub_resource type="Curve" id="Curve_ink_scale"]
+_data = [Vector2(0, 1.5), 0.0, 0.0, 0, 0, Vector2(1, 0.0), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_ink"]
+curve = SubResource("Curve_ink_scale")
+
+[sub_resource type="Gradient" id="Gradient_ink"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(0.1, 0, 0.2, 0, 0.6, 0.1, 0.8, 0.8, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_ink"]
+gradient = SubResource("Gradient_ink")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_cast"]
+emission_shape = 1
+emission_sphere_radius = 3.0
+direction = Vector3(0, 1, 0)
+radial_accel_min = -15.0
+radial_accel_max = -10.0
+gravity = Vector3(0, 0, 0)
+scale_curve = SubResource("CurveTexture_ink")
+color_ramp = SubResource("GradientTexture1D_ink")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ink"]
+transparency = 1
+blend_mode = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_texture = ExtResource("2_smoke")
+billboard_mode = 3
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="QuadMesh" id="QuadMesh_ink"]
+material = SubResource("StandardMaterial3D_ink")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_ring"]
+gravity = Vector3(0, 0, 0)
+scale_min = 2.0
+scale_max = 2.5
+color = Color(0.8, 0.0, 0.5, 0.8)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ring"]
+transparency = 1
+blend_mode = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_texture = ExtResource("3_ring")
+billboard_mode = 2
+
+[sub_resource type="QuadMesh" id="QuadMesh_ring"]
+material = SubResource("StandardMaterial3D_ring")
+orientation = 1
+
+[node name="Inkage Cast Root" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="InkSwirl" type="GPUParticles3D" parent="."]
+emitting = false
+amount = 40
+lifetime = 1.0
+one_shot = true
+process_material = SubResource("ParticleProcessMaterial_cast")
+draw_pass_1 = SubResource("QuadMesh_ink")
+
+[node name="MagicRing" type="GPUParticles3D" parent="."]
+emitting = false
+amount = 1
+lifetime = 1.0
+one_shot = true
+process_material = SubResource("ParticleProcessMaterial_ring")
+draw_pass_1 = SubResource("QuadMesh_ring")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="."]
+light_color = Color(0.5, 0.0, 0.8, 1)
+light_energy = 2.0
+omni_range = 5.0

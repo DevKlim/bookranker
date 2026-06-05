@@ -23,8 +23,7 @@ var respawns_label: Label
 var _core_ref: Node
 
 # Context Menu
-var context_menu_panel: PanelContainer
-var context_menu_vbox: VBoxContainer
+var context_menu: ContextMenu
 
 # macOS / Glass Wrappers
 var taskbar: PanelContainer
@@ -76,10 +75,13 @@ func _ready() -> void:
 	_setup_network_stats_ui()
 	_setup_pause_menu_instance()
 	_setup_notification_label()
-	_setup_context_menu()
 	_setup_bottom_left_ui()
 	_setup_timer_ui()
 	_setup_shop_menu()
+	
+	context_menu = ContextMenu.new()
+	context_menu.name = "ContextMenu"
+	add_child(context_menu)
 	
 	GameManager.shop_requested.connect(_on_shop_requested)
 	GameManager.run_data_changed.connect(_update_currency_ui)
@@ -106,7 +108,6 @@ func _ready() -> void:
 
 	var vp_size = get_viewport().get_visible_rect().size
 	
-	# Increased height to 200 and shifted up to gracefully fit multiple respawning lines
 	stats_window = _create_glass_window("Stats", bottom_left_content, Vector2(20, vp_size.y - 230), "Stats", Vector2(280, 200))
 	
 	dev_window = _create_glass_window("Dev Tools", dev_ui_panel, Vector2(vp_size.x - 260, 20), "Dev Tools", Vector2(250, 200))
@@ -125,30 +126,8 @@ func _ready() -> void:
 	taskbar_hbox.add_child(pm_btn)
 
 func apply_liquid_glass(win: Control, corner_radius: float = 12.0) -> void:
-	win.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	WindowUtils.apply_liquid_glass(win, corner_radius)
 	
-	var bbc = BackBufferCopy.new()
-	bbc.copy_mode = BackBufferCopy.COPY_MODE_VIEWPORT
-	win.add_child(bbc)
-	win.move_child(bbc, 0)
-	
-	var bg = ColorRect.new()
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var mat = ShaderMaterial.new()
-	var shader = load("res://shaders/liquid_glass.gdshader")
-	if shader:
-		mat.shader = shader
-		mat.set_shader_parameter("tint", Color(0.9, 0.9, 0.9, 0.25))
-		mat.set_shader_parameter("corner_radius", corner_radius)
-		mat.set_shader_parameter("bezel_width", 12.0)
-	bg.material = mat
-	win.add_child(bg)
-	win.move_child(bg, 1)
-	
-	win.resized.connect(func(): if mat.shader: mat.set_shader_parameter("rect_size", win.size))
-	win.call_deferred("emit_signal", "resized")
-
 func _setup_taskbar() -> void:
 	taskbar = PanelContainer.new()
 	taskbar.theme = global_theme
@@ -333,122 +312,7 @@ func _create_window_btn(txt: String) -> Button:
 	return btn
 
 func _setup_window_resizing(win: Control, base_min: Vector2, scale_wrapper: Control, scale_root: Control, content_node: Control) -> void:
-	var m = 12
-	var configs =[[0, -1, Control.CURSOR_VSIZE],[0, 1, Control.CURSOR_VSIZE],[-1, 0, Control.CURSOR_HSIZE],[1, 0, Control.CURSOR_HSIZE],[-1, -1, Control.CURSOR_FDIAGSIZE],[1, -1, Control.CURSOR_BDIAGSIZE],[-1, 1, Control.CURSOR_BDIAGSIZE],[1, 1, Control.CURSOR_FDIAGSIZE]]
-	var handles =[]
-	var sync_ref =[]
-	
-	for cfg in configs:
-		var handle = Control.new()
-		handle.mouse_default_cursor_shape = cfg[2]
-		handle.top_level = true
-		win.add_child(handle)
-		handles.append({"node": handle, "dx": cfg[0], "dy": cfg[1]})
-		
-		handle.gui_input.connect(func(event):
-			if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-				if event.pressed:
-					win.set_meta("res_drag", true)
-					win.set_meta("res_dx", cfg[0])
-					win.set_meta("res_dy", cfg[1])
-					win.set_meta("res_start_pos", win.global_position)
-					win.set_meta("res_start_size", win.size)
-					win.set_meta("res_start_mouse", event.global_position)
-				else:
-					win.set_meta("res_drag", false)
-			elif event is InputEventMouseMotion and win.get_meta("res_drag", false):
-				var dx = win.get_meta("res_dx")
-				var dy = win.get_meta("res_dy")
-				var s_pos = win.get_meta("res_start_pos")
-				var s_size = win.get_meta("res_start_size")
-				var s_mouse = win.get_meta("res_start_mouse")
-				
-				var delta = event.global_position - s_mouse
-				var absolute_min = Vector2(80, 80)
-				
-				var new_pos = s_pos
-				var new_size = s_size
-				
-				if dx == 1:
-					new_size.x = max(absolute_min.x, s_size.x + delta.x)
-				elif dx == -1:
-					new_size.x = max(absolute_min.x, s_size.x - delta.x)
-					new_pos.x = s_pos.x + (s_size.x - new_size.x)
-					
-				if dy == 1:
-					new_size.y = max(absolute_min.y, s_size.y + delta.y)
-				elif dy == -1:
-					new_size.y = max(absolute_min.y, s_size.y - delta.y)
-					new_pos.y = s_pos.y + (s_size.y - new_size.y)
-					
-				win.global_position = new_pos
-				win.size = new_size
-				win.custom_minimum_size = new_size
-				
-				if sync_ref.size() > 0:
-					sync_ref[0].call()
-		)
-		
-	var sync_handles = func():
-		if not win.is_inside_tree(): return
-		
-		var c_size = scale_wrapper.size
-		c_size.x = max(1.0, c_size.x)
-		c_size.y = max(1.0, c_size.y)
-		
-		var target_x = max(1.0, base_min.x - 24.0)
-		var target_y = max(1.0, base_min.y - 54.0)
-		
-		var s = min(1.0, min(c_size.x / target_x, c_size.y / target_y))
-		if s >= 0.99: 
-			s = 1.0 # Prevent floating point compression
-			
-		scale_root.scale = Vector2(s, s)
-		content_node.size = (c_size / s).ceil()
-		content_node.position = Vector2.ZERO
-		
-		for h in handles:
-			var node = h.node
-			var dx = h.dx
-			var dy = h.dy
-			var r_pos = win.global_position
-			var r_size = win.size
-			
-			if dx == 0 and dy == -1:
-				node.global_position = r_pos + Vector2(m, -m)
-				node.size = Vector2(r_size.x - 2*m, 2*m)
-			elif dx == 0 and dy == 1:
-				node.global_position = r_pos + Vector2(m, r_size.y - m)
-				node.size = Vector2(r_size.x - 2*m, 2*m)
-			elif dx == -1 and dy == 0:
-				node.global_position = r_pos + Vector2(-m, m)
-				node.size = Vector2(2*m, r_size.y - 2*m)
-			elif dx == 1 and dy == 0:
-				node.global_position = r_pos + Vector2(r_size.x - m, m)
-				node.size = Vector2(2*m, r_size.y - 2*m)
-			elif dx == -1 and dy == -1:
-				node.global_position = r_pos + Vector2(-m, -m)
-				node.size = Vector2(2*m, 2*m)
-			elif dx == 1 and dy == -1:
-				node.global_position = r_pos + Vector2(r_size.x - m, -m)
-				node.size = Vector2(2*m, 2*m)
-			elif dx == -1 and dy == 1:
-				node.global_position = r_pos + Vector2(-m, r_size.y - m)
-				node.size = Vector2(2*m, 2*m)
-			elif dx == 1 and dy == 1:
-				node.global_position = r_pos + Vector2(r_size.x - m, r_size.y - m)
-				node.size = Vector2(2*m, 2*m)
-				
-	sync_ref.append(sync_handles)
-	win.resized.connect(sync_handles)
-	win.item_rect_changed.connect(sync_handles)
-	win.visibility_changed.connect(func():
-		for h in handles:
-			h.node.visible = win.visible
-		if win.visible:
-			win.call_deferred("emit_signal", "resized")
-	)
-	win.call_deferred("emit_signal", "resized")
+	WindowUtils.setup_window_resizing(win, scale_wrapper, scale_root, content_node, base_min)
 
 func _setup_bottom_left_ui() -> void:
 	var vbox = VBoxContainer.new()
@@ -564,80 +428,13 @@ func _process(delta: float) -> void:
 	elif respawns_label and respawns_label.text != "":
 		respawns_label.text = ""
 
-func _setup_context_menu() -> void:
-	context_menu_panel = PanelContainer.new()
-	context_menu_panel.name = "ContextMenu"
-	context_menu_panel.visible = false
-	context_menu_panel.theme = global_theme
-	
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color.WHITE
-	style.border_width_left = 1; style.border_width_right = 1
-	style.border_width_top = 1; style.border_width_bottom = 1
-	style.border_color = Color(0.8, 0.8, 0.8, 0.6)
-	style.corner_radius_top_left = 6; style.corner_radius_top_right = 6
-	style.corner_radius_bottom_right = 6; style.corner_radius_bottom_left = 6
-	style.shadow_color = Color(0, 0, 0, 0.15)
-	style.shadow_size = 8
-	context_menu_panel.add_theme_stylebox_override("panel", style)
-	
-	add_child(context_menu_panel)
-	
-	var margin = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 4)
-	margin.add_theme_constant_override("margin_right", 4)
-	margin.add_theme_constant_override("margin_top", 4)
-	margin.add_theme_constant_override("margin_bottom", 4)
-	context_menu_panel.add_child(margin)
-	
-	context_menu_vbox = VBoxContainer.new()
-	context_menu_vbox.add_theme_constant_override("separation", 2)
-	margin.add_child(context_menu_vbox)
-
 func show_context_menu(screen_pos: Vector2, options: Array) -> void:
-	hide_context_menu()
-	if options.is_empty(): return
-	
-	if BuildManager.is_building: BuildManager.exit_build_mode()
-	if PlayerManager.equipped_item: PlayerManager.set_equipped_item(null)
-	
-	for child in context_menu_vbox.get_children(): child.queue_free()
-	
-	for opt in options:
-		var btn = Button.new()
-		btn.text = opt.label
-		btn.add_theme_color_override("font_color", Color.BLACK)
-		btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		btn.flat = true
-		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		btn.pressed.connect(func(): 
-			opt.callback.call()
-			hide_context_menu()
-		)
-		context_menu_vbox.add_child(btn)
-	
-	var cancel = Button.new()
-	cancel.text = "Cancel"
-	cancel.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	cancel.flat = true
-	cancel.modulate = Color(1, 0.5, 0.5)
-	cancel.pressed.connect(hide_context_menu)
-	context_menu_vbox.add_child(HSeparator.new())
-	context_menu_vbox.add_child(cancel)
-	
-	context_menu_panel.position = screen_pos
-	context_menu_panel.visible = true
+	if context_menu:
+		context_menu.show_menu(screen_pos, options)
 
 func hide_context_menu() -> void:
-	context_menu_panel.visible = false
-
-func _input(event: InputEvent) -> void:
-	if context_menu_panel.visible:
-		if event is InputEventMouseButton and event.pressed:
-			if not context_menu_panel.get_global_rect().has_point(event.position):
-				hide_context_menu()
-		if event.is_action_pressed("ui_cancel"):
-			hide_context_menu()
+	if context_menu:
+		context_menu.hide_menu()
 
 func _setup_pause_menu_instance() -> void:
 	pause_menu = PAUSE_MENU_SCENE.instantiate()
@@ -843,13 +640,13 @@ func close_inventory() -> void:
 func set_inventory_screen_position(_screen_pos: Vector2) -> void: pass 
 
 func get_ui_rects() -> Array[Rect2]:
-	var rects: Array[Rect2] = []
+	var rects: Array[Rect2] =[]
 	if hotbar: rects.append(hotbar.get_global_rect())
 	if dev_ui_panel: rects.append(dev_ui_panel.get_global_rect())
 	if inventory_gui and inventory_gui.visible: rects.append(inventory_gui.get_global_rect())
 	if player_menu and player_menu.visible:
 		if player_menu.window_root: rects.append(player_menu.window_root.get_global_rect())
-	if context_menu_panel and context_menu_panel.visible: rects.append(context_menu_panel.get_global_rect())
+	if context_menu and context_menu.visible: rects.append(context_menu.panel.get_global_rect())
 	if shop_menu and shop_menu.visible and shop_menu.panel: rects.append(shop_menu.panel.get_global_rect())
 	return rects
 
@@ -866,4 +663,3 @@ func close_all_menus() -> void:
 
 func set_selected_ally(ally: Node) -> void:
 	if player_menu: player_menu.set_current_ally(ally)
-

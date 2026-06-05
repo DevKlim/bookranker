@@ -1,0 +1,42 @@
+[gd_scene format=3 uid="uid://b3qargnfm5x72"]
+
+[ext_resource type="Script" uid="uid://lg5rovrj17ud" path="res://scripts/entities/base_building.gd" id="1_turx7"]
+[ext_resource type="Script" uid="uid://dad3f8h2j4k5l" path="res://scripts/components/inventory_component.gd" id="3_jbdka"]
+[ext_resource type="Script" uid="uid://dg4gfri6lu5o2" path="res://scripts/components/elemental_component.gd" id="4_5q4pk"]
+[ext_resource type="PackedScene" uid="uid://d3mcpssl5aj8t" path="res://assets/blocks/loot_mesh/loot.gltf" id="4_turx7"]
+[ext_resource type="Script" uid="uid://bueujvuhrwtv0" path="res://scripts/components/mod_handler_component.gd" id="5_aysas"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wp3kt"]
+size = Vector3(0.5, 0.5, 0.5)
+
+[node name="backpack" type="StaticBody3D" unique_id=349007773]
+script = ExtResource("1_turx7")
+unpowered_color = Color(1, 1, 1, 1)
+modslot_count = 0
+max_health = 5.0
+power_consumption = 0.0
+health_equation = "base_health * max(0.1, 1.0 + health_mult)"
+stat_weights = {
+"health_mult": 1.0
+}
+default_output_mask = 4
+layout_config = [Vector2i(0, 0)]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=510862557]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
+shape = SubResource("BoxShape3D_wp3kt")
+
+[node name="InventoryComponent" type="Node" parent="." unique_id=254446361]
+script = ExtResource("3_jbdka")
+max_slots = 8
+slot_capacity = 100
+
+[node name="ElementalComponent" type="Node" parent="." unique_id=1169804205]
+script = ExtResource("4_5q4pk")
+
+[node name="blockbench_export" parent="." unique_id=1794835679 instance=ExtResource("4_turx7")]
+transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 0, 0, 0)
+
+[node name="ModHandlerComponent" type="Node" parent="." unique_id=1183023071]
+script = ExtResource("5_aysas")
+metadata/_custom_type_script = "uid://bueujvuhrwtv0"

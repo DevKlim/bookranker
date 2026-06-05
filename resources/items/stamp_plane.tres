@@ -1,10 +1,11 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://bi6wesocdmum4"]
 
-[ext_resource type="Texture2D" uid="uid://cv02j7xi3e3tg" path="res://assets/icons/stamp_plane.png" id="1_2yes2"]
+[ext_resource type="Texture2D" uid="uid://cv02j7xi3e3tg" path="res://assets/items/stamp_plane.png" id="1_2yes2"]
 [ext_resource type="Script" uid="uid://b8q2k7l3m5oap" path="res://scripts/resources/item_resource.gd" id="2_xkvgn"]
 
 [resource]
 script = ExtResource("2_xkvgn")
 item_name = "Plane Stamp"
 icon = ExtResource("1_2yes2")
-stack_size = 1
+stack_size = 1.0
+item_category = "Item: Material"

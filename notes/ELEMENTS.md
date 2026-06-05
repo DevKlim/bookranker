@@ -33,11 +33,6 @@ The fundamental building blocks.
 *   **Combat:** None.
 *   **Mod Chip (Overheat):** Increases Damage by 1.2x, but increases the building's `temperature` stat by 1. Requires active cooling fans or it takes continuous damage.
 
-### Volt (Electricity / Energy)
-*   **Type:** Energy / Tech
-*   **Combat:** None.
-*   **Mod Chip (Battery):** Stores up to 500 excess Power. Releases it when grid demand > generation.
-
 ### Magne (Magnetic / Force)
 *   **Type:** Physical / Tech
 *   **Combat:** None.
@@ -57,11 +52,6 @@ The fundamental building blocks.
 *   **Type:** Universal / Motion
 *   **Combat:** None.
 *   **Mod Chip (Vent):** Nearby buildings will obtain 1% of this building's stats
-
-### Chem (Acid / Catalyst)
-*   **Type:** Universal / Decay
-*   **Combat:** None.
-*   **Mod Chip (Catalyst):** Increase Duration stat of Building by 5%
 
 ### Lux (Light / Magic)
 *   **Type:** Universal / Apex

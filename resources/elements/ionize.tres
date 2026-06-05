@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ElementResource" format=3 uid="uid://ulavk0issdya"]
+
+[ext_resource type="Script" uid="uid://dywv5rvs3qy3a" path="res://scripts/resources/element_resource.gd" id="1_44o04"]
+[ext_resource type="Texture2D" uid="uid://ccg4hjcl7agby" path="res://assets/icons/ionize.png" id="1_h7hy1"]
+
+[resource]
+script = ExtResource("1_44o04")
+element_name = "Ionize"
+icon = ExtResource("1_h7hy1")
+color = Color(0, 1, 1, 1)
+duration = 0.1

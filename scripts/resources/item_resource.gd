@@ -10,6 +10,11 @@ enum EquipmentType { NONE, TOOL, WEAPON, ARMOR, ACCESSORY, MOD }
 @export var is_projectile: bool = false
 @export var equipment_type: EquipmentType = EquipmentType.NONE
 
+@export_group("Classification")
+@export var rarity: String = "C"
+@export var item_category: String = "Item"
+@export var custom_tooltip_labels: Dictionary = {}
+
 @export_group("Mod Specs")
 @export var mod_type: String = ""
 
@@ -51,4 +56,3 @@ func get_artifact_instance() -> Variant:
 	
 	set_meta("artifact_instance", null)
 	return null
-
